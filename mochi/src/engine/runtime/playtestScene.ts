@@ -14,7 +14,9 @@ export interface PlaytestSceneBundle {
   dispose: () => void;
 }
 
-const SKY = 0x0a0f1a;
+// The editor plate is dark grey; the sky has to sit well below it or the
+// ground reads as empty space in a small viewport.
+const SKY = 0x161e2e;
 
 export function createPlaytestScene(canvas: HTMLCanvasElement): PlaytestSceneBundle {
   const width = canvas.clientWidth || 800;
@@ -26,20 +28,22 @@ export function createPlaytestScene(canvas: HTMLCanvasElement): PlaytestSceneBun
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(SKY);
-  scene.fog = new THREE.Fog(SKY, 45, 130);
+  scene.fog = new THREE.Fog(SKY, 70, 190);
 
   const camera = new THREE.PerspectiveCamera(62, width / height, 0.1, 400);
   camera.position.set(0, 9, 15);
 
-  scene.add(new THREE.HemisphereLight(0xbfdbfe, 0x1e293b, 1.15));
-  const sun = new THREE.DirectionalLight(0xffffff, 2.1);
+  scene.add(new THREE.HemisphereLight(0xbfdbfe, 0x334155, 1.55));
+  const sun = new THREE.DirectionalLight(0xffffff, 2.7);
   sun.position.set(14, 22, 10);
   scene.add(sun);
   const rim = new THREE.DirectionalLight(0x38bdf8, 0.7);
   rim.position.set(-12, 8, -14);
   scene.add(rim);
 
-  const grid = new THREE.GridHelper(80, 80, 0x6366f1, 0x1e293b);
+  const grid = new THREE.GridHelper(80, 80, 0x6366f1, 0x334155);
+  // Sit just above the plate top so the two coplanar surfaces never z-fight.
+  grid.position.y = 0.002;
   scene.add(grid);
 
   const followCamera = new FollowCamera({ radius: 8, phi: Math.PI / 3.1, heightOffset: 1.15, smoothSpeed: 12 });
