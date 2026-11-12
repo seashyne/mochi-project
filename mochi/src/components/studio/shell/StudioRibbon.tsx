@@ -12,6 +12,7 @@ import {
 } from './ribbonGroups';
 
 export type { StudioRibbonActions, StudioRibbonTab, StudioPanelName } from './ribbonTypes';
+export { DEFAULT_PANELS } from './ribbonTypes';
 
 const TABS: { id: StudioRibbonTab; label: string }[] = [
   { id: 'home', label: 'Home' },

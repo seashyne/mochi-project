@@ -71,6 +71,10 @@ export interface PagesTranslations {
   density: string;
   densityComfortable: string;
   densityCompact: string;
+  studioSettings: string;
+  panelLayout: string;
+  resetPanels: string;
+  shortcutsTitle: string;
   accountSection: string;
   signedInAs: string;
   signOut: string;

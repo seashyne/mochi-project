@@ -6,10 +6,14 @@ import ReactDOM from 'react-dom/client';
 import StudioApp from '../../src/apps/studio/StudioApp';
 import { I18nProvider } from '../../src/i18n/context';
 import { registerServiceWorker } from '../../src/pwa/registerServiceWorker';
+import { useThemeStore } from '../../src/store/useThemeStore';
 import '../../src/index.css';
 import '../../src/theme-soft.css';
 import '../../src/styles/studio-theme.css';
 import '../../src/styles/auth.css';
+
+// Sync the theme store with the class the document script already applied.
+useThemeStore.getState().initTheme();
 
 const rootElement = document.getElementById('root');
 if (rootElement) {

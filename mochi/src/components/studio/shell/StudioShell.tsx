@@ -60,6 +60,7 @@ export interface StudioShellProps {
   onPublish: () => void;
   onRunScript: () => void;
   onCommand: (command: string) => void;
+  onResetPanels: () => void;
   onFocusSelection: () => void;
   onExit?: () => void;
   teamAccessory?: React.ReactNode;
@@ -77,7 +78,7 @@ export const StudioShell: React.FC<StudioShellProps> = (props) => {
     onGizmoMode, snapping, onToggleSnap, brush, onBrushChange, isSculpting,
     onToggleSculpting, selectedService, onSelectService, onSelectObject,
     onToggleObjectSelect, onCreateConstraint, onSave, onPlaytest, onPublish,
-    onRunScript, onCommand, onFocusSelection, onExit, teamAccessory, viewport,
+    onRunScript, onCommand, onResetPanels, onFocusSelection, onExit, teamAccessory, viewport,
     clockLabel, skyLabel
   } = props;
 
@@ -141,7 +142,8 @@ export const StudioShell: React.FC<StudioShellProps> = (props) => {
     onTogglePanel,
     onPlaytest,
     onRunScript,
-    onFocusSelection
+    onFocusSelection,
+    onResetPanels
   };
 
   return (

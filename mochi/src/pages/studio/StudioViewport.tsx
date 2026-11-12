@@ -7,10 +7,12 @@
 import React from 'react';
 import { StudioScriptTab } from '../../components/studio/StudioScriptTab';
 import { StudioAnimationEditor } from '../../components/studio/StudioAnimationEditor';
+import { StudioAnimationGraphPanel } from '../../components/studio/StudioAnimationGraphPanel';
 import { StudioPublishForm } from '../../components/studio/StudioPublishForm';
 import type { StudioAnimationsApi } from '../../components/studio/useStudioAnimations';
 import type { StudioRibbonTab } from '../../components/studio/shell/ribbonTypes';
 import type { StudioObject } from '../../engine/studio/types';
+import { StudioPlaytestStage, type PlaytestLogLevel } from '../../components/studio/StudioPlaytestStage';
 import type { StudioScriptRunnerApi } from './useStudioScriptRunner';
 
 export type EditorView = 'builder' | 'script' | 'animation' | 'publish';
@@ -45,6 +47,13 @@ export interface StudioPublishView {
   onSubmit: (event: React.FormEvent) => void;
 }
 
+export interface StudioPlayView {
+  objects: StudioObject[];
+  title: string;
+  onStop: () => void;
+  onLog: (level: PlaytestLogLevel, message: string) => void;
+}
+
 export interface StudioViewportProps {
   view: EditorView;
   canvas: React.ReactNode;
@@ -52,9 +61,13 @@ export interface StudioViewportProps {
   animation: StudioAnimationsApi;
   script: StudioScriptView;
   publish: StudioPublishView;
+  /** Set while a play session owns the viewport; takes over every tab. */
+  play?: StudioPlayView;
 }
 
-export const StudioViewport: React.FC<StudioViewportProps> = ({ view, canvas, objects, animation, script, publish }) => {
+export const StudioViewport: React.FC<StudioViewportProps> = ({ view, canvas, objects, animation, script, publish, play }) => {
+  if (play) return <StudioPlaytestStage {...play} />;
+
   if (view === 'script') {
     return (
       <StudioScriptTab
@@ -104,8 +117,13 @@ export const StudioViewport: React.FC<StudioViewportProps> = ({ view, canvas, ob
     <div className="flex-1 flex min-h-0">
       {canvas}
       {view === 'animation' && (
-        <div className="w-[380px] shrink-0 border-l border-studio-border bg-studio-panel min-h-0 overflow-hidden">
-          <StudioAnimationEditor api={animation} objects={objects} />
+        <div className="w-[380px] shrink-0 border-l border-studio-border bg-studio-panel min-h-0 flex flex-col">
+          <div className="flex-1 min-h-0 overflow-hidden">
+            <StudioAnimationEditor api={animation} objects={objects} />
+          </div>
+          <div className="shrink-0 max-h-[45%] overflow-y-auto">
+            <StudioAnimationGraphPanel graph={animation.graph} clips={animation.clips} onChange={animation.setGraph} />
+          </div>
         </div>
       )}
     </div>

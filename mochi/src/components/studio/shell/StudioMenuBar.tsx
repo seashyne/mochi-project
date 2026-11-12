@@ -4,6 +4,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { ChevronDown, HelpCircle, Share2, Box } from 'lucide-react';
+import { StudioSettingsMenu } from './StudioSettingsMenu';
 
 export interface StudioMenuActions {
   onNewProject?: () => void;
@@ -23,6 +24,7 @@ export interface StudioMenuActions {
   onPlaytest?: () => void;
   onRunScript?: () => void;
   onFocusSelection?: () => void;
+  onResetPanels?: () => void;
 }
 
 export interface StudioMenuBarProps {
@@ -95,7 +97,9 @@ export const StudioMenuBar: React.FC<StudioMenuBarProps> = ({
   onCollaborate
 }) => {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const barRef = useRef<HTMLDivElement | null>(null);
+  const settingsTriggerRef = useRef<HTMLSpanElement | null>(null);
   const menus = buildMenus(actions);
 
   useEffect(() => {
@@ -192,21 +196,36 @@ export const StudioMenuBar: React.FC<StudioMenuBarProps> = ({
             <span>Collaborate</span>
           </button>
         )}
-        <button
-          type="button"
-          title="Studio shortcuts"
-          className="p-1 rounded text-studio-muted hover:text-studio-text hover:bg-studio-card transition-colors"
-        >
-          <HelpCircle className="w-3.5 h-3.5" />
-        </button>
-        <button
-          type="button"
-          title="More"
-          className="p-1 rounded text-studio-muted hover:text-studio-text hover:bg-studio-card transition-colors"
-        >
-          <ChevronDown className="w-3.5 h-3.5" />
-        </button>
+        <span ref={settingsTriggerRef} className="flex items-center gap-1">
+          <button
+            type="button"
+            title="Studio settings and shortcuts"
+            aria-label="Studio settings"
+            onClick={() => setSettingsOpen((prev) => !prev)}
+            className="p-1 rounded text-studio-muted hover:text-studio-text hover:bg-studio-card transition-colors"
+          >
+            <HelpCircle className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            title="Studio settings"
+            aria-label="More"
+            onClick={() => setSettingsOpen((prev) => !prev)}
+            className="p-1 rounded text-studio-muted hover:text-studio-text hover:bg-studio-card transition-colors"
+          >
+            <ChevronDown className="w-3.5 h-3.5" />
+          </button>
+        </span>
       </div>
+      {settingsOpen && actions.onResetPanels && (
+        <StudioSettingsMenu
+          onClose={() => setSettingsOpen(false)}
+          anchorRef={settingsTriggerRef}
+          panels={actions.panels ?? { toolbox: true, explorer: true, properties: true, output: true }}
+          onTogglePanel={(panel) => actions.onTogglePanel?.(panel)}
+          onResetPanels={actions.onResetPanels}
+        />
+      )}
     </div>
   );
 };

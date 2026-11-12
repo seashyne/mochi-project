@@ -19,14 +19,13 @@ import { useStudioPublish } from '../components/studio/useStudioPublish';
 import { useStudioDocument } from '../components/studio/useStudioDocument';
 import { Studio3DCanvas } from '../components/studio/Studio3DCanvas';
 import { useStudioAnimations } from '../components/studio/useStudioAnimations';
-import { StudioPlaytestModal } from '../components/studio/StudioPlaytestModal';
 import { useStudioShortcuts } from '../components/studio/useStudioShortcuts';
 import { useStudioEnvironment } from '../components/studio/useStudioEnvironment';
 import { useServerManifest } from '../components/studio/useServerManifest';
 import { StudioShell } from '../components/studio/shell/StudioShell';
 import type { StudioToolboxTab } from '../components/studio/shell/StudioToolboxPanel';
 import type { StudioOutputFilter } from '../components/studio/shell/StudioOutputPanel';
-import type { StudioPanelName, StudioRibbonTab } from '../components/studio/shell/StudioRibbon';
+import { DEFAULT_PANELS, type StudioPanelName, type StudioRibbonTab } from '../components/studio/shell/StudioRibbon';
 import { useStudioSystemLog } from '../components/studio/shell/useStudioSystemLog';
 import { STUDIO_SERVICES, type StudioServiceId } from '../engine/studio/services';
 import { clockTimeFromEnvironment, formatClockTime } from '../engine/environment/timeOfDay';
@@ -52,16 +51,14 @@ export const StudioPage: React.FC<StudioPageProps> = ({ onGamePublished, initial
   const activeMapId = mapId || initialProjectId || null;
 
   const [ribbonTab, setRibbonTab] = useState<StudioRibbonTab>('home');
-  const [panels, setPanels] = useState<Record<StudioPanelName, boolean>>({
-    toolbox: true, explorer: true, properties: true, output: true
-  });
+  const [panels, setPanels] = useState<Record<StudioPanelName, boolean>>(DEFAULT_PANELS);
   const [toolboxTab, setToolboxTab] = useState<StudioToolboxTab>('assets');
   const [outputFilter, setOutputFilter] = useState<StudioOutputFilter>('all');
   const [outputCollapsed, setOutputCollapsed] = useState(false);
   const [gizmoMode, setGizmoMode] = useState<GizmoMode>('translate');
   const [snapping, setSnapping] = useState(false);
   const [selectedService, setSelectedService] = useState<StudioServiceId | null>('lighting');
-  const [isPlaytestOpen, setIsPlaytestOpen] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [brush, setBrush] = useState<TerrainBrush>(DEFAULT_TERRAIN_BRUSH);
   const [isSculpting, setIsSculpting] = useState(false);
   const [draftId, setDraftId] = useState<string | null>(activeMapId);
@@ -106,15 +103,13 @@ export const StudioPage: React.FC<StudioPageProps> = ({ onGamePublished, initial
   useEffect(() => () => sceneEngine.destroy(), [sceneEngine]);
 
   const team = useStudioTeamBridge({
-    mapId: activeMapId, token, selfId: user?.id ?? null, doc,
-    scriptCode, environment, setScriptCode, setTitle, setSlug, setDescription,
-    setDraftId, setLastSavedAt, replaceEnvironment, replaceAnimations: animation.replaceClips, serverManifest, markSaved
+    mapId: activeMapId, token, selfId: user?.id ?? null, doc, scriptCode, environment, setScriptCode, setTitle, setSlug, setDescription, setDraftId, setLastSavedAt, replaceEnvironment,
+    replaceAnimations: animation.replaceClips, animations: animation.clips, animationStateMachine: animation.graph, replaceAnimationStateMachine: animation.setGraph, serverManifest, markSaved
   });
 
   const persistence = useStudioSavePublish({
-    token, userId: user?.id ?? null, activeMapId, draftId, setDraftId, setLastSavedAt, setIsSaving: setIsSavingDraft,
-    target: { title, slug, description, versionNumber, objects, scriptCode, environment, animations: animation.clips },
-    serverManifest, log, markSaved, isTeamLive: team.isLive, saveToTeam: team.save, publish, setPublishError
+    token, userId: user?.id ?? null, activeMapId, draftId, setDraftId, setLastSavedAt, setIsSaving: setIsSavingDraft, serverManifest, log, markSaved, isTeamLive: team.isLive, saveToTeam: team.save, publish, setPublishError,
+    target: { title, slug, description, versionNumber, objects, scriptCode, environment, animations: animation.clips, animationStateMachine: animation.graph }
   });
 
   useEffect(() => {
@@ -125,8 +120,16 @@ export const StudioPage: React.FC<StudioPageProps> = ({ onGamePublished, initial
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isDirty]);
 
+  // Esc leaves play mode, matching the editor convention.
+  useEffect(() => {
+    if (!isPlaying) return undefined;
+    const handleEscape = (event: KeyboardEvent) => { if (event.key === 'Escape') setIsPlaying(false); };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [isPlaying]);
+
   useStudioShortcuts({
-    enabled: view === 'builder',
+    enabled: view === 'builder' && !isPlaying,
     selectedId, selectedIds,
     onDuplicate: duplicateObjects, onDelete: deleteObjects, onGroup: groupSelected,
     onToggleAnchor: toggleAnchor, onUndo: undo, onRedo: redo, onSelectAll: selectAll
@@ -186,7 +189,7 @@ export const StudioPage: React.FC<StudioPageProps> = ({ onGamePublished, initial
 
   const handleCommand = (command: string) => {
     const normalized = command.trim().toLowerCase();
-    if (normalized === 'play') { setIsPlaytestOpen(true); return; }
+    if (normalized === 'play') { setIsPlaying(true); return; }
     if (normalized === 'save') { void persistence.saveDraft(); return; }
     if (normalized === 'clear') { log.clear(); return; }
     if (normalized === 'select all') { selectAll(); return; }
@@ -225,6 +228,11 @@ export const StudioPage: React.FC<StudioPageProps> = ({ onGamePublished, initial
         onTitleChange: setTitle, onSlugChange: setSlug, onVersionChange: setVersionNumber,
         onDescriptionChange: setDescription, onSubmit: persistence.submitPublish
       }}
+      play={isPlaying ? {
+        objects, title,
+        onStop: () => setIsPlaying(false),
+        onLog: (level, message) => log.push(level, 'Playtest', message)
+      } : undefined}
     />
   );
 
@@ -268,10 +276,11 @@ export const StudioPage: React.FC<StudioPageProps> = ({ onGamePublished, initial
         onToggleObjectSelect={handleToggleObjectSelect}
         onCreateConstraint={handleCreateConstraint}
         onSave={() => void persistence.saveDraft()}
-        onPlaytest={() => { setIsPlaytestOpen(true); log.push('info', 'Test', 'Playtest session started'); }}
+        onPlaytest={() => { setIsPlaying(true); log.push('info', 'Test', 'Playtest session started'); }}
         onPublish={() => setRibbonTab('publish')}
         onRunScript={() => { setRibbonTab('script'); void scriptRunner.runTest(scriptCode); }}
         onCommand={handleCommand}
+        onResetPanels={() => setPanels(DEFAULT_PANELS)}
         onFocusSelection={() => sceneEngine.focusSelection?.()}
         onExit={onExit}
         teamAccessory={<StudioTeamPresence team={team} />}
@@ -279,7 +288,6 @@ export const StudioPage: React.FC<StudioPageProps> = ({ onGamePublished, initial
         clockLabel={formatClockTime(clockHours)}
         skyLabel={skybox.label}
       />
-      <StudioPlaytestModal isOpen={isPlaytestOpen} onClose={() => setIsPlaytestOpen(false)} objects={objects} worldTitle={title} />
       <StudioTeamControls team={team} />
     </>
   );
