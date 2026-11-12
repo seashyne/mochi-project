@@ -8,7 +8,7 @@ import { createTerrainData } from '../../engine/studio/terrainCodec';
 import { DEFAULT_CONSTRAINT, DEFAULT_PARTICLE } from '../../engine/studio/advancedTypes';
 import { collectClipboard, offsetClipboard, remapClipboard } from '../../engine/studio/studioClipboard';
 import type { TransformUpdate } from '../../engine/studio/multiTransform';
-import { useStudioHistory, CommitOptions } from './useStudioHistory';
+import { useStudioPatchHistory, type CommitOptions } from './useStudioPatchHistory';
 
 export interface StudioDocumentApi {
   objects: StudioObject[];
@@ -66,7 +66,7 @@ export function collectWithDescendants(objects: StudioObject[], ids: string[]): 
 }
 
 export function useStudioDocument(sceneEngine: StudioScene, initial: StudioObject[]): StudioDocumentApi {
-  const { value: objects, revision, canUndo, canRedo, commit, replace, undo, redo } = useStudioHistory<StudioObject[]>(initial);
+  const { objects, revision, canUndo, canRedo, commit, replace, undo, redo } = useStudioPatchHistory(initial);
   const [selectedIds, setSelectedIds] = useState<string[]>(initial[0] ? [initial[0].id] : []);
   const [isDirty, setIsDirty] = useState(false);
   const clipboardRef = useRef<StudioObject[]>([]);

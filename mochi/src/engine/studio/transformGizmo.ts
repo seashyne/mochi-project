@@ -50,6 +50,9 @@ export class TransformGizmoController {
     scene.add(this.helper);
 
     this.controls.addEventListener('change', () => {
+      // TransformControls also emits on attach / mode changes; only a real drag
+      // is a document edit, otherwise the mirror rebuild feeds itself forever.
+      if (!this.controls?.dragging) return;
       if (this.attachedObject && this.onChangeCallback) {
         this.onChangeCallback({
           position: {

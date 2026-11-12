@@ -32,7 +32,7 @@ Reference source lives in `godot-master/godot-master/` (353 MB, keep it out of v
 | # | Item | Godot reference | Status |
 | --- | --- | --- | --- |
 | 1.1 | Schema-driven property inspector (`PropertyDescriptor` + per-type registry, generic field renderer) | `editor/inspector/editor_inspector.cpp` | DONE |
-| 1.2 | Patch-based undo/redo (store deltas, not full snapshots) | `core/object/undo_redo.cpp` | WIP |
+| 1.2 | Patch-based undo/redo (store deltas, not full snapshots) | `core/object/undo_redo.cpp` | DONE |
 
 Acceptance: adding a new object type needs only schema entries; undo memory scales with edited objects, not scene size; existing inspector and history behaviour preserved.
 
