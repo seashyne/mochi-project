@@ -1,0 +1,72 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "mochi-cloud-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-07-07",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "observability": {
+    "enabled": true
+  },
+  "vars": {
+    "ENVIRONMENT": "production",
+    "ALLOWED_ORIGINS": "https://game.lenout.com,https://studio-game.lenout.com,https://game-staging.lenout.com,http://localhost:5173,http://127.0.0.1:5173,capacitor://localhost,https://localhost",
+    "API_HOSTNAME": "api-game.lenout.com",
+    "PUBLIC_ASSETS_URL": "https://assets-game.lenout.com",
+    "ACCESS_ASSETS_URL": "https://access-game.lenout.com",
+    "JWT_SECRET": "mochi-prod-hmac-key-2026-lenout-decoupled",
+    "EMAIL_FROM": "noreply@lenout.com",
+    "EMAIL_FROM_NAME": "Mochi Platform"
+  },
+  "send_email": [
+    {
+      "name": "EMAIL",
+      "allowed_sender_addresses": [
+        "noreply@lenout.com",
+        "official@lenout.com"
+      ]
+    }
+  ],
+  "routes": [
+    {
+      "pattern": "api-game.lenout.com",
+      "custom_domain": true
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "mochi-db",
+      "database_id": "f4605cae-da6d-40b0-a8ef-2a501d8d5382",
+      "migrations_dir": "./migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "ASSETS",
+      "bucket_name": "mochi-assets"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "GAME_ROOM",
+        "class_name": "GameRoomDO"
+      },
+      {
+        "name": "STUDIO_DRAFT",
+        "class_name": "StudioDraftDO"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["GameRoomDO"]
+    },
+    {
+      "tag": "v2",
+      "new_sqlite_classes": ["StudioDraftDO"]
+    }
+  ]
+}

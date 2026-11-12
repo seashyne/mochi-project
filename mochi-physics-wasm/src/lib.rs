@@ -1,0 +1,381 @@
+// Mochi Platform - High-Performance 3D Physics WebAssembly Kernel
+// Proprietary and Confidential - Copyright (c) 2026 Mochi Platform
+
+use std::alloc::{alloc, dealloc, Layout};
+
+/// Allocate f32 buffer in WebAssembly linear memory for zero-copy data passing
+#[no_mangle]
+pub extern "C" fn alloc_f32_buffer(count: usize) -> *mut f32 {
+    let layout = Layout::array::<f32>(count).unwrap();
+    unsafe { alloc(layout) as *mut f32 }
+}
+
+/// Free f32 buffer in WebAssembly linear memory
+#[no_mangle]
+pub extern "C" fn free_f32_buffer(ptr: *mut f32, count: usize) {
+    if !ptr.is_null() && count > 0 {
+        let layout = Layout::array::<f32>(count).unwrap();
+        unsafe { dealloc(ptr as *mut u8, layout) };
+    }
+}
+
+/// Compute Euclidean 3D vector length
+#[no_mangle]
+pub extern "C" fn vec3_length(x: f32, y: f32, z: f32) -> f32 {
+    (x * x + y * y + z * z).sqrt()
+}
+
+/// Compute 3D Euclidean distance between two points
+#[no_mangle]
+pub extern "C" fn vec3_distance(ax: f32, ay: f32, az: f32, bx: f32, by: f32, bz: f32) -> f32 {
+    let dx = ax - bx;
+    let dy = ay - by;
+    let dz = az - bz;
+    (dx * dx + dy * dy + dz * dz).sqrt()
+}
+
+/// Compute 3D dot product
+#[no_mangle]
+pub extern "C" fn vec3_dot(ax: f32, ay: f32, az: f32, bx: f32, by: f32, bz: f32) -> f32 {
+    ax * bx + ay * by + az * bz
+}
+
+/// Semi-implicit Euler integration step for rigid body dynamics
+/// Updates velocity and position with linear damping:
+/// vel = (vel + accel * dt) * (1.0 - damping * dt)
+/// pos = pos + vel * dt
+#[no_mangle]
+pub extern "C" fn integrate_body(
+    pos_ptr: *mut f32,
+    vel_ptr: *mut f32,
+    accel_x: f32,
+    accel_y: f32,
+    accel_z: f32,
+    dt: f32,
+    damping: f32,
+) {
+    if pos_ptr.is_null() || vel_ptr.is_null() {
+        return;
+    }
+    unsafe {
+        let damp_factor = (1.0 - damping * dt).max(0.0);
+        let vx = (*vel_ptr.add(0) + accel_x * dt) * damp_factor;
+        let vy = (*vel_ptr.add(1) + accel_y * dt) * damp_factor;
+        let vz = (*vel_ptr.add(2) + accel_z * dt) * damp_factor;
+
+        *vel_ptr.add(0) = vx;
+        *vel_ptr.add(1) = vy;
+        *vel_ptr.add(2) = vz;
+
+        *pos_ptr.add(0) += vx * dt;
+        *pos_ptr.add(1) += vy * dt;
+        *pos_ptr.add(2) += vz * dt;
+    }
+}
+
+/// Test Sphere vs Sphere intersection
+/// If colliding, returns 1 and writes normal (nx, ny, nz) and penetration depth into out_contact[0..4]
+/// Otherwise returns 0
+#[no_mangle]
+pub extern "C" fn test_sphere_sphere(
+    ax: f32, ay: f32, az: f32, ar: f32,
+    bx: f32, by: f32, bz: f32, br: f32,
+    out_contact: *mut f32,
+) -> i32 {
+    let dx = bx - ax;
+    let dy = by - ay;
+    let dz = bz - az;
+    let dist_sq = dx * dx + dy * dy + dz * dz;
+    let radius_sum = ar + br;
+
+    if dist_sq >= radius_sum * radius_sum {
+        return 0;
+    }
+
+    let dist = dist_sq.sqrt();
+    let penetration = radius_sum - dist;
+
+    if !out_contact.is_null() {
+        unsafe {
+            if dist > 0.00001 {
+                let inv = 1.0 / dist;
+                *out_contact.add(0) = dx * inv;
+                *out_contact.add(1) = dy * inv;
+                *out_contact.add(2) = dz * inv;
+            } else {
+                *out_contact.add(0) = 0.0;
+                *out_contact.add(1) = 1.0;
+                *out_contact.add(2) = 0.0;
+            }
+            *out_contact.add(3) = penetration;
+        }
+    }
+    1
+}
+
+/// Test Sphere vs Axis-Aligned Bounding Box (AABB)
+/// Returns 1 if colliding, 0 if not.
+/// Writes contact normal (nx, ny, nz) pointing out of box, and penetration depth into out_contact[0..4]
+#[no_mangle]
+pub extern "C" fn test_sphere_aabb(
+    sx: f32, sy: f32, sz: f32, sr: f32,
+    min_x: f32, min_y: f32, min_z: f32,
+    max_x: f32, max_y: f32, max_z: f32,
+    out_contact: *mut f32,
+) -> i32 {
+    let cx = sx.max(min_x).min(max_x);
+    let cy = sy.max(min_y).min(max_y);
+    let cz = sz.max(min_z).min(max_z);
+
+    let dx = sx - cx;
+    let dy = sy - cy;
+    let dz = sz - cz;
+    let dist_sq = dx * dx + dy * dy + dz * dz;
+
+    if dist_sq > sr * sr {
+        return 0;
+    }
+
+    // Sphere centre inside the box: exit through the nearest face so the
+    // resolver pushes out along the shallowest axis (matches the TS solver).
+    if dist_sq <= 0.00000001 {
+        let ex = (max_x - sx).min(sx - min_x);
+        let ey = (max_y - sy).min(sy - min_y);
+        let ez = (max_z - sz).min(sz - min_z);
+
+        let (nx, ny, nz, face_dist) = if ex <= ey && ex <= ez {
+            (if sx >= 0.0 { 1.0 } else { -1.0 }, 0.0, 0.0, ex)
+        } else if ey <= ez {
+            (0.0, if sy >= 0.0 { 1.0 } else { -1.0 }, 0.0, ey)
+        } else {
+            (0.0, 0.0, if sz >= 0.0 { 1.0 } else { -1.0 }, ez)
+        };
+
+        if !out_contact.is_null() {
+            unsafe {
+                *out_contact.add(0) = nx;
+                *out_contact.add(1) = ny;
+                *out_contact.add(2) = nz;
+                *out_contact.add(3) = sr + face_dist;
+            }
+        }
+        return 1;
+    }
+
+    let dist = dist_sq.sqrt();
+    let penetration = sr - dist;
+
+    if !out_contact.is_null() {
+        unsafe {
+            if dist > 0.00001 {
+                let inv = 1.0 / dist;
+                *out_contact.add(0) = dx * inv;
+                *out_contact.add(1) = dy * inv;
+                *out_contact.add(2) = dz * inv;
+            } else {
+                *out_contact.add(0) = 0.0;
+                *out_contact.add(1) = 1.0;
+                *out_contact.add(2) = 0.0;
+            }
+            *out_contact.add(3) = penetration;
+        }
+    }
+    1
+}
+
+/// Test Axis-Aligned Bounding Box (AABB) vs AABB overlap
+#[no_mangle]
+pub extern "C" fn test_aabb_aabb(
+    min_ax: f32, min_ay: f32, min_az: f32,
+    max_ax: f32, max_ay: f32, max_az: f32,
+    min_bx: f32, min_by: f32, min_bz: f32,
+    max_bx: f32, max_by: f32, max_bz: f32,
+) -> i32 {
+    if max_ax < min_bx || min_ax > max_bx {
+        return 0;
+    }
+    if max_ay < min_by || min_ay > max_by {
+        return 0;
+    }
+    if max_az < min_bz || min_az > max_bz {
+        return 0;
+    }
+    1
+}
+
+/// Fast Ray vs AABB slab intersection test (used for cursor picking, clicking objects, and line-of-sight)
+/// Returns hit distance `t >= 0.0`, or `-1.0` if no intersection occurs within max_dist
+#[no_mangle]
+pub extern "C" fn ray_intersect_aabb(
+    orig_x: f32, orig_y: f32, orig_z: f32,
+    dir_x: f32, dir_y: f32, dir_z: f32,
+    min_x: f32, min_y: f32, min_z: f32,
+    max_x: f32, max_y: f32, max_z: f32,
+    max_dist: f32,
+) -> f32 {
+    let mut tmin = 0.0f32;
+    let mut tmax = max_dist;
+
+    // X slab
+    if dir_x.abs() > 0.000001 {
+        let inv_d = 1.0 / dir_x;
+        let mut t1 = (min_x - orig_x) * inv_d;
+        let mut t2 = (max_x - orig_x) * inv_d;
+        if t1 > t2 { std::mem::swap(&mut t1, &mut t2); }
+        tmin = tmin.max(t1);
+        tmax = tmax.min(t2);
+        if tmin > tmax { return -1.0; }
+    } else if orig_x < min_x || orig_x > max_x {
+        return -1.0;
+    }
+
+    // Y slab
+    if dir_y.abs() > 0.000001 {
+        let inv_d = 1.0 / dir_y;
+        let mut t1 = (min_y - orig_y) * inv_d;
+        let mut t2 = (max_y - orig_y) * inv_d;
+        if t1 > t2 { std::mem::swap(&mut t1, &mut t2); }
+        tmin = tmin.max(t1);
+        tmax = tmax.min(t2);
+        if tmin > tmax { return -1.0; }
+    } else if orig_y < min_y || orig_y > max_y {
+        return -1.0;
+    }
+
+    // Z slab
+    if dir_z.abs() > 0.000001 {
+        let inv_d = 1.0 / dir_z;
+        let mut t1 = (min_z - orig_z) * inv_d;
+        let mut t2 = (max_z - orig_z) * inv_d;
+        if t1 > t2 { std::mem::swap(&mut t1, &mut t2); }
+        tmin = tmin.max(t1);
+        tmax = tmax.min(t2);
+        if tmin > tmax { return -1.0; }
+    } else if orig_z < min_z || orig_z > max_z {
+        return -1.0;
+    }
+
+    if tmin >= 0.0 { tmin } else { -1.0 }
+}
+
+/// Ray vs AABB returning both the entry distance and the outward face normal.
+/// Writes `(nx, ny, nz)` into `out_normal` and returns `t >= 0.0`, or `-1.0`.
+#[no_mangle]
+pub extern "C" fn ray_intersect_aabb_normal(
+    orig_x: f32, orig_y: f32, orig_z: f32,
+    dir_x: f32, dir_y: f32, dir_z: f32,
+    min_x: f32, min_y: f32, min_z: f32,
+    max_x: f32, max_y: f32, max_z: f32,
+    max_dist: f32,
+    out_normal: *mut f32,
+) -> f32 {
+    let mut tmin = 0.0f32;
+    let mut tmax = max_dist;
+    let mut axis = 0usize;
+    let mut sign = 1.0f32;
+
+    macro_rules! slab {
+        ($o:expr, $d:expr, $mn:expr, $mx:expr, $idx:expr) => {{
+            if $d.abs() > 0.000001 {
+                let inv_d = 1.0 / $d;
+                let mut t1 = ($mn - $o) * inv_d;
+                let mut t2 = ($mx - $o) * inv_d;
+                let mut face_sign = -1.0f32;
+                if t1 > t2 {
+                    std::mem::swap(&mut t1, &mut t2);
+                    face_sign = 1.0;
+                }
+                if t1 > tmin {
+                    tmin = t1;
+                    axis = $idx;
+                    sign = face_sign;
+                }
+                tmax = tmax.min(t2);
+                if tmin > tmax {
+                    return -1.0;
+                }
+            } else if $o < $mn || $o > $mx {
+                return -1.0;
+            }
+        }};
+    }
+
+    slab!(orig_x, dir_x, min_x, max_x, 0);
+    slab!(orig_y, dir_y, min_y, max_y, 1);
+    slab!(orig_z, dir_z, min_z, max_z, 2);
+
+    if tmin < 0.0 {
+        return -1.0;
+    }
+
+    if !out_normal.is_null() {
+        unsafe {
+            *out_normal = if axis == 0 { sign } else { 0.0 };
+            *out_normal.add(1) = if axis == 1 { sign } else { 0.0 };
+            *out_normal.add(2) = if axis == 2 { sign } else { 0.0 };
+        }
+    }
+
+    tmin
+}
+
+/// Character capsule / AABB ground step resolver
+/// Resolves avatar vertical stand and horizontal penetration against solid bounding box
+#[no_mangle]
+pub extern "C" fn resolve_character_box_collision(
+    px: f32, py: f32, pz: f32,
+    radius: f32, half_height: f32,
+    min_x: f32, min_y: f32, min_z: f32,
+    max_x: f32, max_y: f32, max_z: f32,
+    out_pos: *mut f32,
+) -> i32 {
+    let char_min_x = px - radius;
+    let char_max_x = px + radius;
+    let char_min_y = py;
+    let char_max_y = py + half_height * 2.0;
+    let char_min_z = pz - radius;
+    let char_max_z = pz + radius;
+
+    // Fast rejection test
+    if char_max_x < min_x || char_min_x > max_x ||
+       char_max_y < min_y || char_min_y > max_y ||
+       char_max_z < min_z || char_min_z > max_z {
+        return 0;
+    }
+
+    if out_pos.is_null() {
+        return 1;
+    }
+
+    // Find smallest axis of penetration
+    let overlap_x1 = max_x - char_min_x;
+    let overlap_x2 = char_max_x - min_x;
+    let pen_x = if overlap_x1 < overlap_x2 { overlap_x1 } else { -overlap_x2 };
+
+    let overlap_y1 = max_y - char_min_y;
+    let overlap_y2 = char_max_y - min_y;
+    let pen_y = if overlap_y1 < overlap_y2 { overlap_y1 } else { -overlap_y2 };
+
+    let overlap_z1 = max_z - char_min_z;
+    let overlap_z2 = char_max_z - min_z;
+    let pen_z = if overlap_z1 < overlap_z2 { overlap_z1 } else { -overlap_z2 };
+
+    let abs_x = pen_x.abs();
+    let abs_y = pen_y.abs();
+    let abs_z = pen_z.abs();
+
+    unsafe {
+        *out_pos.add(0) = px;
+        *out_pos.add(1) = py;
+        *out_pos.add(2) = pz;
+
+        if abs_y <= abs_x && abs_y <= abs_z {
+            *out_pos.add(1) = py + pen_y;
+        } else if abs_x <= abs_z {
+            *out_pos.add(0) = px + pen_x;
+        } else {
+            *out_pos.add(2) = pz + pen_z;
+        }
+    }
+    1
+}

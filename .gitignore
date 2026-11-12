@@ -1,0 +1,50 @@
+# Dependencies
+node_modules/
+
+# Third-party engine reference sources (read-only reference, never a dependency).
+# These are 500+ MB upstream snapshots; keep them outside version control.
+engine open source/
+*.zip
+
+# Source asset packs (2.6 GB of downloads). The runtime copies it needs live in
+# mochi/public, so the raw packs stay local.
+access/
+
+# Production build outputs
+dist/
+dist-studio/
+dist-player/
+dist.bak-*
+dist-studio.bak-*
+build/
+.tmp/
+mochi-physics-wasm/target/
+
+# Agent scratch state
+.agents/
+.workbuddy/
+.workbuddy-ai/
+*.genie
+
+# Cloudflare Wrangler
+.wrangler/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Editor and OS
+.DS_Store
+Thumbs.db
+*.suo
+*.user
+.idea/
+.vscode/
+*.swp
+
+# Logs and coverage
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+coverage/

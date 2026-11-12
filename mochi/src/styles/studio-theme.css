@@ -1,0 +1,153 @@
+/*
+ * Mochi Studio semantic design tokens - single source of truth.
+ * tailwind.config.js maps colors.studio onto these RGB triplets via
+ * rgb(var(--studio-*-rgb) / <alpha-value>), so Tailwind opacity modifiers such
+ * as bg-studio-panel/90 keep working while dark/light themes swap cleanly.
+ * Hex counterparts in index.css remain the backwards-compatible documentation.
+ */
+
+:root,
+.dark {
+  /* Surfaces */
+  --studio-bg-rgb: 30 30 36;
+  --studio-surface-rgb: 34 34 40;
+  --studio-panel-rgb: 37 37 43;
+  --studio-ribbon-rgb: 40 40 48;
+  --studio-card-rgb: 42 42 50;
+  --studio-border-rgb: 54 54 64;
+  --studio-muted-rgb: 160 160 171;
+  --studio-text-rgb: 237 237 242;
+  --studio-accent-rgb: 0 162 255;
+
+  /* Semantic states - replace raw emerald/amber/rose/violet utilities */
+  --studio-success-rgb: 74 222 128;
+  --studio-warning-rgb: 251 191 36;
+  --studio-danger-rgb: 251 113 133;
+  --studio-info-rgb: 56 189 248;
+  --studio-violet-rgb: 192 132 252;
+  --studio-on-accent-rgb: 6 18 28;
+  --studio-overlay-rgb: 6 8 14;
+
+  /* Object identity colours: Explorer, palette and toolbar icons */
+  --studio-type-block-rgb: 129 140 248;
+  --studio-type-sphere-rgb: 244 114 182;
+  --studio-type-cylinder-rgb: 167 139 250;
+  --studio-type-ramp-rgb: 251 146 60;
+  --studio-type-platform-rgb: 56 189 248;
+  --studio-type-coin-rgb: 251 191 36;
+  --studio-type-jump-rgb: 52 211 153;
+  --studio-type-hazard-rgb: 251 113 133;
+  --studio-type-spawn-rgb: 0 162 255;
+  --studio-type-model-rgb: 251 191 36;
+
+  /* Geometry and typography */
+  --studio-radius-sm: 8px;
+  --studio-radius-md: 12px;
+  --studio-radius-lg: 16px;
+  --studio-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --studio-ring: 0 0 0 2px rgb(var(--studio-accent-rgb) / 0.45);
+}
+
+html.light,
+.light {
+  --studio-bg-rgb: 244 246 249;
+  --studio-surface-rgb: 251 252 254;
+  --studio-panel-rgb: 255 255 255;
+  --studio-ribbon-rgb: 240 243 248;
+  --studio-card-rgb: 238 242 247;
+  --studio-border-rgb: 216 222 232;
+  --studio-muted-rgb: 107 118 140;
+  --studio-text-rgb: 31 39 54;
+  --studio-accent-rgb: 63 116 201;
+  --studio-success-rgb: 5 150 105;
+  --studio-warning-rgb: 185 132 25;
+  --studio-danger-rgb: 220 38 38;
+  --studio-info-rgb: 2 132 199;
+  --studio-violet-rgb: 124 58 237;
+  --studio-on-accent-rgb: 255 255 255;
+  --studio-overlay-rgb: 15 23 42;
+  --studio-type-block-rgb: 79 70 229;
+  --studio-type-sphere-rgb: 219 39 119;
+  --studio-type-cylinder-rgb: 124 58 237;
+  --studio-type-ramp-rgb: 194 65 12;
+  --studio-type-platform-rgb: 2 132 199;
+  --studio-type-coin-rgb: 180 83 9;
+  --studio-type-jump-rgb: 5 150 105;
+  --studio-type-hazard-rgb: 190 18 60;
+  --studio-type-spawn-rgb: 63 116 201;
+  --studio-type-model-rgb: 146 64 14;
+  --studio-ring: 0 0 0 2px rgb(var(--studio-accent-rgb) / 0.35);
+}
+
+/* Reusable state surfaces. Prefer these over hand-written colour utilities. */
+.studio-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--studio-radius-sm);
+  border: 1px solid rgb(var(--studio-border-rgb));
+  background: rgb(var(--studio-card-rgb));
+  color: rgb(var(--studio-text-rgb));
+  font-family: var(--studio-font-mono);
+  font-size: 10px;
+}
+
+.studio-chip-success {
+  border-color: rgb(var(--studio-success-rgb) / 0.4);
+  background: rgb(var(--studio-success-rgb) / 0.15);
+  color: rgb(var(--studio-success-rgb));
+}
+
+.studio-chip-warning {
+  border-color: rgb(var(--studio-warning-rgb) / 0.35);
+  background: rgb(var(--studio-warning-rgb) / 0.18);
+  color: rgb(var(--studio-warning-rgb));
+}
+
+.studio-chip-danger {
+  border-color: rgb(var(--studio-danger-rgb) / 0.35);
+  background: rgb(var(--studio-danger-rgb) / 0.12);
+  color: rgb(var(--studio-danger-rgb));
+}
+
+.studio-chip-accent {
+  border-color: rgb(var(--studio-accent-rgb) / 0.5);
+  background: rgb(var(--studio-accent-rgb) / 0.18);
+  color: rgb(var(--studio-accent-rgb));
+}
+
+.studio-input {
+  width: 100%;
+  padding: 4px 8px;
+  border-radius: var(--studio-radius-sm);
+  border: 1px solid rgb(var(--studio-border-rgb));
+  background: rgb(var(--studio-bg-rgb));
+  color: rgb(var(--studio-text-rgb));
+  font-family: var(--studio-font-mono);
+  font-size: 11px;
+}
+
+.studio-input:focus-visible,
+.studio-chip:focus-visible,
+.studio-focus-ring:focus-visible {
+  outline: none;
+  box-shadow: var(--studio-ring);
+}
+
+/* Object-type icon colours: use these classes on icon elements instead of
+   text-indigo-400, text-[#38bdf8], etc. Each maps to a --studio-type-*-rgb
+   variable that swaps correctly between dark and light themes. */
+.studio-type-block    { color: rgb(var(--studio-type-block-rgb)); }
+.studio-type-sphere   { color: rgb(var(--studio-type-sphere-rgb)); }
+.studio-type-cylinder { color: rgb(var(--studio-type-cylinder-rgb)); }
+.studio-type-ramp     { color: rgb(var(--studio-type-ramp-rgb)); }
+.studio-type-platform { color: rgb(var(--studio-type-platform-rgb)); }
+.studio-type-coin     { color: rgb(var(--studio-type-coin-rgb)); }
+.studio-type-jump     { color: rgb(var(--studio-type-jump-rgb)); }
+.studio-type-hazard   { color: rgb(var(--studio-type-hazard-rgb)); }
+.studio-type-spawn    { color: rgb(var(--studio-type-spawn-rgb)); }
+.studio-type-model    { color: rgb(var(--studio-type-model-rgb)); }
+.studio-type-terrain  { color: rgb(var(--studio-type-jump-rgb)); }
+.studio-type-constraint { color: rgb(var(--studio-type-cylinder-rgb)); }
+.studio-type-particle { color: rgb(var(--studio-type-coin-rgb)); }

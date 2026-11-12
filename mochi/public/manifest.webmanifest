@@ -1,0 +1,20 @@
+{
+  "name": "Mochi - 3D Web Game Platform",
+  "short_name": "Mochi",
+  "description": "Play and build multiplayer 3D games in your browser.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#090b10",
+  "theme_color": "#090b10",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

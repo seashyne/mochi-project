@@ -1,0 +1,293 @@
+/* Paper & clay authentication surface for sign-in and sign-up */
+.mochi-auth {
+  --a-card: #fffdf8;
+  --a-ink: #241f33;
+  --a-sub: #6b6280;
+  --a-line: #e4d7c1;
+  --a-field: #fff7ea;
+  --a-soft: #f3e7d2;
+  --a-accent: #d9536f;
+  --a-accent-dark: #b03e56;
+  --a-accent-ink: #fff8ec;
+  --a-shadow: rgba(36, 31, 51, 0.18);
+  font-family: 'IBM Plex Sans Thai', 'Segoe UI', sans-serif;
+  color: var(--a-ink);
+}
+.dark .mochi-auth {
+  --a-card: #211c31;
+  --a-ink: #f6efe3;
+  --a-sub: #b5abc7;
+  --a-line: #3d3553;
+  --a-field: #2a2440;
+  --a-soft: #332b4b;
+  --a-accent: #e06a83;
+  --a-accent-dark: #a84459;
+  --a-accent-ink: #1c1526;
+  --a-shadow: rgba(0, 0, 0, 0.5);
+}
+.mochi-auth-backdrop {
+  background-color: rgba(34, 28, 50, 0.55);
+  background-image: radial-gradient(rgba(255, 253, 248, 0.14) 1px, transparent 1px);
+  background-size: 22px 22px;
+  backdrop-filter: blur(10px);
+}
+.dark .mochi-auth-backdrop {
+  background-color: rgba(8, 6, 14, 0.72);
+}
+.mochi-auth-card {
+  background: var(--a-card);
+  border: 2px solid var(--a-line);
+  border-radius: 26px;
+  box-shadow: 0 10px 0 -4px var(--a-shadow), 0 28px 60px var(--a-shadow);
+  color: var(--a-ink);
+}
+.mochi-auth-title {
+  font-family: 'Mitr', 'IBM Plex Sans Thai', sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--a-ink);
+}
+.mochi-auth-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--a-soft);
+  border: 1.5px solid var(--a-line);
+  color: var(--a-ink);
+  font-family: 'Mitr', 'IBM Plex Sans Thai', sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.mochi-auth-badge-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--a-accent);
+}
+.mochi-auth-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--a-sub);
+}
+.mochi-auth-required {
+  color: var(--a-accent);
+}
+.mochi-auth .mochi-auth-input,
+.mochi-auth .mochi-input {
+  width: 100%;
+  padding: 11px 14px;
+  background: var(--a-field);
+  border: 1.5px solid var(--a-line);
+  border-radius: 14px;
+  color: var(--a-ink);
+  font-size: 13px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.mochi-auth .mochi-auth-input::placeholder,
+.mochi-auth .mochi-input::placeholder {
+  color: var(--a-sub);
+  opacity: 0.7;
+}
+.mochi-auth .mochi-auth-input:focus,
+.mochi-auth .mochi-input:focus {
+  outline: none;
+  border-color: var(--a-accent);
+  box-shadow: 0 0 0 3px rgba(217, 83, 111, 0.16);
+}
+.mochi-auth .mochi-auth-input-icon {
+  padding-left: 40px;
+}
+.mochi-auth .mochi-auth-input-end {
+  padding-right: 42px;
+}
+.mochi-auth-field-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--a-sub);
+  pointer-events: none;
+}
+.mochi-auth-field-toggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 5px;
+  border-radius: 9px;
+  color: var(--a-sub);
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+.mochi-auth-field-toggle:hover {
+  color: var(--a-ink);
+  background: var(--a-soft);
+}
+.mochi-auth .mochi-auth-primary,
+.mochi-auth .mochi-btn-primary {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--a-accent);
+  border-radius: 14px;
+  box-shadow: 0 4px 0 var(--a-accent-dark);
+  color: var(--a-accent-ink);
+  font-size: 13px;
+  font-weight: 700;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.15s ease;
+}
+.mochi-auth .mochi-auth-primary:hover:not(:disabled),
+.mochi-auth .mochi-btn-primary:hover:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: 0 3px 0 var(--a-accent-dark);
+  filter: brightness(1.05);
+}
+.mochi-auth .mochi-auth-primary:active:not(:disabled),
+.mochi-auth .mochi-btn-primary:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 var(--a-accent-dark);
+}
+.mochi-auth .mochi-auth-primary:disabled,
+.mochi-auth .mochi-btn-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.mochi-auth .mochi-auth-primary-orange {
+  background: #f2681f;
+  box-shadow: 0 4px 0 #c4500f;
+  color: #fff8f2;
+}
+.mochi-auth .mochi-auth-primary-orange:hover:not(:disabled) {
+  background: #ff7b30;
+}
+.mochi-auth .mochi-auth-primary-orange:active:not(:disabled) {
+  box-shadow: 0 1px 0 #c4500f;
+}
+.mochi-auth .mochi-auth-ghost,
+.mochi-auth .mochi-btn-secondary {
+  padding: 10px 12px;
+  background: var(--a-field);
+  border: 1.5px solid var(--a-line);
+  border-radius: 14px;
+  color: var(--a-ink);
+  font-size: 12px;
+  font-weight: 600;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+.mochi-auth .mochi-auth-ghost:hover,
+.mochi-auth .mochi-btn-secondary:hover {
+  border-color: var(--a-accent);
+  background: var(--a-soft);
+}
+.mochi-auth-link {
+  color: var(--a-accent);
+  font-weight: 600;
+}
+.mochi-auth-link:hover {
+  text-decoration: underline;
+}
+.mochi-auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--a-sub);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.mochi-auth-divider::before,
+.mochi-auth-divider::after {
+  content: '';
+  flex: 1;
+  border-top: 1.5px solid var(--a-line);
+}
+.mochi-auth-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: rgba(217, 83, 111, 0.1);
+  border: 1.5px solid rgba(217, 83, 111, 0.35);
+  border-radius: 12px;
+  color: #a63a52;
+  font-size: 12px;
+}
+.dark .mochi-auth-error {
+  color: #ffb3c2;
+}
+.mochi-auth-close {
+  position: absolute;
+  right: 14px;
+  top: 14px;
+  padding: 6px;
+  border-radius: 999px;
+  color: var(--a-sub);
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+.mochi-auth-close:hover {
+  color: var(--a-ink);
+  background: var(--a-soft);
+}
+.mochi-auth-legal {
+  color: var(--a-sub);
+  font-size: 10px;
+  line-height: 1.6;
+  text-align: center;
+}
+.mochi-auth-muted {
+  color: var(--a-sub);
+}
+.mochi-auth .mochi-auth-otp {
+  width: 44px;
+  height: 52px;
+  border: 1.5px solid var(--a-line);
+  border-radius: 12px;
+  background: var(--a-field);
+  color: var(--a-ink);
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 18px;
+  font-weight: 700;
+  text-align: center;
+}
+.mochi-auth .mochi-auth-otp:focus {
+  outline: none;
+  border-color: var(--a-accent);
+  box-shadow: 0 0 0 3px rgba(217, 83, 111, 0.16);
+}
+.mochi-auth .mochi-auth-otp-filled {
+  border-color: var(--a-accent);
+  background: var(--a-soft);
+}
+.mochi-auth .text-rose-200 {
+  color: #a63a52;
+}
+.dark .mochi-auth .text-rose-200 {
+  color: #ffb3c2;
+}
+.mochi-auth .text-emerald-200 {
+  color: #2f7a52;
+}
+.dark .mochi-auth .text-emerald-200 {
+  color: #a7e7c4;
+}
+.mochi-auth .mochi-auth-select-wrap {
+  position: relative;
+}
+.mochi-auth .mochi-auth-select {
+  appearance: none;
+  cursor: pointer;
+  padding-right: 24px;
+}
+.mochi-auth .mochi-auth-select-chevron {
+  position: absolute;
+  right: 7px;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  transform: translateY(-50%);
+  color: var(--a-sub);
+  pointer-events: none;
+}

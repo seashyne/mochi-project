@@ -1,0 +1,289 @@
+/*
+ * Mochi Soft Surface System
+ * Calm, low-glare surfaces layered on top of the semantic color tokens.
+ * Loaded after index.css so these rules win over Tailwind utilities.
+ */
+
+.mochi-page {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.mochi-page-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.mochi-eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--mochi-text-muted);
+}
+
+.mochi-page-title {
+  font-size: 1.5rem;
+  line-height: 1.2;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--mochi-text);
+}
+
+.mochi-page-sub {
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--mochi-text-sub);
+  max-width: 62ch;
+}
+
+.mochi-panel {
+  background: var(--mochi-panel);
+  border: 1px solid var(--mochi-border);
+  border-radius: 18px;
+  padding: 20px;
+  box-shadow: 0 14px 34px -24px rgba(0, 0, 0, 0.6);
+}
+
+.mochi-card-soft {
+  background: var(--mochi-card);
+  border: 1px solid var(--mochi-border);
+  border-radius: 16px;
+  padding: 16px;
+  transition: border-color 180ms ease, background-color 180ms ease, transform 180ms ease;
+}
+
+.mochi-card-soft:hover {
+  background: var(--mochi-card-hover);
+  border-color: rgba(111, 158, 245, 0.34);
+}
+
+.mochi-icon-badge {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--mochi-blue);
+  background: rgba(111, 158, 245, 0.12);
+  border: 1px solid rgba(111, 158, 245, 0.22);
+}
+
+.mochi-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--mochi-blue);
+  background: rgba(111, 158, 245, 0.12);
+  border: 1px solid rgba(111, 158, 245, 0.22);
+}
+
+.mochi-chip-muted {
+  color: var(--mochi-text-sub);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--mochi-border);
+}
+
+.mochi-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mochi-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--mochi-card);
+  border: 1px solid var(--mochi-border);
+}
+
+.mochi-row:hover {
+  border-color: rgba(111, 158, 245, 0.28);
+}
+
+.mochi-empty {
+  padding: 44px 24px;
+  border-radius: 18px;
+  border: 1px dashed var(--mochi-border-light);
+  background: rgba(255, 255, 255, 0.015);
+  text-align: center;
+  color: var(--mochi-text-muted);
+}
+
+.mochi-input-soft {
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  color: var(--mochi-text);
+  background: var(--mochi-surface);
+  border: 1px solid var(--mochi-border);
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.mochi-input-soft::placeholder {
+  color: var(--mochi-text-muted);
+}
+
+.mochi-input-soft:focus {
+  outline: none;
+  border-color: var(--mochi-blue);
+  box-shadow: 0 0 0 3px rgba(111, 158, 245, 0.14);
+}
+
+.mochi-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mochi-text-sub);
+  background: transparent;
+  border: 1px solid var(--mochi-border);
+  transition: color 160ms ease, border-color 160ms ease, background-color 160ms ease;
+}
+
+.mochi-btn-ghost:hover:not(:disabled) {
+  color: var(--mochi-text);
+  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--mochi-border-light);
+}
+
+.mochi-divider {
+  height: 1px;
+  background: var(--mochi-border);
+  border: 0;
+  margin: 0;
+}
+
+.mochi-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mochi-text-muted);
+  border: 1px solid transparent;
+  transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease;
+}
+
+.mochi-tab:hover {
+  color: var(--mochi-text);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.mochi-tab[data-active="true"] {
+  color: var(--mochi-text);
+  background: rgba(111, 158, 245, 0.14);
+  border-color: rgba(111, 158, 245, 0.28);
+}
+
+.mochi-meta {
+  font-size: 11px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--mochi-text-muted);
+}
+
+.mochi-focus:focus-visible,
+.mochi-page :focus-visible {
+  outline: 2px solid var(--mochi-blue);
+  outline-offset: 2px;
+}
+
+.light .mochi-panel,
+html.light .mochi-panel {
+  box-shadow: 0 16px 34px -26px rgba(31, 39, 54, 0.35);
+}
+
+.light .mochi-card-soft:hover,
+html.light .mochi-card-soft:hover {
+  border-color: rgba(63, 116, 201, 0.32);
+}
+
+.light .mochi-card-soft,
+.light .mochi-row,
+html.light .mochi-card-soft,
+html.light .mochi-row {
+  box-shadow: 0 1px 2px rgba(31, 39, 54, 0.04);
+}
+
+.light .mochi-empty,
+html.light .mochi-empty {
+  background: rgba(31, 39, 54, 0.015);
+}
+
+.light .mochi-btn-ghost:hover:not(:disabled),
+html.light .mochi-btn-ghost:hover:not(:disabled) {
+  background: rgba(31, 39, 54, 0.05);
+}
+
+.light .mochi-tab:hover,
+html.light .mochi-tab:hover {
+  background: rgba(31, 39, 54, 0.05);
+}
+
+.light .mochi-tab[data-active="true"],
+html.light .mochi-tab[data-active="true"] {
+  background: rgba(63, 116, 201, 0.12);
+  border-color: rgba(63, 116, 201, 0.26);
+}
+
+.reduce-motion *,
+.reduce-motion *::before,
+.reduce-motion *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+html[data-density='compact'] .mochi-page {
+  padding: 14px 16px;
+  gap: 12px;
+}
+html[data-density='compact'] .mochi-card-soft {
+  padding: 12px;
+  border-radius: 12px;
+}
+html[data-density='compact'] .mochi-page-title {
+  font-size: 1.2rem;
+}
+html[data-density='compact'] .mochi-page-sub {
+  font-size: 11px;
+}
+html[data-density='compact'] .mochi-tab {
+  padding: 6px 10px;
+  font-size: 11px;
+}

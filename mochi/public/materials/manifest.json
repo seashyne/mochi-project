@@ -1,0 +1,132 @@
+[
+  {
+    "id": "brick_red",
+    "name": "Red Brick",
+    "category": "masonry",
+    "source": "access/Texture/01/Bricks097_1K-JPG.zip",
+    "license": "CC0",
+    "maps": {
+      "color": "/materials/brick_red/color.jpg",
+      "normal": "/materials/brick_red/normal.jpg",
+      "roughness": "/materials/brick_red/roughness.jpg"
+    },
+    "bytes": 280163
+  },
+  {
+    "id": "concrete_plain",
+    "name": "Plain Concrete",
+    "category": "concrete",
+    "source": "access/Texture/01/Concrete034_1K-JPG.zip",
+    "license": "CC0",
+    "maps": {
+      "color": "/materials/concrete_plain/color.jpg",
+      "normal": "/materials/concrete_plain/normal.jpg",
+      "roughness": "/materials/concrete_plain/roughness.jpg"
+    },
+    "bytes": 144976
+  },
+  {
+    "id": "wood_planks",
+    "name": "Wood Planks",
+    "category": "wood",
+    "source": "access/Texture/01/Planks019_1K-JPG.zip",
+    "license": "CC0",
+    "maps": {
+      "color": "/materials/wood_planks/color.jpg",
+      "normal": "/materials/wood_planks/normal.jpg",
+      "roughness": "/materials/wood_planks/roughness.jpg"
+    },
+    "bytes": 223811
+  },
+  {
+    "id": "metal_plate",
+    "name": "Metal Plate",
+    "category": "metal",
+    "source": "access/Texture/01/Metal020_1K-JPG.zip",
+    "license": "CC0",
+    "maps": {
+      "color": "/materials/metal_plate/color.jpg",
+      "normal": "/materials/metal_plate/normal.jpg",
+      "roughness": "/materials/metal_plate/roughness.jpg"
+    },
+    "bytes": 208922
+  },
+  {
+    "id": "diamond_plate",
+    "name": "Diamond Plate",
+    "category": "metal",
+    "source": "access/Texture/01/DiamondPlate008A_1K-JPG.zip",
+    "license": "CC0",
+    "maps": {
+      "color": "/materials/diamond_plate/color.jpg",
+      "normal": "/materials/diamond_plate/normal.jpg",
+      "roughness": "/materials/diamond_plate/roughness.jpg"
+    },
+    "bytes": 201339
+  },
+  {
+    "id": "grass_field",
+    "name": "Grass Field",
+    "category": "nature",
+    "source": "access/Texture/01/Grass003_1K-JPG.zip",
+    "license": "CC0",
+    "maps": {
+      "color": "/materials/grass_field/color.jpg",
+      "normal": "/materials/grass_field/normal.jpg",
+      "roughness": "/materials/grass_field/roughness.jpg"
+    },
+    "bytes": 334715
+  },
+  {
+    "id": "stone_paving",
+    "name": "Stone Paving",
+    "category": "stone",
+    "source": "access/Texture/01/PavingStones057_1K-JPG.zip",
+    "license": "CC0",
+    "maps": {
+      "color": "/materials/stone_paving/color.jpg",
+      "normal": "/materials/stone_paving/normal.jpg",
+      "roughness": "/materials/stone_paving/roughness.jpg"
+    },
+    "bytes": 289182
+  },
+  {
+    "id": "marble_white",
+    "name": "White Marble",
+    "category": "stone",
+    "source": "access/Texture/01/Marble016_1K-JPG.zip",
+    "license": "CC0",
+    "maps": {
+      "color": "/materials/marble_white/color.jpg",
+      "normal": "/materials/marble_white/normal.jpg",
+      "roughness": "/materials/marble_white/roughness.jpg"
+    },
+    "bytes": 118152
+  },
+  {
+    "id": "lava_flow",
+    "name": "Lava Flow",
+    "category": "nature",
+    "source": "access/Texture/01/Lava001_1K-JPG.zip",
+    "license": "CC0",
+    "maps": {
+      "color": "/materials/lava_flow/color.jpg",
+      "normal": "/materials/lava_flow/normal.jpg",
+      "roughness": "/materials/lava_flow/roughness.jpg"
+    },
+    "bytes": 264752
+  },
+  {
+    "id": "fabric_weave",
+    "name": "Woven Fabric",
+    "category": "fabric",
+    "source": "access/Texture/01/Fabric070_1K-JPG.zip",
+    "license": "CC0",
+    "maps": {
+      "color": "/materials/fabric_weave/color.jpg",
+      "normal": "/materials/fabric_weave/normal.jpg",
+      "roughness": "/materials/fabric_weave/roughness.jpg"
+    },
+    "bytes": 214300
+  }
+]

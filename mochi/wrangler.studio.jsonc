@@ -1,0 +1,19 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "mochi-studio",
+  "compatibility_date": "2026-07-07",
+  "workers_dev": true,
+  "observability": {
+    "enabled": true
+  },
+  "assets": {
+    "directory": "./dist-studio",
+    "not_found_handling": "single-page-application"
+  },
+  "routes": [
+    {
+      "pattern": "studio-game.lenout.com",
+      "custom_domain": true
+    }
+  ]
+}

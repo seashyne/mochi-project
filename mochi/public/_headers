@@ -1,0 +1,30 @@
+# Cache policy for both apps (Cloudflare Workers static assets).
+# Fingerprinted build output is immutable; creator media revalidates in the
+# background; the shell document and the service worker must never go stale.
+
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/draco/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/basis/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/models/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+
+/skyboxes/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+
+/materials/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+
+/wasm/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+
+/index.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+/sw.js
+  Cache-Control: no-cache
