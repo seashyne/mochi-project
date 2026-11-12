@@ -7,6 +7,8 @@ import React from 'react';
 import { renderToString } from 'react-dom/server';
 
 import { StudioExplorerPanel } from '../src/components/studio/shell/StudioExplorerPanel';
+import { StudioExplorerRow, type ExplorerRowActions } from '../src/components/studio/shell/StudioExplorerRow';
+import { StudioExplorerContextMenu } from '../src/components/studio/shell/StudioExplorerContextMenu';
 import { part, plain } from './shellFixtures';
 
 const explorer = (objects = [part()], selectedIds: string[] = []) =>
@@ -119,5 +121,82 @@ describe('Studio explorer dock', () => {
       part({ id: 'c2', name: 'TowerBase', parentId: 'm1' })
     ]);
     expect(plain(html)).toContain('2');
+  });
+});
+
+describe('Explorer row and context menu', () => {
+  const actions = (overrides: Partial<ExplorerRowActions> = {}): ExplorerRowActions => ({
+    onSelect: vi.fn(),
+    onToggleCollapse: vi.fn(),
+    onContextMenu: vi.fn(),
+    onStartRename: vi.fn(),
+    onDuplicate: vi.fn(),
+    onDelete: vi.fn(),
+    renamingId: null,
+    draftName: '',
+    onDraftName: vi.fn(),
+    onCommitRename: vi.fn(),
+    onCancelRename: vi.fn(),
+    ...overrides
+  });
+
+  it('tags every row with its part id for automation', () => {
+    const html = explorer([part({ id: 'obj_x', name: 'Hero' })]);
+    expect(html).toContain('data-part-id="obj_x"');
+  });
+
+  it('swaps the label for an input while renaming', () => {
+    const html = renderToString(
+      <StudioExplorerRow
+        object={part({ id: 'obj_x', name: 'Hero' })}
+        depth={1}
+        childCount={0}
+        isSelected
+        isCollapsed={false}
+        actions={actions({ renamingId: 'obj_x', draftName: 'Renamed' })}
+      />
+    );
+    expect(html).toContain('aria-label="Rename Hero"');
+    expect(html).toContain('value="Renamed"');
+  });
+
+  it('renders the full action list for a part', () => {
+    const html = renderToString(
+      <StudioExplorerContextMenu
+        object={part({ name: 'Hero' })}
+        x={10}
+        y={20}
+        onClose={vi.fn()}
+        onRename={vi.fn()}
+        onDuplicate={vi.fn()}
+        onDelete={vi.fn()}
+        onFocus={vi.fn()}
+        onGroup={vi.fn()}
+      />
+    );
+    expect(html).toContain('role="menu"');
+    expect(html).toContain('aria-label="Actions for Hero"');
+    ['Rename', 'Duplicate', 'Focus', 'Group into model', 'Delete'].forEach((label) =>
+      expect(html).toContain(label)
+    );
+    expect(html).not.toContain('Ungroup');
+  });
+
+  it('offers ungroup instead of group for a model container', () => {
+    const html = renderToString(
+      <StudioExplorerContextMenu
+        object={part({ name: 'Tower', type: 'model' })}
+        x={0}
+        y={0}
+        onClose={vi.fn()}
+        onRename={vi.fn()}
+        onDuplicate={vi.fn()}
+        onDelete={vi.fn()}
+        onFocus={vi.fn()}
+        onUngroup={vi.fn()}
+      />
+    );
+    expect(html).toContain('Ungroup');
+    expect(html).not.toContain('Group into model');
   });
 });

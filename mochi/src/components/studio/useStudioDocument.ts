@@ -33,6 +33,8 @@ export interface StudioDocumentApi {
   groupSelected: (id: string) => void;
   ungroupSelected: (modelId: string) => void;
   select: (ids: string[]) => void;
+  /** Selects one part and frames it in the viewport. */
+  focusObject: (id: string) => void;
   toggleSelect: (id: string) => void;
   selectAll: () => void;
   replaceObjects: (objects: StudioObject[]) => void;
@@ -225,6 +227,8 @@ export function useStudioDocument(sceneEngine: StudioScene, initial: StudioObjec
     sceneEngine.selectObjects(ids);
   }, [sceneEngine]);
 
+  const focusObject = useCallback((id: string) => { select([id]); sceneEngine.focusSelection(); }, [select, sceneEngine]);
+
   const selectAll = useCallback(() => {
     select(objectsRef.current.map((o) => o.id));
   }, [select]);
@@ -282,6 +286,7 @@ export function useStudioDocument(sceneEngine: StudioScene, initial: StudioObjec
     groupSelected,
     ungroupSelected,
     select,
+    focusObject,
     toggleSelect,
     selectAll,
     replaceObjects,

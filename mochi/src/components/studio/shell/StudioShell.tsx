@@ -191,6 +191,8 @@ export const StudioShell: React.FC<StudioShellProps> = (props) => {
           onDuplicateSelection={() => doc.duplicateObjects(selectedIds)}
           onGroupSelected={doc.groupSelected}
           onUngroupSelected={doc.ungroupSelected}
+          onRenameObject={(id, name) => doc.updateObject(id, { name })}
+          onFocusObject={doc.focusObject}
         />
       }
       properties={
