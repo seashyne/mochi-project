@@ -23,6 +23,8 @@ export interface Studio3DCanvasProps {
   brush?: TerrainBrush | null;
   onTerrainEdit?: (id: string, terrain: TerrainData) => void;
   objects?: StudioObject[];
+  /** Current selection, restored after the scene is rebuilt on remount. */
+  selectedIds?: string[];
   onCopy?: () => void;
   onCut?: () => void;
   onPaste?: () => void;
@@ -40,7 +42,7 @@ export interface Studio3DCanvasProps {
 export const Studio3DCanvas: React.FC<Studio3DCanvasProps> = ({
   sceneEngine, onSelect, onSelectionSet, onTransform, onTransformSet,
   environment = STARTER_ENVIRONMENT, brush = null, onTerrainEdit,
-  objects = [], onCopy, onCut, onPaste, clipboardCount = 0,
+  objects = [], selectedIds = [], onCopy, onCut, onPaste, clipboardCount = 0,
   variant = 'card', gizmoMode, onGizmoModeChange, snapping, onSnappingChange
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -50,6 +52,8 @@ export const Studio3DCanvas: React.FC<Studio3DCanvasProps> = ({
   // document identity or camera mode.
   const objectsRef = useRef<StudioObject[]>(objects);
   objectsRef.current = objects;
+  const selectedIdsRef = useRef<string[]>(selectedIds);
+  selectedIdsRef.current = selectedIds;
   const [internalGizmoMode, setInternalGizmoMode] = useState<GizmoMode>('translate');
   const [internalSnapping, setInternalSnapping] = useState(false);
   const activeGizmoMode = gizmoMode ?? internalGizmoMode;
@@ -93,6 +97,7 @@ export const Studio3DCanvas: React.FC<Studio3DCanvasProps> = ({
     // The page seeds the document before this canvas exists, so a fresh scene
     // would otherwise start empty. Re-mirror on every (re)initialisation.
     if (objectsRef.current.length > 0) sceneEngine.replaceAll(objectsRef.current);
+    sceneEngine.selectObjects(selectedIdsRef.current, true);
     sceneEngine.setSelectionSetCallback(onSelectionSet);
     sceneEngine.setTransformSetCallback?.(onTransformSet ?? null);
 

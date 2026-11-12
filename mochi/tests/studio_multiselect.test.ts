@@ -125,7 +125,17 @@ describe('StudioScene batch selection', () => {
 
     expect(scene.getSelectedIds()).toEqual([]);
     expect(scene.exportSnapshot('t').objects.map((o) => o.id)).toEqual(['x', 'y']);
+    // The rebuild stays silent: a remount or history restore must not clear the
+    // document's own selection. The caller re-applies it with selectObjects().
+    expect(selectionSets.length).toBe(before);
+  });
+
+  it('still notifies when the caller re-applies a selection after a rebuild', () => {
+    scene.replaceAll([makeObject('x'), makeObject('y')]);
+    const before = selectionSets.length;
+    scene.selectObjects(['y']);
     expect(selectionSets.length).toBe(before + 1);
+    expect(scene.getSelectedIds()).toEqual(['y']);
   });
 
   it('keeps the snapshot order stable across a rebuild', () => {

@@ -208,6 +208,7 @@ export const StudioPage: React.FC<StudioPageProps> = ({ onGamePublished, initial
       snapping={snapping}
       onSnappingChange={setSnapping}
       objects={objects}
+      selectedIds={selectedIds}
     />
   );
 

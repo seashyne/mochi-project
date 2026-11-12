@@ -119,7 +119,7 @@ export class StudioScene {
 
   /** Bulk load used by history restore and draft loading: rebuilds without selection churn. */
   public replaceAll(objects: StudioObject[]): void {
-    this.clearAll();
+    this.clearAll(true);
     objects.forEach((obj) => this.addObjectInternal(obj, false));
     // Frame the opening scene once, like a scene editor does when a file loads.
     // Later replaceAll calls (undo, redo, remote sync) keep the user's camera.
@@ -173,7 +173,7 @@ export class StudioScene {
     this.selectObjects(id ? [id] : []);
   }
 
-  public selectObjects(ids: string[]): void {
+  public selectObjects(ids: string[], silent = false): void {
     if (!this.scene) return;
     const unique = Array.from(new Set(ids)).filter((id) => this.objectEntries.has(id));
     const changed = unique.length !== this.selectedIds.length || unique.some((id, index) => this.selectedIds[index] !== id);
@@ -193,8 +193,8 @@ export class StudioScene {
 
     // Notify only on real changes: callbacks re-enter selectObjects, and an
     // unconditional notification recurses until the stack overflows.
-    if (changed && this.onSelectionChange) this.onSelectionChange(unique[0] ?? null);
-    if (changed && this.onSelectionSetChange) this.onSelectionSetChange([...unique]);
+    if (changed && !silent && this.onSelectionChange) this.onSelectionChange(unique[0] ?? null);
+    if (changed && !silent && this.onSelectionSetChange) this.onSelectionSetChange([...unique]);
   }
 
   public toggleSelection(id: string): void {
@@ -224,12 +224,10 @@ export class StudioScene {
     };
   }
 
-  public importSnapshot(snapshot: StudioSceneSnapshot): void {
-    this.replaceAll(snapshot.objects);
-  }
+  public importSnapshot(snapshot: StudioSceneSnapshot): void { this.replaceAll(snapshot.objects); }
 
-  public clearAll(): void {
-    this.selectObjects([]);
+  public clearAll(silent = false): void {
+    this.selectObjects([], silent);
     this.objectEntries.forEach((e) => this.scene?.remove(e.mesh));
     this.objectEntries.clear();
   }
@@ -246,7 +244,7 @@ export class StudioScene {
     this.detachPointer?.();
     this.detachPointer = null;
     this.gizmo.dispose(this.scene);
-    this.clearAll();
+    this.clearAll(true);
     this.overlay.dispose();
     this.renderer?.dispose();
     this.scene?.clear();
