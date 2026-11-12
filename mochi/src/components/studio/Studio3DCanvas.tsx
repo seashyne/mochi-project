@@ -46,6 +46,10 @@ export const Studio3DCanvas: React.FC<Studio3DCanvasProps> = ({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const environmentRef = useRef<SceneEnvironment | null>(null);
   const latestEnvironment = useRef<EnvironmentState>(environment);
+  // Read through refs inside the init effect so scene churn never depends on
+  // document identity or camera mode.
+  const objectsRef = useRef<StudioObject[]>(objects);
+  objectsRef.current = objects;
   const [internalGizmoMode, setInternalGizmoMode] = useState<GizmoMode>('translate');
   const [internalSnapping, setInternalSnapping] = useState(false);
   const activeGizmoMode = gizmoMode ?? internalGizmoMode;
@@ -86,6 +90,9 @@ export const Studio3DCanvas: React.FC<Studio3DCanvasProps> = ({
     const canvas = canvasRef.current;
     if (!canvas) return;
     sceneEngine.init(canvas, onSelect, onTransform);
+    // The page seeds the document before this canvas exists, so a fresh scene
+    // would otherwise start empty. Re-mirror on every (re)initialisation.
+    if (objectsRef.current.length > 0) sceneEngine.replaceAll(objectsRef.current);
     sceneEngine.setSelectionSetCallback(onSelectionSet);
     sceneEngine.setTransformSetCallback?.(onTransformSet ?? null);
 
@@ -102,9 +109,9 @@ export const Studio3DCanvas: React.FC<Studio3DCanvasProps> = ({
       const target = document.activeElement;
       if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || (target as HTMLElement)?.isContentEditable) return;
       if (e.key === 'Escape') sceneEngine.clearSelection();
-      else if (!flyMode && (e.key === 'w' || e.key === 'W')) handleSetGizmoMode('translate');
-      else if (!flyMode && (e.key === 'e' || e.key === 'E')) handleSetGizmoMode('rotate');
-      else if (!flyMode && (e.key === 'r' || e.key === 'R')) handleSetGizmoMode('scale');
+      else if (!flyModeRef.current && (e.key === 'w' || e.key === 'W')) handleSetGizmoMode('translate');
+      else if (!flyModeRef.current && (e.key === 'e' || e.key === 'E')) handleSetGizmoMode('rotate');
+      else if (!flyModeRef.current && (e.key === 'r' || e.key === 'R')) handleSetGizmoMode('scale');
     };
 
     window.addEventListener('resize', handleResize);
@@ -118,7 +125,7 @@ export const Studio3DCanvas: React.FC<Studio3DCanvasProps> = ({
       sceneEngine.setTerrainEditCallback(null);
       sceneEngine.destroy();
     };
-  }, [sceneEngine, onSelect, onSelectionSet, onTransform, onTransformSet, handleSetGizmoMode, flyMode]);
+  }, [sceneEngine, onSelect, onSelectionSet, onTransform, onTransformSet, handleSetGizmoMode]);
 
   useEffect(() => { sceneEngine.setTerrainBrush(brush); }, [sceneEngine, brush]);
   useEffect(() => { sceneEngine.setTerrainEditCallback(onTerrainEdit ?? null); }, [sceneEngine, onTerrainEdit]);

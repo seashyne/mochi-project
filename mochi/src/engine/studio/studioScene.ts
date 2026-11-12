@@ -13,6 +13,7 @@ import { sculptTerrainAt, selectionIdAt } from './studioInteraction';
 import type { TransformUpdate } from './multiTransform';
 import { GizmoTransformBroker } from './gizmoBroker';
 import type { TerrainBrush, TerrainData } from './advancedTypes';
+import { frameObjects } from './sceneFraming';
 
 export type SelectionCallback = (selectedId: string | null) => void;
 export type SelectionSetCallback = (selectedIds: string[]) => void;
@@ -42,6 +43,7 @@ export class StudioScene {
   private onTerrainEdit: TerrainEditCallback | null = null;
   private flyMode = false;
   private lastFrameTime = 0;
+  private hasFramedScene = false;
 
   public init(
     canvas: HTMLCanvasElement,
@@ -74,7 +76,7 @@ export class StudioScene {
     this.scene.add(dir);
 
     // Grid
-    const grid = new THREE.GridHelper(40, 40, 0x00a2ff, 0x1e293b);
+    const grid = new THREE.GridHelper(64, 64, 0x00a2ff, 0x1e293b);
     grid.position.y = 0;
     this.scene.add(grid);
 
@@ -108,14 +110,8 @@ export class StudioScene {
 
   /** Frames every selected object; falls back to the current view when empty. */
   public focusSelection(): void {
-    if (!this.cameraRig) return;
-    const box = new THREE.Box3();
-    for (const id of this.selectedIds) {
-      const mesh = this.objectEntries.get(id)?.mesh;
-      if (mesh) box.expandByObject(mesh);
-    }
-    if (box.isEmpty()) return;
-    this.cameraRig.focus(box.getCenter(new THREE.Vector3()), Math.max(6, box.getSize(new THREE.Vector3()).length() * 1.6));
+    const meshes = this.selectedIds.map((id) => this.objectEntries.get(id)?.mesh);
+    if (this.cameraRig) frameObjects(this.cameraRig, meshes.filter((m): m is THREE.Object3D => Boolean(m)));
   }
 
   public setSelectionSetCallback(cb?: SelectionSetCallback): void { this.onSelectionSetChange = cb || null; }
@@ -125,6 +121,10 @@ export class StudioScene {
   public replaceAll(objects: StudioObject[]): void {
     this.clearAll();
     objects.forEach((obj) => this.addObjectInternal(obj, false));
+    // Frame the opening scene once, like a scene editor does when a file loads.
+    // Later replaceAll calls (undo, redo, remote sync) keep the user's camera.
+    const meshes = [...this.objectEntries.values()].map((entry) => entry.mesh);
+    if (!this.hasFramedScene && this.cameraRig) this.hasFramedScene = frameObjects(this.cameraRig, meshes);
   }
 
   private addObjectInternal(obj: StudioObject, select: boolean): void {
@@ -242,9 +242,7 @@ export class StudioScene {
   }
 
   public destroy(): void {
-    if (this.animId !== null && typeof cancelAnimationFrame !== 'undefined') {
-      cancelAnimationFrame(this.animId);
-    }
+    if (this.animId !== null && typeof cancelAnimationFrame !== 'undefined') cancelAnimationFrame(this.animId);
     this.detachPointer?.();
     this.detachPointer = null;
     this.gizmo.dispose(this.scene);
@@ -252,6 +250,7 @@ export class StudioScene {
     this.overlay.dispose();
     this.renderer?.dispose();
     this.scene?.clear();
+    this.hasFramedScene = false;
   }
 
   private attachViewportHandlers(canvas: HTMLCanvasElement): void {

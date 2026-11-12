@@ -156,6 +156,10 @@ export const StudioPage: React.FC<StudioPageProps> = ({ onGamePublished, initial
     toggleSelect(id);
   }, [toggleSelect]);
 
+  const handleCanvasSelect = useCallback((id: string | null) => {
+    if (id) handleSelectObject(id);
+  }, [handleSelectObject]);
+
   const handleBrushChange = useCallback((patch: Partial<TerrainBrush>) => {
     setBrush((prev) => ({ ...prev, ...patch }));
   }, []);
@@ -193,7 +197,7 @@ export const StudioPage: React.FC<StudioPageProps> = ({ onGamePublished, initial
     <Studio3DCanvas
       sceneEngine={sceneEngine}
       variant="docked"
-      onSelect={(id) => id && handleSelectObject(id)}
+      onSelect={handleCanvasSelect}
       onSelectionSet={select}
       onTransform={transformObject}
       environment={environment}
