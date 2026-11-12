@@ -6,7 +6,7 @@ import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 import { renderToString } from 'react-dom/server';
 
-import { StudioExplorerPanel } from '../src/components/studio/shell/StudioExplorerPanel';
+import { StudioExplorerPanel, isDescendant } from '../src/components/studio/shell/StudioExplorerPanel';
 import { StudioExplorerRow, type ExplorerRowActions } from '../src/components/studio/shell/StudioExplorerRow';
 import { StudioExplorerContextMenu } from '../src/components/studio/shell/StudioExplorerContextMenu';
 import { part, plain } from './shellFixtures';
@@ -198,5 +198,76 @@ describe('Explorer row and context menu', () => {
     );
     expect(html).toContain('Ungroup');
     expect(html).not.toContain('Group into model');
+  });
+});
+
+describe('Explorer clipboard and reparent', () => {
+  it('offers cut, copy and paste with the paste disabled on an empty clipboard', () => {
+    const html = renderToString(
+      <StudioExplorerContextMenu
+        object={part({ name: 'Hero' })}
+        x={0}
+        y={0}
+        onClose={vi.fn()}
+        onRename={vi.fn()}
+        onCut={vi.fn()}
+        onCopy={vi.fn()}
+        onPaste={vi.fn()}
+        canPaste={false}
+        onDuplicate={vi.fn()}
+        onDelete={vi.fn()}
+        onFocus={vi.fn()}
+      />
+    );
+    ['Cut', 'Copy', 'Paste'].forEach((label) => expect(html).toContain(label));
+    expect(html).toMatch(/disabled=""[^>]*>[\s\S]*?Paste/);
+  });
+
+  it('enables paste once the clipboard holds something', () => {
+    const html = renderToString(
+      <StudioExplorerContextMenu
+        object={part({ name: 'Hero' })}
+        x={0}
+        y={0}
+        onClose={vi.fn()}
+        onRename={vi.fn()}
+        onPaste={vi.fn()}
+        canPaste
+        onDuplicate={vi.fn()}
+        onDelete={vi.fn()}
+        onFocus={vi.fn()}
+      />
+    );
+    expect(html).not.toContain('disabled=""');
+  });
+
+  it('makes rows draggable only when reparenting is wired', () => {
+    const withReparent = renderToString(
+      <StudioExplorerPanel
+        objects={[part({ id: 'a', name: 'A' })]}
+        selectedId={null}
+        selectedIds={[]}
+        selectedService={null}
+        onSelectObject={vi.fn()}
+        onSelectService={vi.fn()}
+        onReparent={vi.fn()}
+      />
+    );
+    expect(withReparent).toContain('draggable="true"');
+
+    expect(explorer()).not.toContain('draggable="true"');
+  });
+
+  it('detects descendant cycles before reparenting', () => {
+    const objects = [
+      part({ id: 'root', type: 'model' }),
+      part({ id: 'child', parentId: 'root' }),
+      part({ id: 'leaf', parentId: 'child' }),
+      part({ id: 'other' })
+    ];
+    expect(isDescendant(objects, 'leaf', 'root')).toBe(true);
+    expect(isDescendant(objects, 'child', 'root')).toBe(true);
+    expect(isDescendant(objects, 'root', 'leaf')).toBe(false);
+    expect(isDescendant(objects, 'other', 'root')).toBe(false);
   });
 });

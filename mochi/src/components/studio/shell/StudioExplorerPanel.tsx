@@ -1,35 +1,17 @@
 // Explorer dock: the project service tree with the scene objects nested under
-// Workspace and the sky/atmosphere instances nested under Lighting.
+// Workspace, a search filter, an action bar and a right-click menu.
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  Beaker,
-  Box,
-  ChevronDown,
-  ChevronRight,
-  Cloud,
-  CloudFog,
-  Database,
-  Folder,
-  Gamepad2,
-  LayoutGrid,
-  Music,
-  Package,
-  Palette,
-  Search,
-  Server,
-  Sun,
-  Users
-} from 'lucide-react';
+import { Search } from 'lucide-react';
 import type { StudioObject, StudioObjectType } from '@/engine/studio/types';
 import {
   childServices,
   topLevelServices,
-  type ServiceIconKey,
   type StudioServiceId
 } from '@/engine/studio/services';
 import { StudioExplorerActions } from './StudioExplorerActions';
 import { StudioExplorerRow, type ExplorerRowActions } from './StudioExplorerRow';
+import { StudioExplorerServiceRow } from './StudioExplorerServiceRow';
 import { StudioExplorerContextMenu } from './StudioExplorerContextMenu';
 
 export interface StudioExplorerPanelProps {
@@ -49,27 +31,26 @@ export interface StudioExplorerPanelProps {
   onUngroupSelected?: (id: string) => void;
   onRenameObject?: (id: string, name: string) => void;
   onFocusObject?: (id: string) => void;
+  onCutObject?: (id: string) => void;
+  onCopyObject?: (id: string) => void;
+  onPasteObjects?: () => void;
+  clipboardCount?: number;
+  onReparent?: (id: string, parentId: string | null) => void;
 }
-
-const SERVICE_ICONS: Record<ServiceIconKey, { icon: React.ReactNode; className: string }> = {
-  workspace: { icon: <Box className="w-3.5 h-3.5" />, className: 'text-studio-accent' },
-  players: { icon: <Users className="w-3.5 h-3.5" />, className: 'text-studio-info' },
-  lighting: { icon: <Sun className="w-3.5 h-3.5" />, className: 'text-studio-warning' },
-  sky: { icon: <Cloud className="w-3.5 h-3.5" />, className: 'text-studio-info' },
-  atmosphere: { icon: <CloudFog className="w-3.5 h-3.5" />, className: 'text-studio-muted' },
-  material: { icon: <Palette className="w-3.5 h-3.5" />, className: 'text-studio-violet' },
-  folder: { icon: <Folder className="w-3.5 h-3.5" />, className: 'text-studio-muted' },
-  database: { icon: <Database className="w-3.5 h-3.5" />, className: 'text-studio-info' },
-  server: { icon: <Server className="w-3.5 h-3.5" />, className: 'text-studio-success' },
-  gui: { icon: <LayoutGrid className="w-3.5 h-3.5" />, className: 'text-studio-violet' },
-  backpack: { icon: <Package className="w-3.5 h-3.5" />, className: 'text-studio-warning' },
-  player: { icon: <Gamepad2 className="w-3.5 h-3.5" />, className: 'text-studio-info' },
-  sound: { icon: <Music className="w-3.5 h-3.5" />, className: 'text-studio-violet' },
-  test: { icon: <Beaker className="w-3.5 h-3.5" />, className: 'text-studio-muted' }
-};
 
 const rowBase =
   'group flex items-center gap-1.5 h-[22px] pr-2 rounded-[3px] cursor-pointer text-[11px] transition-colors';
+
+/** True when `candidate` sits below `ancestor` in the parent chain. */
+export function isDescendant(objects: StudioObject[], candidate: string, ancestor: string): boolean {
+  let current = objects.find((object) => object.id === candidate);
+  while (current?.parentId) {
+    if (current.parentId === ancestor) return true;
+    const parentId = current.parentId;
+    current = objects.find((object) => object.id === parentId);
+  }
+  return false;
+}
 
 export const StudioExplorerPanel: React.FC<StudioExplorerPanelProps> = ({
   objects,
@@ -87,13 +68,19 @@ export const StudioExplorerPanel: React.FC<StudioExplorerPanelProps> = ({
   onGroupSelected,
   onUngroupSelected,
   onRenameObject,
-  onFocusObject
+  onFocusObject,
+  onCutObject,
+  onCopyObject,
+  onPasteObjects,
+  clipboardCount = 0,
+  onReparent
 }) => {
   const [query, setQuery] = useState('');
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [menu, setMenu] = useState<{ id: string; x: number; y: number } | null>(null);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [draftName, setDraftName] = useState('');
+
   const selectedObject = objects.find((object) => object.id === selectedId) ?? null;
   const hasSelection = selectedIds.length > 0;
 
@@ -108,15 +95,10 @@ export const StudioExplorerPanel: React.FC<StudioExplorerPanelProps> = ({
     return map;
   }, [objects]);
 
-  const rootObjects = useMemo(
-    () => objects.filter((obj) => !obj.parentId),
-    [objects]
-  );
+  const rootObjects = useMemo(() => objects.filter((obj) => !obj.parentId), [objects]);
 
   const matches = (name: string) => !query || name.toLowerCase().includes(query.toLowerCase());
-
-  const toggle = (key: string) =>
-    setCollapsed((prev) => ({ ...prev, [key]: !prev[key] }));
+  const toggle = (key: string) => setCollapsed((prev) => ({ ...prev, [key]: !prev[key] }));
 
   const startRename = (id: string) => {
     const target = objects.find((object) => object.id === id);
@@ -134,24 +116,6 @@ export const StudioExplorerPanel: React.FC<StudioExplorerPanelProps> = ({
     setRenamingId(null);
   };
 
-  const actions: ExplorerRowActions = {
-    onSelect: (id, additive) => (additive && onToggleObjectSelect ? onToggleObjectSelect(id) : onSelectObject(id)),
-    onToggleCollapse: (id) => toggle(id),
-    onContextMenu: (id, event) => {
-      event.preventDefault();
-      onSelectObject(id);
-      setMenu({ id, x: event.clientX, y: event.clientY });
-    },
-    onStartRename: startRename,
-    onDuplicate: onDuplicateObject,
-    onDelete: onDeleteObject,
-    renamingId,
-    draftName,
-    onDraftName: setDraftName,
-    onCommitRename: commitRename,
-    onCancelRename: () => setRenamingId(null)
-  };
-
   // F2 renames the selected part, the way every scene editor does it.
   const renameRef = useRef(startRename);
   renameRef.current = startRename;
@@ -166,6 +130,32 @@ export const StudioExplorerPanel: React.FC<StudioExplorerPanelProps> = ({
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [selectedId]);
+
+  const reparent = (id: string, parentId: string | null) => {
+    if (!onReparent || id === parentId) return;
+    // Dropping a part into its own descendant would build a cycle.
+    if (parentId && isDescendant(objects, parentId, id)) return;
+    onReparent(id, parentId);
+  };
+
+  const actions: ExplorerRowActions = {
+    onSelect: (id, additive) => (additive && onToggleObjectSelect ? onToggleObjectSelect(id) : onSelectObject(id)),
+    onToggleCollapse: toggle,
+    onContextMenu: (id, event) => {
+      event.preventDefault();
+      onSelectObject(id);
+      setMenu({ id, x: event.clientX, y: event.clientY });
+    },
+    onStartRename: startRename,
+    onDuplicate: onDuplicateObject,
+    onDelete: onDeleteObject,
+    onReparent: onReparent ? reparent : undefined,
+    renamingId,
+    draftName,
+    onDraftName: setDraftName,
+    onCommitRename: commitRename,
+    onCancelRename: () => setRenamingId(null)
+  };
 
   const renderObject = (obj: StudioObject, depth: number): React.ReactNode => {
     if (!matches(obj.name)) return null;
@@ -193,43 +183,24 @@ export const StudioExplorerPanel: React.FC<StudioExplorerPanelProps> = ({
     if (!service) return null;
     const nested = childServices(service.id);
     const holdsObjects = service.id === 'workspace';
-    const expandable = nested.length > 0 || holdsObjects;
     const isCollapsed = Boolean(collapsed[service.id]);
-    const isSelected = selectedService === service.id;
-    const icon = SERVICE_ICONS[service.icon];
-    const objectCount = holdsObjects ? rootObjects.length : nested.length;
 
     return (
       <React.Fragment key={service.id}>
-        <div
-          onClick={() => onSelectService(service.id)}
-          style={{ paddingLeft: `${6 + depth * 12}px` }}
-          className={`${rowBase} ${
-            isSelected
-              ? 'bg-studio-accent/25 text-studio-text border-l-2 border-studio-accent'
-              : 'text-studio-text/85 hover:bg-studio-card/60 border-l-2 border-transparent'
-          }`}
-        >
-          {expandable ? (
-            <button
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation();
-                toggle(service.id);
-              }}
-              className="text-studio-muted hover:text-studio-text"
-            >
-              {isCollapsed ? <ChevronRight className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-            </button>
-          ) : (
-            <span className="w-3" />
-          )}
-          <span className={icon.className}>{icon.icon}</span>
-          <span className="truncate">{service.name}</span>
-          {objectCount > 0 && (
-            <span className="ml-auto text-[9px] font-mono text-studio-muted">{objectCount}</span>
-          )}
-        </div>
+        <StudioExplorerServiceRow
+          serviceId={service.id}
+          name={service.name}
+          iconKey={service.icon}
+          depth={depth}
+          expandable={nested.length > 0 || holdsObjects}
+          isCollapsed={isCollapsed}
+          isSelected={selectedService === service.id}
+          objectCount={holdsObjects ? rootObjects.length : nested.length}
+          rowClass={rowBase}
+          onSelect={() => onSelectService(service.id)}
+          onToggleCollapse={() => toggle(service.id)}
+          onDropPart={holdsObjects && onReparent ? (partId) => reparent(partId, null) : undefined}
+        />
         {!isCollapsed && holdsObjects && rootObjects.map((obj) => renderObject(obj, depth + 1))}
         {!isCollapsed && nested.map((child) => renderService(child.id, depth + 1))}
       </React.Fragment>
@@ -273,6 +244,10 @@ export const StudioExplorerPanel: React.FC<StudioExplorerPanelProps> = ({
             y={menu.y}
             onClose={() => setMenu(null)}
             onRename={startRename}
+            onCut={onCutObject}
+            onCopy={onCopyObject}
+            onPaste={onPasteObjects}
+            canPaste={clipboardCount > 0}
             onDuplicate={(id) => onDuplicateObject?.(id)}
             onDelete={(id) => onDeleteObject?.(id)}
             onFocus={(id) => onFocusObject?.(id)}

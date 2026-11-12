@@ -193,6 +193,11 @@ export const StudioShell: React.FC<StudioShellProps> = (props) => {
           onUngroupSelected={doc.ungroupSelected}
           onRenameObject={(id, name) => doc.updateObject(id, { name })}
           onFocusObject={doc.focusObject}
+          onCutObject={(id) => doc.cutObjects([id])}
+          onCopyObject={(id) => doc.copyObjects([id])}
+          onPasteObjects={() => doc.pasteObjects()}
+          clipboardCount={doc.clipboardCount}
+          onReparent={(id, parentId) => doc.updateObject(id, { parentId })}
         />
       }
       properties={

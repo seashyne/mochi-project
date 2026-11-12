@@ -2,7 +2,7 @@
 // click. Positioned at the cursor and closed by the parent on any selection.
 
 import React, { useEffect, useRef } from 'react';
-import { Copy, Crosshair, FolderPlus, PencilLine, Trash2, Unlink } from 'lucide-react';
+import { ClipboardPaste, Copy, Crosshair, FolderPlus, PencilLine, Scissors, Trash2, Unlink } from 'lucide-react';
 import type { StudioObject } from '@/engine/studio/types';
 
 export interface StudioExplorerContextMenuProps {
@@ -12,6 +12,10 @@ export interface StudioExplorerContextMenuProps {
   y: number;
   onClose: () => void;
   onRename: (id: string) => void;
+  onCut?: (id: string) => void;
+  onCopy?: (id: string) => void;
+  onPaste?: () => void;
+  canPaste?: boolean;
   onDuplicate: (id: string) => void;
   onDelete: (id: string) => void;
   onFocus: (id: string) => void;
@@ -28,6 +32,10 @@ export const StudioExplorerContextMenu: React.FC<StudioExplorerContextMenuProps>
   y,
   onClose,
   onRename,
+  onCut,
+  onCopy,
+  onPaste,
+  canPaste = false,
   onDuplicate,
   onDelete,
   onFocus,
@@ -75,6 +83,32 @@ export const StudioExplorerContextMenu: React.FC<StudioExplorerContextMenuProps>
         <span>Rename</span>
         <span className="ml-auto font-mono text-[9px] text-studio-muted">F2</span>
       </button>
+      {onCut && (
+        <button type="button" className={ITEM} onClick={run(() => onCut(object.id))}>
+          <Scissors className="w-3 h-3 text-studio-muted" />
+          <span>Cut</span>
+          <span className="ml-auto font-mono text-[9px] text-studio-muted">Ctrl+X</span>
+        </button>
+      )}
+      {onCopy && (
+        <button type="button" className={ITEM} onClick={run(() => onCopy(object.id))}>
+          <Copy className="w-3 h-3 text-studio-muted" />
+          <span>Copy</span>
+          <span className="ml-auto font-mono text-[9px] text-studio-muted">Ctrl+C</span>
+        </button>
+      )}
+      {onPaste && (
+        <button
+          type="button"
+          disabled={!canPaste}
+          onClick={run(onPaste)}
+          className={`${ITEM} disabled:opacity-35 disabled:hover:bg-transparent`}
+        >
+          <ClipboardPaste className="w-3 h-3 text-studio-muted" />
+          <span>Paste</span>
+          <span className="ml-auto font-mono text-[9px] text-studio-muted">Ctrl+V</span>
+        </button>
+      )}
       <button type="button" className={ITEM} onClick={run(() => onDuplicate(object.id))}>
         <Copy className="w-3 h-3 text-studio-muted" />
         <span>Duplicate</span>

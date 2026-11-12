@@ -1,7 +1,7 @@
 // One row of the Explorer tree: icon, name (or inline rename), child count,
 // hover actions and the right-click hook.
 
-import React from 'react';
+import React, { useState } from 'react';
 import { ChevronDown, ChevronRight, Copy, Trash2 } from 'lucide-react';
 import type { StudioObject } from '@/engine/studio/types';
 import { objectTypeIcon } from './objectIcons';
@@ -13,6 +13,8 @@ export interface ExplorerRowActions {
   onStartRename: (id: string) => void;
   onDuplicate?: (id: string) => void;
   onDelete?: (id: string) => void;
+  /** Reparents the dragged part under `parentId` (null = Workspace root). */
+  onReparent?: (id: string, parentId: string | null) => void;
   renamingId: string | null;
   draftName: string;
   onDraftName: (value: string) => void;
@@ -42,19 +44,41 @@ export const StudioExplorerRow: React.FC<StudioExplorerRowProps> = ({
 }) => {
   const renaming = actions.renamingId === object.id;
   const hasChildren = childCount > 0;
+  const [isDropTarget, setIsDropTarget] = useState(false);
+  const dragKey = 'text/part-id';
 
   return (
     <div
       onClick={(event) => actions.onSelect(object.id, event.ctrlKey || event.metaKey || event.shiftKey)}
       onContextMenu={(event) => actions.onContextMenu(object.id, event)}
       onDoubleClick={() => actions.onStartRename(object.id)}
+      draggable={Boolean(actions.onReparent) && !renaming}
+      onDragStart={(event) => {
+        event.dataTransfer.setData(dragKey, object.id);
+        event.dataTransfer.effectAllowed = 'move';
+      }}
+      onDragOver={(event) => {
+        if (!actions.onReparent) return;
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'move';
+        setIsDropTarget(true);
+      }}
+      onDragLeave={() => setIsDropTarget(false)}
+      onDrop={(event) => {
+        if (!actions.onReparent) return;
+        event.preventDefault();
+        event.stopPropagation();
+        setIsDropTarget(false);
+        const draggedId = event.dataTransfer.getData(dragKey);
+        if (draggedId && draggedId !== object.id) actions.onReparent(draggedId, object.id);
+      }}
       data-part-id={object.id}
       style={{ paddingLeft: `${8 + depth * 12}px` }}
       className={`${rowBase} ${
         isSelected
           ? 'bg-studio-accent/25 text-studio-text border-l-2 border-studio-accent'
           : 'text-studio-text/85 hover:bg-studio-card/60 border-l-2 border-transparent'
-      }`}
+      } ${isDropTarget ? 'ring-1 ring-inset ring-studio-accent bg-studio-accent/10' : ''}`}
     >
       {hasChildren ? (
         <button
