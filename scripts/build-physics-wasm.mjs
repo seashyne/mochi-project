@@ -47,7 +47,8 @@ const expected = [
   'test_sphere_aabb',
   'ray_intersect_aabb',
   'ray_intersect_aabb_normal',
-  'resolve_character_box_collision'
+  'resolve_character_box_collision',
+  'bake_nav_grid'
 ];
 
 const module = await WebAssembly.instantiate(fs.readFileSync(destination), {});

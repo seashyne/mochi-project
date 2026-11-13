@@ -6,6 +6,7 @@
 
 import type { StudioObject } from '../studio/types';
 import { NavGrid } from './navGrid';
+import { bakeNavGridWasm } from './wasmBake';
 
 export interface NavGridFromSceneOptions {
   /** Edge length of one cell in metres. Defaults to 1. */
@@ -16,6 +17,11 @@ export interface NavGridFromSceneOptions {
   ignoreTypes?: string[];
   /** Explicit bounds; defaults to the scene extents plus one cell of padding. */
   bounds?: { minX: number; minZ: number; maxX: number; maxZ: number };
+  /**
+   * Set false to force the TypeScript rasteriser. The kernel is used whenever it
+   * is loaded; the parity test compares the two paths.
+   */
+  useKernel?: boolean;
 }
 
 // Objects a character can walk through or over. Decorations, pickups and other
@@ -53,6 +59,69 @@ export function buildNavGrid(
 
   const width = Math.max(1, Math.ceil((bounds.maxX - bounds.minX) / cellSize));
   const height = Math.max(1, Math.ceil((bounds.maxZ - bounds.minZ) / cellSize));
+  const origin = { x: bounds.minX, z: bounds.minZ };
+
+  const boxes = new Float32Array(blocking.length * 4);
+  blocking.forEach((object, index) => {
+    const box = footprint(object);
+    boxes[index * 4] = box.minX;
+    boxes[index * 4 + 1] = box.maxX;
+    boxes[index * 4 + 2] = box.minZ;
+    boxes[index * 4 + 3] = box.maxZ;
+  });
+
+  // The kernel rasterises and labels regions in one pass. It returns null when it
+  // is not loaded, and `useKernel: false` forces the reference path.
+  const baked = options.useKernel === false
+    ? null
+    : bakeNavGridWasm({
+        boxes,
+        boxCount: blocking.length,
+        originX: origin.x,
+        originZ: origin.z,
+        cellSize,
+        width,
+        height,
+        agentRadius: radius
+      });
+
+  if (baked) {
+    const blocked = new Uint8Array(baked.walkable.length);
+    for (let index = 0; index < blocked.length; index += 1) {
+      blocked[index] = baked.walkable[index] ? 0 : 1;
+    }
+    return new NavGrid({
+      width,
+      height,
+      cellSize,
+      origin,
+      blocked,
+      regions: baked.regions,
+      regionCount: baked.regionCount
+    });
+  }
+
+  return new NavGrid({
+    width,
+    height,
+    cellSize,
+    origin,
+    blocked: rasterise(blocking, { cellSize, radius, bounds, width, height })
+  });
+}
+
+/** Reference rasteriser: the same rule the kernel implements. */
+function rasterise(
+  blocking: StudioObject[],
+  geometry: {
+    cellSize: number;
+    radius: number;
+    bounds: { minX: number; minZ: number };
+    width: number;
+    height: number;
+  }
+): Uint8Array {
+  const { cellSize, radius, bounds, width, height } = geometry;
   const blocked = new Uint8Array(width * height);
 
   for (const object of blocking) {
@@ -72,13 +141,7 @@ export function buildNavGrid(
     }
   }
 
-  return new NavGrid({
-    width,
-    height,
-    cellSize,
-    origin: { x: bounds.minX, z: bounds.minZ },
-    blocked
-  });
+  return blocked;
 }
 
 function computeBounds(objects: StudioObject[], cellSize: number) {

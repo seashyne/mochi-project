@@ -379,3 +379,119 @@ pub extern "C" fn resolve_character_box_collision(
     }
     1
 }
+
+/// Bakes a walkability bitmap plus connected walkable regions from box footprints.
+///
+/// `boxes` holds four f32 per box: `min_x, max_x, min_z, max_z` in world space.
+/// Each footprint is inflated by `agent_radius` before rasterising, so a walkable
+/// cell is one an agent's centre can occupy. Cell coverage follows the same rule
+/// as the TypeScript reference in `engine/navigation/navGridFromScene.ts`: the
+/// first covered cell contains the min edge, the last is the cell that actually
+/// overlaps the max edge.
+///
+/// `walkable_out` receives 1 per walkable cell and 0 per blocked cell.
+/// `region_out` receives 1..=n for walkable cells, 0 for blocked ones. Regions are
+/// 4-way connected: the pathfinder refuses corner cutting, so a diagonal-only
+/// link is not a link. Returns the number of regions.
+#[no_mangle]
+pub extern "C" fn bake_nav_grid(
+    boxes: *const f32,
+    box_count: usize,
+    origin_x: f32,
+    origin_z: f32,
+    cell_size: f32,
+    width: usize,
+    height: usize,
+    agent_radius: f32,
+    walkable_out: *mut u8,
+    region_out: *mut u32,
+) -> u32 {
+    if walkable_out.is_null() || region_out.is_null() || width == 0 || height == 0 {
+        return 0;
+    }
+    if !(cell_size > 0.0) || !(agent_radius >= 0.0) {
+        return 0;
+    }
+
+    let cells = width * height;
+    let walkable = unsafe { std::slice::from_raw_parts_mut(walkable_out, cells) };
+    let region = unsafe { std::slice::from_raw_parts_mut(region_out, cells) };
+
+    for index in 0..cells {
+        walkable[index] = 1;
+        region[index] = 0;
+    }
+
+    if !boxes.is_null() && box_count > 0 {
+        let boxes = unsafe { std::slice::from_raw_parts(boxes, box_count * 4) };
+        for index in 0..box_count {
+            let base = index * 4;
+            let min_x = boxes[base] - agent_radius;
+            let max_x = boxes[base + 1] + agent_radius;
+            let min_z = boxes[base + 2] - agent_radius;
+            let max_z = boxes[base + 3] + agent_radius;
+
+            let first_x = ((min_x - origin_x) / cell_size).floor() as i64;
+            let last_x = ((max_x - origin_x) / cell_size).ceil() as i64 - 1;
+            let first_z = ((min_z - origin_z) / cell_size).floor() as i64;
+            let last_z = ((max_z - origin_z) / cell_size).ceil() as i64 - 1;
+
+            let x0 = first_x.max(0);
+            let x1 = last_x.min(width as i64 - 1);
+            let z0 = first_z.max(0);
+            let z1 = last_z.min(height as i64 - 1);
+            if x1 < x0 || z1 < z0 {
+                continue;
+            }
+
+            for z in z0..=z1 {
+                let row = (z as usize) * width;
+                for x in x0..=x1 {
+                    walkable[row + x as usize] = 0;
+                }
+            }
+        }
+    }
+
+    let mut region_count: u32 = 0;
+    let mut stack: Vec<u32> = Vec::new();
+
+    macro_rules! visit {
+        ($x:expr, $z:expr) => {{
+            let index = ($z) * width + ($x);
+            if walkable[index] == 1 && region[index] == 0 {
+                region[index] = region_count;
+                stack.push(index as u32);
+            }
+        }};
+    }
+
+    for start in 0..cells {
+        if walkable[start] == 0 || region[start] != 0 {
+            continue;
+        }
+        region_count += 1;
+        region[start] = region_count;
+        stack.push(start as u32);
+
+        while let Some(cell) = stack.pop() {
+            let index = cell as usize;
+            let x = index % width;
+            let z = index / width;
+            if x > 0 {
+                visit!(x - 1, z);
+            }
+            if x + 1 < width {
+                visit!(x + 1, z);
+            }
+            if z > 0 {
+                visit!(x, z - 1);
+            }
+            if z + 1 < height {
+                visit!(x, z + 1);
+            }
+        }
+    }
+
+    region_count
+}

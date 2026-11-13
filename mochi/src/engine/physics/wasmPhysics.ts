@@ -61,6 +61,13 @@ export interface WasmPhysicsExports {
     maxX: number, maxY: number, maxZ: number,
     outPosPtr: number
   ) => number;
+  bake_nav_grid: (
+    boxesPtr: number, boxCount: number,
+    originX: number, originZ: number,
+    cellSize: number, width: number, height: number,
+    agentRadius: number,
+    walkablePtr: number, regionPtr: number
+  ) => number;
 }
 
 let wasmInstance: WasmPhysicsExports | null = null;
@@ -108,6 +115,15 @@ export async function initWasmPhysics(customWasmUrl?: string): Promise<boolean> 
 
 export function isWasmPhysicsReady(): boolean {
   return wasmInstance !== null;
+}
+
+/**
+ * The loaded kernel, for engine subsystems that share it. Navigation bakes its
+ * grid here rather than in a TypeScript loop; callers must handle `null` (kernel
+ * not loaded, or the browser never fetched it) and fall back.
+ */
+export function getWasmKernel(): WasmPhysicsExports | null {
+  return wasmInstance;
 }
 
 export function wasmVec3Length(x: number, y: number, z: number): number {

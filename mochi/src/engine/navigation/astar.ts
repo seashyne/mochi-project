@@ -113,6 +113,12 @@ export function findPath(
 ): NavPoint[] | null {
   if (!grid.isWalkable(start.x, start.y) || !grid.isWalkable(goal.x, goal.y)) return null;
 
+  // Region labels come from the WASM bake. Two different labels mean the cells are
+  // in separate islands, so no route exists and the search can be skipped entirely.
+  const startRegion = grid.regionAt(start.x, start.y);
+  const goalRegion = grid.regionAt(goal.x, goal.y);
+  if (startRegion !== 0 && goalRegion !== 0 && startRegion !== goalRegion) return null;
+
   const startIndex = grid.index(start.x, start.y);
   const goalIndex = grid.index(goal.x, goal.y);
   if (startIndex === goalIndex) return [{ x: start.x, y: start.y }];

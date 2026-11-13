@@ -18,6 +18,10 @@ export interface NavGridOptions {
   origin?: { x: number; z: number };
   /** 1 = blocked, 0 = walkable. Defaults to fully walkable. */
   blocked?: Uint8Array;
+  /** Connected-region labels from the WASM bake; 0 for blocked or unlabelled. */
+  regions?: Uint32Array;
+  /** Number of regions in `regions`; informational. */
+  regionCount?: number;
 }
 
 export class NavGrid {
@@ -26,6 +30,13 @@ export class NavGrid {
   readonly cellSize: number;
   readonly originX: number;
   readonly originZ: number;
+  /**
+   * Connected walkable regions, when the grid came from the WASM bake. A route
+   * between two different labels cannot exist, which the pathfinder uses to give
+   * up before searching. Null when the bake ran in TypeScript.
+   */
+  readonly regions: Uint32Array | null;
+  readonly regionCount: number;
   private readonly blocked: Uint8Array;
 
   constructor(options: NavGridOptions) {
@@ -44,6 +55,8 @@ export class NavGrid {
     this.originZ = options.origin?.z ?? 0;
 
     const expected = width * height;
+    this.regions = options.regions && options.regions.length === expected ? options.regions : null;
+    this.regionCount = this.regions ? options.regionCount ?? 0 : 0;
     if (options.blocked && options.blocked.length === expected) {
       this.blocked = options.blocked;
     } else {
@@ -71,6 +84,12 @@ export class NavGrid {
 
   isWalkable(x: number, y: number): boolean {
     return this.isInside(x, y) && this.blocked[this.index(x, y)] === 0;
+  }
+
+  /** Region label for a cell: 0 when blocked, outside, or unlabelled. */
+  regionAt(x: number, y: number): number {
+    if (!this.regions || !this.isInside(x, y)) return 0;
+    return this.regions[this.index(x, y)];
   }
 
   setBlocked(x: number, y: number, value: boolean): void {
