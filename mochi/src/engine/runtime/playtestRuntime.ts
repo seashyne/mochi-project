@@ -131,7 +131,8 @@ export class PlaytestRuntime {
     this.navigation = navigation;
     this.agents = createRuntimeAgents(
       (key) => world.get(key) ?? world.findByName(key) ?? null,
-      () => navigation.grid()
+      () => navigation.grid(),
+      { staticBodies: () => [{ position: player.getPosition(), radius: 0.5 }] }
     );
     this.agents.setObjects(objects);
     const deps: RuntimeApiDeps = {

@@ -81,9 +81,11 @@ export class GameRuntime {
       }
     );
     // NPC keys are object ids or display names, both resolved against the registry.
+    // The player is a static body for spacing: agents step around it, never shove it.
     this.agents = createRuntimeAgents(
       (key) => this.world.get(key) ?? this.world.findByName(key) ?? null,
-      () => this.navigation.grid()
+      () => this.navigation.grid(),
+      { staticBodies: () => [{ position: options.player.getPosition(), radius: 0.5 }] }
     );
     this.deps = {
       world: this.world,

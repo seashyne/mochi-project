@@ -48,7 +48,8 @@ const expected = [
   'ray_intersect_aabb',
   'ray_intersect_aabb_normal',
   'resolve_character_box_collision',
-  'bake_nav_grid'
+  'bake_nav_grid',
+  'resolve_overlaps'
 ];
 
 const module = await WebAssembly.instantiate(fs.readFileSync(destination), {});

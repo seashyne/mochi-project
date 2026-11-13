@@ -68,6 +68,10 @@ export interface WasmPhysicsExports {
     agentRadius: number,
     walkablePtr: number, regionPtr: number
   ) => number;
+  resolve_overlaps: (
+    positionsPtr: number, radiiPtr: number, weightsPtr: number,
+    count: number, maxStep: number, iterations: number
+  ) => number;
 }
 
 let wasmInstance: WasmPhysicsExports | null = null;

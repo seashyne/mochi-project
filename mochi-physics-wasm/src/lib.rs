@@ -495,3 +495,106 @@ pub extern "C" fn bake_nav_grid(
 
     region_count
 }
+
+/// Lateral bias applied to the push between two movable bodies. Two agents walking
+/// straight at each other would otherwise be pushed exactly opposite their travel
+/// and lock; a few degrees of rotation turns the deadlock into a slide past.
+const HEAD_ON_BIAS: f32 = 0.15;
+
+/// Separates overlapping discs in the XZ plane, in place.
+///
+/// `positions` holds `x, z` per body, `radii` one radius per body, and `weights`
+/// the share of each push a body takes: 1 for a peer that can move, 0 for
+/// something immovable like the player or a prop. A pair is pushed apart along its
+/// centre line, each body taking `weight / (weight_i + weight_j)` of the
+/// correction, capped at `max_step` per pair per iteration so a deep overlap does
+/// not teleport.
+///
+/// Returns the number of separating moves applied.
+#[no_mangle]
+pub extern "C" fn resolve_overlaps(
+    positions: *mut f32,
+    radii: *const f32,
+    weights: *const f32,
+    count: usize,
+    max_step: f32,
+    iterations: u32,
+) -> u32 {
+    if positions.is_null() || radii.is_null() || weights.is_null() || count < 2 {
+        return 0;
+    }
+    if !(max_step > 0.0) {
+        return 0;
+    }
+
+    let pos = unsafe { std::slice::from_raw_parts_mut(positions, count * 2) };
+    let rad = unsafe { std::slice::from_raw_parts(radii, count) };
+    let wgt = unsafe { std::slice::from_raw_parts(weights, count) };
+
+    let mut applied: u32 = 0;
+
+    for _ in 0..iterations.max(1) {
+        let mut moved = false;
+        for i in 0..count {
+            for j in (i + 1)..count {
+                let total_weight = wgt[i] + wgt[j];
+                if !(total_weight > 0.0) {
+                    continue;
+                }
+                let ix = i * 2;
+                let iz = i * 2 + 1;
+                let jx = j * 2;
+                let jz = j * 2 + 1;
+
+                let dx = pos[jx] - pos[ix];
+                let dz = pos[jz] - pos[iz];
+                let distance_sq = dx * dx + dz * dz;
+                let reach = rad[i] + rad[j];
+                if !(reach > 0.0) || distance_sq >= reach * reach {
+                    continue;
+                }
+
+                let distance = distance_sq.sqrt();
+                // Exactly coincident centres have no centre line; pick +X so the
+                // pair still separates instead of jittering in place.
+                let (mut nx, mut nz) = if distance > 1e-6 {
+                    (dx / distance, dz / distance)
+                } else {
+                    (1.0, 0.0)
+                };
+
+                // Two moving bodies walking straight at each other get a push that
+                // is exactly opposite their travel, so neither ever makes progress
+                // and they lock. Rotating the normal a few degrees turns that into a
+                // slide past. Applied only to pairs that can both move, so pushing
+                // off a wall or the player stays square.
+                if wgt[i] > 0.0 && wgt[j] > 0.0 {
+                    let biased_x = nx - nz * HEAD_ON_BIAS;
+                    let biased_z = nz + nx * HEAD_ON_BIAS;
+                    let biased_len = (biased_x * biased_x + biased_z * biased_z).sqrt();
+                    if biased_len > 1e-6 {
+                        nx = biased_x / biased_len;
+                        nz = biased_z / biased_len;
+                    }
+                }
+
+                let push = (reach - distance).min(max_step);
+                let share_i = wgt[i] / total_weight;
+                let share_j = wgt[j] / total_weight;
+
+                pos[ix] -= nx * push * share_i;
+                pos[iz] -= nz * push * share_i;
+                pos[jx] += nx * push * share_j;
+                pos[jz] += nz * push * share_j;
+
+                moved = true;
+                applied += 1;
+            }
+        }
+        if !moved {
+            break;
+        }
+    }
+
+    applied
+}
