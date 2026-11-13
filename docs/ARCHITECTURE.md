@@ -203,3 +203,23 @@ header on its own.
 
 `POST /api/v1/auth/logout` clears the cookie and needs no token - clearing a cookie
 grants nothing.
+
+### Making those origins real
+
+Declaring `PUBLIC_ASSETS_URL` and `ACCESS_ASSETS_URL` is not enough: a URL is only
+as real as the worker route behind it. `mochi-cloud/wrangler.jsonc` binds both
+hosts with `custom_domain` routes alongside the API host. Without them the server
+resolves asset URLs to hostnames that answer nothing.
+
+`npm run verify:assets` (also part of `verify:standards`) refuses to pass when:
+
+- either host is missing, not https, or shares the API origin,
+- either host has no matching `custom_domain` route,
+- public and gated assets share an origin,
+- the production client's `VITE_ACCESS_ASSETS_URL`, or the baked-in
+  `DEFAULT_ACCESS_ASSET_HOST` fallback, disagrees with the server,
+- the development client points somewhere other than the documented empty
+  same-origin opt-out.
+
+A variable that silently falls back to a hardcoded string is how this gap
+survived. The gate turns that fallback into a checked invariant.
