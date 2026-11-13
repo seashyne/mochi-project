@@ -195,6 +195,18 @@ describe('kernel versus TypeScript', () => {
     }
   });
 
+  it('navigation bake, isolating the region flood fill', () => {
+    // Zero blocking boxes: the kernel still clears every cell and flood fills the
+    // whole grid, while the TypeScript path has nothing to rasterise. The gap is the
+    // price of region labels alone.
+    for (const size of [256, 512]) {
+      const options = { cellSize: 1, agentRadius: 0.4, bounds: { minX: 0, minZ: 0, maxX: size, maxZ: size } };
+      const kernelMs = timeMs(() => { buildNavGrid([], options); }, 10);
+      const typescriptMs = timeMs(() => { buildNavGrid([], { ...options, useKernel: false }); }, 10);
+      record(`bake_nav_grid (${size}x${size}, 0 boxes)`, kernelMs, typescriptMs, 'clear + flood fill only');
+    }
+  });
+
   it('prints the table', () => {
     const width = Math.max(...rows.map((row) => row.name.length));
     console.log('\nkernel versus TypeScript (lower is better)\n');

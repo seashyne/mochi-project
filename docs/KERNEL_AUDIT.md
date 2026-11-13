@@ -16,10 +16,11 @@ Reproduce with `npm run benchmark:kernel` (2026-11-13).
 | `rasterize_occluders`, 256 boxes | 0.96 ms | 1.04 ms | 1.08x faster | on camera move |
 | `test_occlusion`, 36 boxes | 0.008 ms | 0.008 ms | level | every frame |
 | `scan_json_array`, 400 objects | 0.03 ms | 0.05 ms | 1.8x faster | per network chunk |
-| `bake_nav_grid`, 64x64 | 0.19 ms | 0.07 ms | **2.6x slower** | per world change |
-| `bake_nav_grid`, 128x128 | 0.19 ms | 0.03 ms | **5.7x slower** | per world change |
-| `bake_nav_grid`, 256x256 | 0.75 ms | 0.08 ms | **9.0x slower** | per world change |
-| `bake_nav_grid`, 512x512 | 3.21 ms | 0.30 ms | **10.5x slower** | per world change |
+| `bake_nav_grid`, 64x64 | 0.15 ms | 0.10 ms | **1.6x slower** | per world change |
+| `bake_nav_grid`, 128x128 | 0.15 ms | 0.03 ms | **5.3x slower** | per world change |
+| `bake_nav_grid`, 256x256 | 0.50 ms | 0.11 ms | **4.7x slower** | per world change |
+| `bake_nav_grid`, 512x512 | 2.38 ms | 0.28 ms | **8.4x slower** | per world change |
+| `bake_nav_grid`, 512x512, no boxes | 1.72 ms | 0.06 ms | clear + fill only | isolates the region pass |
 
 ## What earns its keep
 
@@ -58,8 +59,16 @@ grid. Two causes, and only one of them is a fair comparison:
    a box actually covers. At 512x512 the kernel touches 262,144 cells where TypeScript
    touches roughly the blocked area.
 
-So the honest statement is: the bake buys region labels, and pays 3-10x for them. It
+So the honest statement is: the bake buys region labels, and pays 2-8x for them. It
 is not the speed win the roadmap recorded when 3.3 shipped.
+
+Two things were done about it. The fill was rewritten as a scanline fill - the
+previous version pushed every cell and recovered its coordinates with `%` and `/`,
+two integer divisions per cell, and the clears were an indexed loop where a slice
+`fill` compiles to a memset. That took 512x512 from 3.21 ms to 2.38 ms, and the
+zero-box case shows the rest is the region pass itself: 1.72 ms of the 2.38 ms is
+clear plus flood fill. A new test compares the whole partition against a reference
+flood fill, not just the number of regions.
 
 Compounding it, `GameRuntime.sync()` calls `navigation.setObjects()` on a 250 ms
 timer with a freshly built array, and `setObjects` unconditionally threw the baked
@@ -67,11 +76,12 @@ grid away. The world was being rebaked several times a second whether or not any
 had moved.
 
 **Fixed**: `setObjects` now compares the resident objects themselves and keeps the
-grid when they are unchanged. **Still open**: whether regions are worth their cost,
-and whether the bake should be sparse (TypeScript rasterise, kernel flood fill only
-when regions are asked for). That is a navigation-behaviour decision, not a
-mechanical one - `findPath` uses the region labels to refuse a route between
-disconnected areas.
+grid when they are unchanged. **Still open**: whether regions are worth their remaining cost, and whether the bake
+should be sparse (TypeScript rasterise, kernel flood fill only when regions are asked
+for). That is a navigation-behaviour decision, not a mechanical one - `findPath` uses
+the region labels to refuse a route between disconnected areas. With bakes now rare,
+the absolute numbers are 0.5 ms at 256x256 and 2.4 ms at 512x512, which is a hitch at
+a chunk boundary rather than a per-frame cost.
 
 ## Test-only exports
 

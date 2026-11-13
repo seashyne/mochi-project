@@ -127,3 +127,74 @@ describe('kernel nav bake', () => {
     expect(grid.regionAt(corner.x, corner.y)).not.toBe(grid.regionAt(inner.x, inner.y));
   });
 });
+
+describe('region labelling', () => {
+  /** Reference partition: plain BFS over the grid the kernel produced. */
+  function referencePartition(
+    width: number,
+    height: number,
+    walkable: (x: number, y: number) => boolean
+  ): string[] {
+    const seen = new Uint8Array(width * height);
+    const groups: string[] = [];
+    for (let startY = 0; startY < height; startY += 1) {
+      for (let startX = 0; startX < width; startX += 1) {
+        const start = startY * width + startX;
+        if (seen[start] || !walkable(startX, startY)) continue;
+        const cells: string[] = [];
+        const queue: Array<[number, number]> = [[startX, startY]];
+        seen[start] = 1;
+        while (queue.length) {
+          const [x, y] = queue.pop()!;
+          cells.push(`${x},${y}`);
+          for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+            const nx = x + dx;
+            const ny = y + dy;
+            if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
+            const index = ny * width + nx;
+            if (seen[index] || !walkable(nx, ny)) continue;
+            seen[index] = 1;
+            queue.push([nx, ny]);
+          }
+        }
+        groups.push(cells.sort().join(' '));
+      }
+    }
+    return groups.sort();
+  }
+
+  it('partitions a maze exactly like a plain flood fill', () => {
+    // Two walls spanning the full depth cut the map into three strips, and an
+    // island inside the middle strip adds a hole for the span scan to deal with.
+    const scene: StudioObject[] = [
+      part('wallA', 'block', -4, 0, 1, 24),
+      part('wallB', 'block', 4, 0, 1, 24),
+      part('island', 'block', 0, 0, 2, 2)
+    ];
+
+    const options = { cellSize: 1, agentRadius: 0, bounds: { minX: -12, minZ: -12, maxX: 12, maxZ: 12 } };
+    const grid = buildNavGrid(scene, options);
+    const reference = referencePartition(
+      grid.width,
+      grid.height,
+      (x, y) => grid.isWalkable(x, y)
+    );
+
+    const kernelGroups = new Map<number, string[]>();
+    for (let y = 0; y < grid.height; y += 1) {
+      for (let x = 0; x < grid.width; x += 1) {
+        const region = grid.regionAt(x, y);
+        if (region === 0) continue;
+        const bucket = kernelGroups.get(region) ?? [];
+        bucket.push(`${x},${y}`);
+        kernelGroups.set(region, bucket);
+      }
+    }
+    const kernel = [...kernelGroups.values()].map((cells) => cells.sort().join(' ')).sort();
+
+    // Guard against a vacuous pass: the comb must actually split the map.
+    expect(reference.length).toBeGreaterThan(1);
+    expect(kernel).toEqual(reference);
+    expect(grid.regionCount).toBe(reference.length);
+  });
+});
