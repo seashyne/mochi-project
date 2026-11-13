@@ -2,7 +2,8 @@
 
 `ROADMAP.md` tracks engine feature adoption (Phases 1-4, all shipped). This file
 tracks the other question: what turns a working engine into something a creator
-would choose over Roblox.
+would choose over Roblox. What has actually shipped is logged separately in
+`docs/PROGRESS.md`, so the plan stays a plan.
 
 Every claim about the current state below is verifiable in code, and the numbers
 are the ones the code enforces, not estimates.
@@ -62,7 +63,7 @@ met today.
 | Gate | Test | Status |
 | --- | --- | --- |
 | G1 Port time | A Roblox developer rebuilds a simple obby in under an hour, in Lua, without reading a manual | Fails: `task.wait` cannot yield, so the loop patterns they know do not work |
-| G2 Density | 30 players in one room at 30+ fps on a mid-range laptop | Unknown: never measured |
+| G2 Density | 30 players in one room at 30+ fps on a mid-range laptop | **Half measured.** The room's CPU cost is 0.052 ms median / 0.163 ms p95 per tick for 30 peers (see 7.5); client frame rate still needs a browser run. |
 | G3 Trust | A client that edits its own position is refused by the server | Fails: transforms are first-writer-wins, no arbiter |
 | G4 Audio | A creator uploads a sound and hears it positioned in 3D | Fails: synthesis only, no uploaded files |
 
@@ -79,26 +80,11 @@ Goal: a Roblox developer can do their normal work here without relearning.
 | 5.3 | Uploaded audio | TS (WebAudio) | No game ships without its own sound | Upload a file, `world.playSound` plays it with the same rolloff, pan and Doppler as synthesis |
 | 5.4 | API parity checklist | docs | Creators discover gaps one at a time, then leave | A table in the docs maps every Roblox call a beginner uses to its equivalent or to a documented "not supported" |
 
-**5.1 shipped** (2026-11-13): scripts run inside a Lua coroutine, `task.wait`
-suspends and the runtime resumes it on a later frame. The two-argument
-`task.wait(delay, callback)` form still schedules a callback, so existing scripts
-did not break. Semantics and the handler caveat are in `docs/SCRIPTING.md`; the
-spike that preceded it confirmed wasmoon can resume a coroutine from the host,
-which was the risk this item carried.
+Shipped 5.1 on 2026-11-13 - details in `docs/PROGRESS.md`.
 
-**5.2 shipped** (2026-11-13): models and audio are checked at import - triangles,
-mesh count, texture edge, file size and audio length - and a breach is refused with
-a message naming the limit and the actual value. The binary scans
-(`image_dimensions`, `audio_duration_ms`) run in the kernel with TypeScript
-references and a parity test; the limits and the holes that remain are in
-`docs/ASSET_LIMITS.md`.
+Shipped 5.2 on 2026-11-13 - details in `docs/PROGRESS.md`.
 
-**5.3 shipped** (2026-11-13): `world.playSound` accepts an access id, a URL or a
-recipe name and routes accordingly. Uploaded files go through the same `prepare()`
-as synthesis, so attenuation, panning, Doppler and buses behave identically. Ids
-resolve through the existing asset service, which is what keeps a blocked or
-unauthorised file from ever producing a URL. `world.loadSound` warms the cache,
-because a one-shot cannot wait for a decode.
+Shipped 5.3 on 2026-11-13 - details in `docs/PROGRESS.md`.
 
 5.1 was the highest value per unit of work in this document: it unlocks the
 largest population of creators and it was testable without any UI.
@@ -114,27 +100,11 @@ Goal: a multiplayer session where the server is the source of truth.
 | 6.3 | World-op validation (bounds, rate, object shape) | TS (edge) | A malformed or out-of-bounds spawn is rejected at the edge |
 | 6.4 | Baseline anti-cheat (speed, teleport, score sanity) | Rust (checks) | Documented thresholds, enforced server-side, logged |
 
-**6.1 shipped** (2026-11-13): the room validates every player position against
-speed, teleport, vertical step, finite values and optional world bounds. A rejected
-report is corrected, and the sender gets the verdict back so the local body snaps
-within one round trip. The client still simulates physics - this is validation of
-outcomes, not replay of inputs - so the remaining half of full authority is
-prediction and server-side collision. Gate G3 now passes for blatant cheats; a
-cheater inside the allowed envelope can still gain a small advantage.
+Shipped 6.1 on 2026-11-13 - details in `docs/PROGRESS.md`.
 
-**6.2 shipped** (2026-11-13): the room owns a `OwnershipTable`. The first peer to
-publish an object id claims it; later writes from other peers are dropped at the
-edge, removals are owner-only, and a disconnect frees that player's objects. The
-client-side channel still applies the same rule locally for responsiveness, but a
-modified client can no longer get its delta relayed.
+Shipped 6.2 on 2026-11-13 - details in `docs/PROGRESS.md`.
 
-**6.3 and 6.4 shipped** (2026-11-13): the room validates every world edit before
-relaying - kind, id, type, finite position/scale/rotation, world bounds, 8 KB
-payload ceiling - and caps spawns with a per-player token bucket on top of the
-generic rate limiter. Score-shaped replicated state is clamped: non-finite and
-negative values become 0, a ceiling is enforced, and a score cannot grow faster
-than 10,000 per second. Non-score state passes through untouched. Both budgets are
-released when a player disconnects.
+Shipped 6.3 and 6.4 on 2026-11-13 - details in `docs/PROGRESS.md`.
 
 Without 6.1 and 6.2, anything competitive (racing, combat, score attack) is
 trivially cheatable, so no amount of rendering work matters.
@@ -150,6 +120,8 @@ Goal: worlds bigger than one screenful, at frame rate.
 | 7.3 | Occlusion culling | Rust (raster test) | Geometry behind walls is drawn |
 | 7.4 | Instance-level streaming | Rust (index) + TS (loader) | Chunks are all-or-nothing at 64 MB |
 | 7.5 | Benchmark harness (30 players, fixed scene) | TS (harness) | G2 needs a number before and after every change |
+
+Shipped 7.5 on 2026-11-13 - details in `docs/PROGRESS.md`.
 
 ## 7. Phase 8 - Platform
 
