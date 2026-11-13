@@ -9,6 +9,7 @@ import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import { fetchAsset } from './assetCache';
+import { registerMaterialVariants } from './materialVariants';
 
 type ProgressCallback = (loadedBytes: number, totalBytes: number) => void;
 
@@ -53,6 +54,9 @@ function ensureLoader(): GLTFLoader {
     .setDRACOLoader(dracoLoader)
     .setKTX2Loader(ktx2Loader)
     .setMeshoptDecoder(MeshoptDecoder);
+  // Creator assets ship material skins through KHR_materials_variants, which
+  // three's loader does not implement on its own.
+  registerMaterialVariants(gltfLoader);
   return gltfLoader;
 }
 
