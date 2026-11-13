@@ -96,6 +96,38 @@ describe('React-Lua Declarative UI & Dialogue Bridge Suite', () => {
     expect(hud[0].progress).toBe(0.6);
   });
 
+  it('styles a HUD card from the curated families only', async () => {
+    await engine.executeScript(`
+      ui.setHud("score", { title = "Score", value = 1200, font = "display", size = "lg" })
+    `);
+
+    let card = store.getHudElements().find((h) => h.id === 'score');
+    expect(card?.font).toBe('display');
+    expect(card?.size).toBe('lg');
+
+    // An unknown family is ignored, not thrown: a typo must not kill the script.
+    await engine.executeScript(`
+      ui.setHud("score", { font = "comic-sans", size = "enormous" })
+    `);
+    card = store.getHudElements().find((h) => h.id === 'score');
+    expect(card?.font).toBe('display');
+    expect(card?.size).toBe('lg');
+
+    // A partial update without style keeps the existing style.
+    await engine.executeScript(`ui.setHud("score", { value = 1300 })`);
+    card = store.getHudElements().find((h) => h.id === 'score');
+    expect(card?.value).toBe(1300);
+    expect(card?.font).toBe('display');
+    expect(card?.size).toBe('lg');
+  });
+
+  it('defaults the HUD to the mono family it has always used', async () => {
+    await engine.executeScript(`ui.setHud("plain", { title = "Plain", value = 1 })`);
+    const card = store.getHudElements().find((h) => h.id === 'plain');
+    expect(card?.font).toBe('mono');
+    expect(card?.size).toBe('md');
+  });
+
   it('executes narrative story branching flow seamlessly', async () => {
     let step = 0;
 

@@ -8,6 +8,7 @@ import {
   LuaUIComponentNode,
   MochiScriptEnvironment
 } from './types';
+import { pickHudFont, pickHudSize } from './hudStyle';
 
 export class ReactLuaUIStore {
   private activeDialogue: LuaDialogueOptions | null = null;
@@ -62,7 +63,9 @@ export class ReactLuaUIStore {
       title: element.title || existing?.title || id,
       value: element.value !== undefined ? element.value : existing?.value,
       progress: element.progress !== undefined ? element.progress : existing?.progress,
-      color: element.color || existing?.color || '#00a2ff'
+      color: element.color || existing?.color || '#00a2ff',
+      font: element.font ?? existing?.font ?? 'mono',
+      size: element.size ?? existing?.size ?? 'md'
     };
     this.hudElements.set(id, updated);
     this.notify();
@@ -151,7 +154,9 @@ export function injectReactLuaBridge(
       title: element.title ? String(element.title) : String(id),
       value: element.value !== undefined ? (element.value as string | number) : undefined,
       progress: typeof element.progress === 'number' ? element.progress : undefined,
-      color: typeof element.color === 'string' ? element.color : undefined
+      color: typeof element.color === 'string' ? element.color : undefined,
+      font: pickHudFont(element.font),
+      size: pickHudSize(element.size)
     });
   };
 

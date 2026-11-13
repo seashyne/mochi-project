@@ -215,3 +215,21 @@ A contract test holds it together: neither shell may reference a font CDN, every
 present, and the phantom families must stay gone. The first version of the generated
 stylesheet used `//` comments, which only the production build caught - PostCSS
 rejects them - so that is now a `/* */` header.
+**HUD typography** (2026-11-13): `ui.setHud` took a title, a value, a progress and a
+colour, so every game's HUD rendered in the platform's own type no matter what the
+game looked like. It now also takes `font` - `mono` (the previous look), `ui` (IBM
+Plex Sans Thai) or `display` (Mitr) - and `size`, `sm`/`md`/`lg`.
+
+There is no upload, deliberately. A creator picks from faces the app already ships,
+so the browser never fetches a font the platform has not licensed, the family is
+already in the shell cache, and no moderation queue is needed. That is the whole
+answer to "should there be a font system": a curated list, not a file picker.
+
+Unknown values are ignored rather than thrown, because a typo in a style hint should
+never kill a running script. A partial update without style keeps the existing style.
+
+The interesting part was finding that two Lua surfaces build a HUD element: the
+runtime API and the legacy script bridge. Each carried its own whitelist, so the
+first version of this change worked on one path and silently dropped the field on the
+other - caught by the test, fixed by extracting `lua/hudStyle.ts` so both read one
+list. Two whitelists for one contract is a bug waiting to happen.

@@ -52,12 +52,21 @@ export interface LuaDialogueOptions {
   onChoice?: (index: number, choiceText: string) => void;
 }
 
+/** Curated HUD families. There is no font upload: every option is a shipped face. */
+export type LuaHudFont = 'mono' | 'ui' | 'display';
+/** Value text size. */
+export type LuaHudSize = 'sm' | 'md' | 'lg';
+
 export interface LuaHudElement {
   id: string;
   title: string;
   value?: string | number;
   progress?: number;
   color?: string;
+  /** Value family. Defaults to 'mono', which is what the HUD always used. */
+  font?: LuaHudFont;
+  /** Value size. Defaults to 'md', which is what the HUD always used. */
+  size?: LuaHudSize;
 }
 
 export interface LuaUIComponentNode {

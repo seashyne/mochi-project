@@ -3,6 +3,7 @@
 // ui.* writes go to the real HUD store; Instance.new really spawns nodes in the world.
 
 import { defaultReactLuaStore } from '../lua/reactLuaBridge';
+import { pickHudFont, pickHudSize } from '../lua/hudStyle';
 import { LuaDialogueOptions } from '../lua/types';
 import { createLuaNode, createPlayerApi, createWorldApi, nodeFromLuaValue, RuntimeApiDeps } from './luaNodeApi';
 import { resolveLuaClass } from './nodeFactory';
@@ -57,7 +58,11 @@ export function createUiApi(deps: RuntimeApiDeps): Record<string, unknown> {
       title: readProp(element, 'title') ? String(readProp(element, 'title')) : String(id),
       value: readProp(element, 'value') as string | number | undefined,
       progress: typeof readProp(element, 'progress') === 'number' ? (readProp(element, 'progress') as number) : undefined,
-      color: readProp(element, 'color') ? String(readProp(element, 'color')) : undefined
+      color: readProp(element, 'color') ? String(readProp(element, 'color')) : undefined,
+      // Unknown values are ignored rather than thrown: a script should never crash
+      // over a typo in a style hint.
+      font: pickHudFont(readProp(element, 'font')),
+      size: pickHudSize(readProp(element, 'size'))
     });
   };
   api.removeHud = (id: unknown) => defaultReactLuaStore.removeHud(String(id));

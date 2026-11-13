@@ -6,7 +6,20 @@ import {
   defaultReactLuaStore,
   ReactLuaUIStore
 } from '../../engine/lua/reactLuaBridge';
-import { LuaDialogueOptions, LuaHudElement } from '../../engine/lua/types';
+import { LuaDialogueOptions, LuaHudElement, LuaHudFont, LuaHudSize } from '../../engine/lua/types';
+
+// Curated families only - a creator picks from what ships, never an upload.
+const HUD_FONT_STACK: Record<LuaHudFont, string> = {
+  mono: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+  ui: "'IBM Plex Sans Thai', system-ui, sans-serif",
+  display: "'Mitr', 'IBM Plex Sans Thai', sans-serif"
+};
+
+const HUD_SIZE_CLASS: Record<LuaHudSize, string> = {
+  sm: 'text-xs',
+  md: 'text-sm',
+  lg: 'text-lg'
+};
 
 export interface LuaUIOverlayProps {
   store?: ReactLuaUIStore;
@@ -40,7 +53,10 @@ export const LuaUIOverlay: React.FC<LuaUIOverlayProps> = ({
                 {el.title}
               </p>
               {el.value !== undefined && (
-                <p className="text-sm font-bold font-mono text-white">
+                <p
+                  className={`font-bold text-white ${HUD_SIZE_CLASS[el.size ?? 'md']}`}
+                  style={{ fontFamily: HUD_FONT_STACK[el.font ?? 'mono'] }}
+                >
                   {el.value}
                 </p>
               )}
