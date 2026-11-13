@@ -40,18 +40,45 @@ Acceptance: adding a new object type needs only schema entries; undo memory scal
 
 | # | Item | Godot reference | Status |
 | --- | --- | --- | --- |
-| 2.1 | Cubic bezier easing alongside linear/step | `scene/animation/animation.cpp` | PLANNED |
-| 2.2 | Cross-fade blending between clips | `animation_mixer.cpp` | PLANNED |
-| 2.3 | State machine / transition graph | `animation_node_state_machine.cpp` | PLANNED |
+| 2.1 | Cubic bezier easing alongside linear/step | `scene/animation/animation.cpp` | DONE |
+| 2.2 | Cross-fade blending between clips | `animation_mixer.cpp` | DONE |
+| 2.3 | State machine / transition graph | `animation_node_state_machine.cpp` | DONE |
+
+Phase 2 is complete. Notes on what actually shipped:
+
+- **2.1** `engine/animation/bezier.ts` solves CSS-style `cubic-bezier(x1,y1,x2,y2)`
+  with Newton-Raphson plus a bisection fallback. `toThreeClip` expands step and
+  bezier segments into linear keys, so the runtime plays exactly what the Studio
+  sampler shows. This also fixed step easing, which the runtime previously
+  ignored (it played every segment as linear).
+- **2.2** Uses three's `AnimationMixer.crossFadeTo` rather than porting a blend
+  tree; `stateMachineRuntime.ts` owns the fade.
+- **2.3** `stateMachine.ts` + `stateMachineRuntime.ts`, driven from Lua via
+  `animation.*`, authored in the Studio panel, validated on the server, and
+  synced through Team Create.
 
 ## Phase 3 - Navigation and AI
 
 | # | Item | Godot reference | Status |
 | --- | --- | --- | --- |
-| 3.1 | A\* over a grid/graph + path smoothing | `core/math/a_star.cpp` | PLANNED |
+| 3.1 | A\* over a grid/graph + path smoothing | `core/math/a_star.cpp` | DONE |
 | 3.2 | Steering and local avoidance (RVO) | `modules/navigation_3d/3d/nav_map*.cpp` | PLANNED |
 | 3.3 | Navmesh baking in the Rust/WASM kernel (`npm run build:wasm`) | `nav_mesh_generator_3d.cpp` | BACKLOG |
 | 3.4 | Agent component + Lua API (`agent.moveTo`) | `scene/3d/navigation_agent_3d.cpp` | PLANNED |
+
+**3.1 shipped** in `engine/navigation/`: `NavGrid` (byte-per-cell walkability with
+world/cell mapping), `findPath` (8-way A*, octile heuristic, binary heap, typed
+arrays, corner cutting refused, iteration budget), `smoothPath` /
+`lineOfSight` (greedy string pulling with a quarter-cell sampled ray), and
+`buildNavGrid` which bakes a grid from `StudioObject[]` — colliding footprints
+inflated by an agent radius, pickups and spawns ignored. 30 tests.
+
+3.4's Lua surface shipped early as `player.moveTo(x, z, speed?)` /
+`player.stopMoving()` / `player.isMoving()` (`engine/runtime/playerNavigator.ts` +
+`runtimeNavigation.ts`, wired in both `gameRuntime` and `playtestRuntime`,
+documented in `docs/RUNTIME.md` section 7). An `agent` NPC type is still open.
+
+Next in this phase: 3.2 steering and local avoidance, then 3.4's agent entity.
 
 ## Phase 4 - Multiplayer and audio
 

@@ -205,3 +205,83 @@ export type SandboxToHostMessage =
 - Denied Globals: The sandbox environment does not expose `window.location`, `window.parent`, `document.cookie`, `localStorage`, or raw `WebSocket`.
 - Capability Gate: Persistent storage and networking must be explicitly declared in `mochi-game.json` permissions; requests exceeding permissions are dropped.
 - Execution Guard: Script ticks exceeding 12ms are aborted to prevent infinite loops from hanging the browser UI thread.
+
+## 6. Animation State Graph from Lua
+
+A world whose manifest carries an `animationStateMachine` block plays clips
+through transitions instead of starting every clip at once. Scripts drive it
+through the `animation` global.
+
+### 6.1 API
+
+| Call | Effect |
+| --- | --- |
+| `animation.setParameter(name, value)` | Sets a parameter; numbers go to `number` parameters, everything else is coerced to boolean |
+| `animation.setBool(name, value)` | Explicit boolean write |
+| `animation.setNumber(name, value)` | Numeric write; non-finite values are dropped |
+| `animation.trigger(name)` | Fires a one-shot trigger, consumed by the first transition that reads it |
+| `animation.getState()` | Current state id, or `""` when the world has no graph |
+
+### 6.2 Example
+
+```lua
+-- Mirror gameplay state into the graph; the graph decides which clip plays.
+script.onUpdate.Connect(function(dt)
+    local speed = player.getScore("Speed")
+    animation.setNumber("speed", speed)
+    animation.setBool("walking", speed > 0.5)
+end)
+
+-- Touch handlers, pads and one-off events fire a one-shot transition.
+animation.trigger("jump")
+```
+
+### 6.3 Contract
+
+- Every call is a no-op when the manifest has no state graph, so a script that
+  drives animation still runs on worlds that do not use it.
+- `getState()` returns an empty string rather than nil: the Lua host cannot
+  return JS `null` (wasmoon probes `.then`) and `undefined` yields zero Lua
+  values, which breaks `tostring`. Compare with `~= ""`.
+- Parameters, transitions and exit times are validated when the manifest loads.
+  An invalid graph is logged and the world falls back to playing its clips
+  directly, rather than failing to load.
+- The same rules run server-side (`mochi-cloud/src/services/animationValidation.ts`)
+  when a draft or publish request is inspected, so a graph that can never run is
+  rejected at the edge instead of being stored. That validator also cross-checks
+  every `state.clipId` against the manifest's `animations` list.
+
+## 7. Scripted Movement (`player.moveTo`)
+
+`player.moveTo(x, z, speed?)` walks the local player to a world position through
+the navigation grid baked from the scene. The path is A* over colliding
+footprints, inflated by an agent radius, then smoothed to waypoints.
+
+| Call | Effect |
+| --- | --- |
+| `player.moveTo(x, z, speed?)` | Starts a scripted walk. `speed` is metres per second (default 4). Returns `false` when no route exists |
+| `player.stopMoving()` | Cancels the walk and leaves the player where it stands |
+| `player.isMoving()` | `true` while a walk is in progress |
+
+### 7.1 Example
+
+```lua
+if player.moveTo(12, -8, 5) then
+    script.onUpdate.Connect(function(dt)
+        if player.health <= 30 then
+            player.stopMoving()
+        end
+    end)
+end
+```
+
+### 7.2 Contract
+
+- The grid is rebuilt lazily from the resident object list, so a chunked world
+  re-bakes as it streams in. Pickups, spawns and `canCollide: false` objects do
+  not block; nothing else about the physics step changes.
+- Movement is kinematic: it writes the player position each frame and does not
+  fight the character controller. Gravity and collision response continue
+  outside the walk.
+- Without a bridge (worlds that never sync objects) every call is a no-op and
+  `isMoving()` returns `false`, so a script that navigates still runs anywhere.

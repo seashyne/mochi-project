@@ -32,60 +32,141 @@ commit fb8a353). License: MIT, single copyright holder.
 
 ## Adoption order
 
-### 1. glTF extension handlers — `src/framework/parsers/glb/` (23 files)
+### 1. glTF extensions — measured against three 0.185.1 (DONE, scoped down)
 
-**Take:** the `glb/` subtree (accessors, extensions, material and texture
-handlers) plus `glb-container-parser.js`. Not the sibling parsers in
-`framework/parsers/` — `audio.js`, `text.js`, `ply.js`, `sog.js` and
-`sprite-sheet.js` are unrelated to glTF and stay out.
+The original plan was to vendor all 22 handlers in `framework/parsers/glb/`.
+Measurement killed that: **three's `GLTFLoader` already implements 19 of them**,
+including `KHR_texture_transform`, all the `KHR_materials_*` PBR extensions,
+`KHR_draco_mesh_compression`, `KHR_texture_basisu`, `EXT_meshopt_compression`
+and `EXT_mesh_gpu_instancing`. Porting those would have been pure regression
+risk for zero capability gain.
 
-**Measured coupling** (spike, `C:\tmp\pc-spike`): 23 files, 36 references to
-modules outside the subtree, and they are almost all `core/math`
-(`vec3`, `mat4`, `quat`, `math`), `core/debug`, `scene/constants`,
-`platform/graphics/constants` and `core/shape/bounding-box`. That is a small,
-finite adapter surface, which is why this item goes first.
+Only three real gaps exist:
 
-**Why first:** `mochi/src/engine/assets/` is only 2 files today, and creator
-uploads go through a Draco/Basis pipeline in `public/draco` and `public/basis`.
-The handler logic is where the hard-won edge cases live.
+| Extension | three 0.185 | Decision |
+| --- | --- | --- |
+| `KHR_materials_variants` | not implemented (loader links to a third-party plugin) | **Shipped** |
+| `KHR_gaussian_splatting` | not implemented | Candidate, needs the renderer work in item 5 |
+| `KHR_materials_pbrSpecularGlossiness` | removed from three | Only if legacy creator assets appear |
+| `KHR_materials_diffuse_transmission` | not implemented (draft spec) | Skip until ratified |
 
-**Target:** `mochi/src/engine/vendor/playcanvas/gltf-extensions/`
+**Shipped in this pass**
 
-**Parity test:** `tests/vendor_gltf_parity.test.ts` — load the same GLB with
-Three's `GLTFLoader` and the ported handlers, compare material parameters,
-texture slots and animation track counts.
+- `mochi/src/engine/vendor/playcanvas/glb/variants.ts` — `createVariantIndex`,
+  `readPrimitiveVariants`, `variantNamesByIndex`. Adapted from
+  `khr-materials-variants.js`, MIT header preserved, registered in `VENDORED`.
+- `mochi/src/engine/assets/materialVariants.ts` — `GLTFMaterialsVariantsExtension`
+  (a `GLTFLoaderPlugin`), `applyMaterialVariant`, `listMaterialVariants`,
+  `readActiveVariant`. Bindings live on `mesh.userData.mochiMaterialVariants` so
+  cloned instances and the Studio inspector read the same shape.
+- `mochi/src/engine/assets/modelLoader.ts` — registers the plugin once on the
+  shared loader, next to Draco / KTX2 / meshopt.
+- `mochi/tests/gltf_material_variants.test.ts` — 17 tests covering the parse
+  helpers, binding, swapping, default restore and malformed input.
 
-**Risk:** medium. Handlers assume a PlayCanvas `Asset` graph. Expect to rewrite
-the I/O edges and keep the parsing bodies.
+**Why this one:** creator assets ship one model with several material skins.
+Without the extension a creator has to upload a second GLB per colourway, which
+costs storage, download and memory. This is the gap that pays for itself.
 
-### 2. Animation state graph — `src/framework/anim/` (30 files)
+**What is left from the original item 1:** nothing. The remaining gaps are
+covered by items 5 (splatting) and a legacy-asset decision.
 
-**Take:** `controller/` (state graph, conditions, transitions, layers) and the
-blend-weight maths. Skip the component wrapper.
+### 2. Animation state graph — DONE, written in-house (no code copied)
 
-**Why:** `mochi/src/engine/animation/` is 5 files and has no layered blending or
-transition conditions. Creator-facing animation authoring is the gap.
+The plan was to port `framework/anim/controller/`. Measurement changed the
+answer again: the hard part of that module is not the state graph, it is the
+blend-tree maths, and **three's `AnimationMixer` already crossfades**
+(`crossFadeTo`). Porting 25 files to re-derive what the mixer does would have
+added a second animation clock next to ours.
 
-**Target:** `mochi/src/engine/vendor/playcanvas/anim-controller/`
+What was actually missing was the authoring layer, so it was written directly:
 
-**Parity test:** `tests/vendor_anim_parity.test.ts` — drive the same state graph
-with the same input sequence and assert identical clip weights per frame.
+- `mochi/src/engine/animation/stateMachine.ts` — states, parameter-driven
+  transitions (`bool` / `number` / `trigger`), priority ordering, `*` (any-state)
+  transitions, normalized `exitTime` with loop-wrap handling, transition offset,
+  and `validateStateMachine()` for the Studio save path.
+- `mochi/src/engine/animation/stateMachineRuntime.ts` — binds the graph to
+  `THREE.AnimationMixer`, one action per clip, real crossfade per transition,
+  missing-clip tolerance.
+- `mochi/tests/animation_state_machine.test.ts` — 25 tests.
 
-**Risk:** low. This module is mostly pure maths over a small state model.
+**Attribution:** no PlayCanvas code was copied. The semantics follow the same
+published model (from/to, priority, conditions, exitTime), which is not
+copyrightable, so there is nothing to add to `VENDORED`. PlayCanvas was read as
+a design reference only.
 
-### 3. Static batching — `src/scene/batching/` (5 files)
+**Deliberately not implemented:** interruption sources (a transition always
+completes), blend trees / 1D-2D blending (the mixer's crossfade covers the
+current need), and layered masks.
 
-**Take:** the batch grouping heuristic and the merged-geometry builder.
+**Wiring (done):**
 
-**Why:** draw-call count is the main perf ceiling for creator maps with many
-repeated props. Small module, immediate measurable win.
+- `engine/animation/stateMachineManifest.ts` — `readAnimationStateMachine()`.
+  An absent field is not an error; a broken graph is, and playback falls back to
+  plain clips instead of failing.
+- `engine/studio/types.ts` (`StudioSceneSnapshot`) and
+  `engine/package/manifestV2.ts` (`MochiManifestV2`) gained an optional
+  `animationStateMachine` field.
+- `engine/scene/attachWorld.ts` — when the graph is present it replaces blanket
+  clip playback with a `AnimationStateMachineRuntime`, and the returned
+  `WorldAttachment` exposes `setAnimationParameter`, `triggerAnimation` and
+  `getAnimationState`. Chunk residency changes rebuild the runtime, same as the
+  clip rebind path.
+- `tests/animation_state_machine_wiring.test.ts` — 9 tests.
 
-**Target:** `mochi/src/engine/vendor/playcanvas/batching/`
+**Lua bindings (done):**
 
-**Parity test:** `tests/vendor_batching_parity.test.ts` — same input mesh set
-produces the same group count and identical vertex totals.
+- `runtime/luaNodeApi.ts` — `AnimationBridge` interface and an optional
+  `animation` field on `RuntimeApiDeps`. Looked up per call, never captured, so
+  the host can attach it after the world loads.
+- `runtime/luaGlobals.ts` — `animation.setParameter / setBool / setNumber /
+  trigger / getState`. Every call is a no-op when the world has no graph.
+- `runtime/gameRuntime.ts` — `setAnimationBridge(bridge | null)`.
+- `scene/attachWorld.ts` — exposes the same controls as `animationBridge` on the
+  returned `WorldAttachment`.
+- `components/PlayerViewport.tsx` — attaches the bridge right after the world
+  attaches.
+- `tests/lua_animation_binding.test.ts` — 8 tests, including real Lua runs
+  through `ScriptContext`.
 
-**Risk:** low.
+**wasmoon gotcha:** a JS function cannot return `null` (wasmoon probes `.then`)
+and returning `undefined` yields zero Lua values, which breaks `tostring(x)`.
+`animation.getState()` therefore returns `''` when there is no state; scripts
+compare against the empty string.
+
+**Studio panel (done):**
+
+- `components/studio/animationGraphModel.ts` — pure edits with referential
+  cleanup: renaming a state rewrites its transitions and the initial pointer,
+  removing a state drops its transitions, removing a parameter drops the
+  conditions that read it.
+- `components/studio/StudioAnimationGraphPanel.tsx` and
+  `StudioAnimationGraphTransitions.tsx` — the panel, rendered under the clip
+  editor in the animation view. Optional: it starts behind a create button and
+  disables creation until a clip exists.
+- `useStudioAnimations` now owns `graph` / `setGraph`, and the value is threaded
+  through `StudioSaveTarget`, the draft payload, `buildPublishManifest` and
+  `studioDraftsApi.save`, so it reaches the server and the validator.
+- `tests/studio_animation_graph.test.tsx` — 18 tests.
+
+Panel colours come from `studio-warning`; the M16 token test rejects raw palette
+utilities in studio components, so amber classes are not an option.
+
+**Team Create sync (done):** `animations` and `animationStateMachine` were added
+to `SYNCED_MANIFEST_FIELDS`, so they flow through `diffManifestFields` and the
+`manifest_patch` op. The Durable Object allowlist now permits both for editors
+(never viewers). `useStudioTeamBridge` applies them on draft load and on remote
+patches. Clips were not synced live before this change either, so the graph
+arrived alongside a fix that was already overdue.
+
+### 3. Static batching — SKIPPED (already covered)
+
+`mochi/src/engine/scene/instancedBatch.ts` already batches repeated primitives
+into `THREE.InstancedMesh`, one batch per chunk, with per-instance colour.
+PlayCanvas `scene/batching/` merges *different* geometries that share a material,
+which only wins when a scene holds many distinct props on one material. Mochi
+has no such scene today, and merging would break per-object editing in Studio.
+Revisit only if a real map shows a draw-call problem that instancing cannot fix.
 
 ### 4. Lightmap baking — `src/framework/lightmapper/` (8 files)
 
