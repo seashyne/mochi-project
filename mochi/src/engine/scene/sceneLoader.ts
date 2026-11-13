@@ -3,6 +3,7 @@ import { PhysicsWorld, RigidBody } from '../physics';
 import { StudioObject, StudioSceneSnapshot, StudioVec3 } from '../studio/types';
 import { attachModelObject } from './modelCollider';
 import { registerCullTarget } from './distanceCulling';
+import { registerOcclusionTarget } from './occlusionCulling';
 import { createInstancedBatches, instancedKindFor } from './instancedBatch';
 import { createObjectBody } from './sceneBodies';
 import { collectBindings, SceneBinding } from './sceneBindings';
@@ -166,7 +167,13 @@ export function loadWorldFromManifest(
   // per instance, and scripts need both.
   const isScripted = (obj: StudioObject) => Boolean(obj.luaScript?.trim());
   createInstancedBatches(objects.filter((obj) => !isScripted(obj)))
-    .forEach((batch) => { scene.add(batch); meshes.push(batch); });
+    .forEach((batch) => {
+      scene.add(batch);
+      meshes.push(batch);
+      // A batch covers a whole chunk, so occlusion almost never hides it, but the
+      // test is one box and it costs nothing next to drawing the chunk.
+      cancels.push(registerOcclusionTarget(batch));
+    });
 
   for (const obj of objects) {
     if (!instancedKindFor(obj.type) || isScripted(obj)) {
@@ -181,6 +188,7 @@ export function loadWorldFromManifest(
       if (obj.type === 'model') {
         cancels.push(attachModelObject(mesh, obj, physicsWorld, bodies, () => disposed, pending));
         cancels.push(registerCullTarget(mesh));
+        cancels.push(registerOcclusionTarget(mesh));
       }
     }
 

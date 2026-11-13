@@ -52,7 +52,9 @@ const expected = [
   'resolve_overlaps',
   'image_dimensions',
   'audio_duration_ms',
-  'simplify_mesh'
+  'simplify_mesh',
+  'rasterize_occluders',
+  'test_occlusion'
 ];
 
 const module = await WebAssembly.instantiate(fs.readFileSync(destination), {});

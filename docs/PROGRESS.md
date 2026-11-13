@@ -86,3 +86,25 @@ detail; a model that cannot shed 20% of its triangles keeps two levels rather th
 paying memory for a level nobody sees. The kernel is 44 KB / 11 exports, and
 `meshSimplification.ts` keeps the TypeScript reference the parity test compares
 against, cell for cell.
+**7.3 shipped** (2026-11-13): solid static boxes - blocks, terrain, model colliders -
+are rasterised into a 256x144 w-buffer, and any registered target whose screen
+rectangle is fully covered by closer geometry is hidden. Every pixel stores 1/w,
+which is linear in screen space under perspective; NDC z is not, and interpolating
+it orders surfaces wrongly on large faces.
+
+The pass is self-gating and throttled: it does nothing below 16 occluders or 8
+targets, and the buffer is only rebuilt when the camera has moved 1.5 m or turned
+3 degrees. Measured cost is 1.04 ms per rebuild at 256 boxes, 1.86 ms at 1,024, and
+0.019 ms per frame for 40 candidate tests - so the cost lands on movement, not on
+every frame.
+
+Boxes straddling the eye plane are skipped rather than clipped. That only loses
+occlusion, never invents it. Distance and occlusion each store their own verdict
+(`distanceCulled`, `occlusionCulled`) and recompute `visible` from both, so neither
+pass can undo the other by writing the flag.
+
+Honest limit: this measures the pass, not a frame-rate win. A batched chunk is one
+box, so occlusion rarely hides it; the win is per-model, and a dense indoor scene is
+where it would show. `getOcclusionStats()` reports occluders, targets, occluded
+count and both timings so a real session can answer whether it pays before anything
+else is built on top of it.

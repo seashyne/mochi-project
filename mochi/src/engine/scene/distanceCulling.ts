@@ -33,8 +33,12 @@ export function updateDistanceCulling(camera: THREE.Camera): number {
         ? object.userData.cullDistance
         : DEFAULT_MODEL_CULL_DISTANCE;
     const visible = worldPosition.distanceToSquared(camera.position) <= maxDistance * maxDistance;
-    object.visible = visible;
-    if (!visible) hidden++;
+    // Two independent passes can veto a draw: distance and occlusion. Each stores
+    // its own verdict and recomputes visibility from both, so neither can undo the
+    // other by simply writing `visible`.
+    object.userData.distanceCulled = !visible;
+    object.visible = visible && object.userData.occlusionCulled !== true;
+    if (!object.visible) hidden++;
   }
   return hidden;
 }

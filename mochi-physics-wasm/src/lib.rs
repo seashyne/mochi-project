@@ -932,3 +932,301 @@ pub extern "C" fn simplify_mesh(
 
     (written / 3) as u32
 }
+
+// ---------------------------------------------------------------------------
+// Software occlusion culling
+//
+// A coarse w-buffer: every pixel stores 1/w of the nearest occluder surface. 1/w
+// is linear in screen space under perspective, so it can be interpolated across a
+// triangle without perspective correction; NDC z cannot, and interpolating it
+// would order surfaces wrongly on large faces.
+// ---------------------------------------------------------------------------
+
+#[inline]
+fn project_corner(vp: &[f32], x: f32, y: f32, z: f32) -> Option<(f32, f32, f32)> {
+    // Column-major 4x4, matching THREE.Matrix4.elements.
+    let cx = vp[0] * x + vp[4] * y + vp[8] * z + vp[12];
+    let cy = vp[1] * x + vp[5] * y + vp[9] * z + vp[13];
+    let cw = vp[3] * x + vp[7] * y + vp[11] * z + vp[15];
+    if !(cw > 1e-6) {
+        // At or behind the eye plane: the projection is not a rectangle any more.
+        return None;
+    }
+    let inv = 1.0 / cw;
+    Some((cx * inv, cy * inv, inv))
+}
+
+#[inline]
+fn screen_x(ndc_x: f32, width: usize) -> f32 {
+    (ndc_x * 0.5 + 0.5) * width as f32
+}
+
+#[inline]
+fn screen_y(ndc_y: f32, height: usize) -> f32 {
+    (0.5 - ndc_y * 0.5) * height as f32
+}
+
+/// Fills one triangle, keeping the nearest (largest 1/w) surface per pixel.
+fn raster_triangle(
+    depth: &mut [f32],
+    width: usize,
+    height: usize,
+    v: [(f32, f32, f32); 3],
+) {
+    let min_x = v[0].0.min(v[1].0).min(v[2].0).floor();
+    let max_x = v[0].0.max(v[1].0).max(v[2].0).ceil();
+    let min_y = v[0].1.min(v[1].1).min(v[2].1).floor();
+    let max_y = v[0].1.max(v[1].1).max(v[2].1).ceil();
+
+    let start_x = min_x.max(0.0) as isize;
+    let end_x = (max_x.min((width - 1) as f32)) as isize;
+    let start_y = min_y.max(0.0) as isize;
+    let end_y = (max_y.min((height - 1) as f32)) as isize;
+    if start_x > end_x || start_y > end_y {
+        return;
+    }
+
+    let (x0, y0, w0) = v[0];
+    let (x1, y1, w1) = v[1];
+    let (x2, y2, w2) = v[2];
+    let area = (x1 - x0) * (y2 - y0) - (x2 - x0) * (y1 - y0);
+    if area.abs() < 1e-9 {
+        return;
+    }
+    let inv_area = 1.0 / area;
+
+    for py in start_y..=end_y {
+        let cy = py as f32 + 0.5;
+        for px in start_x..=end_x {
+            let cx = px as f32 + 0.5;
+            let b0 = ((x1 - cx) * (y2 - cy) - (x2 - cx) * (y1 - cy)) * inv_area;
+            let b1 = ((x2 - cx) * (y0 - cy) - (x0 - cx) * (y2 - cy)) * inv_area;
+            let b2 = 1.0 - b0 - b1;
+            if b0 < -0.0001 || b1 < -0.0001 || b2 < -0.0001 {
+                continue;
+            }
+            let inv_w = b0 * w0 + b1 * w1 + b2 * w2;
+            let index = py as usize * width + px as usize;
+            if inv_w > depth[index] {
+                depth[index] = inv_w;
+            }
+        }
+    }
+}
+
+const BOX_FACES: [[usize; 4]; 6] = [
+    [0, 1, 2, 3],
+    [5, 4, 7, 6],
+    [4, 0, 3, 7],
+    [1, 5, 6, 2],
+    [4, 5, 1, 0],
+    [3, 2, 6, 7],
+];
+
+/// Reads six floats of a box and returns its eight corners.
+#[inline]
+fn box_corners(boxes: &[f32], index: usize) -> Option<[(f32, f32, f32); 8]> {
+    let base = index * 6;
+    let (min_x, min_y, min_z) = (boxes[base], boxes[base + 1], boxes[base + 2]);
+    let (max_x, max_y, max_z) = (boxes[base + 3], boxes[base + 4], boxes[base + 5]);
+    if !(min_x <= max_x && min_y <= max_y && min_z <= max_z) {
+        return None;
+    }
+    Some([
+        (min_x, min_y, min_z),
+        (max_x, min_y, min_z),
+        (max_x, max_y, min_z),
+        (min_x, max_y, min_z),
+        (min_x, min_y, max_z),
+        (max_x, min_y, max_z),
+        (max_x, max_y, max_z),
+        (min_x, max_y, max_z),
+    ])
+}
+
+/// Rasterises static box occluders into a w-buffer of `width * height` floats.
+///
+/// `view_proj` is 16 floats, column-major, already multiplied view * projection.
+/// The buffer is cleared to 0 (nothing occludes) on entry. Boxes that straddle the
+/// eye plane are skipped: their projection is not a rectangle, and skipping only
+/// loses occlusion, never invents it. Returns the number of boxes rasterised.
+#[no_mangle]
+pub extern "C" fn rasterize_occluders(
+    boxes: *const f32,
+    box_count: usize,
+    view_proj: *const f32,
+    width: usize,
+    height: usize,
+    depth_out: *mut f32,
+) -> u32 {
+    if boxes.is_null() || view_proj.is_null() || depth_out.is_null() {
+        return 0;
+    }
+    if width == 0 || height == 0 {
+        return 0;
+    }
+
+    let vp = unsafe { std::slice::from_raw_parts(view_proj, 16) };
+    let pixels = width * height;
+    let depth = unsafe { std::slice::from_raw_parts_mut(depth_out, pixels) };
+    for pixel in depth.iter_mut() {
+        *pixel = 0.0;
+    }
+    if box_count == 0 {
+        return 0;
+    }
+
+    let boxes = unsafe { std::slice::from_raw_parts(boxes, box_count * 6) };
+    let mut drawn = 0u32;
+
+    for index in 0..box_count {
+        let Some(corners) = box_corners(boxes, index) else {
+            continue;
+        };
+        let mut screen = [(0.0f32, 0.0f32, 0.0f32); 8];
+        let mut clipped = false;
+        for corner in 0..8 {
+            let (x, y, z) = corners[corner];
+            match project_corner(vp, x, y, z) {
+                Some((ndc_x, ndc_y, inv_w)) => {
+                    screen[corner] = (screen_x(ndc_x, width), screen_y(ndc_y, height), inv_w);
+                }
+                None => {
+                    clipped = true;
+                    break;
+                }
+            }
+        }
+        if clipped {
+            continue;
+        }
+
+        for face in BOX_FACES.iter() {
+            let a = screen[face[0]];
+            let b = screen[face[1]];
+            let c = screen[face[2]];
+            let d = screen[face[3]];
+            raster_triangle(depth, width, height, [a, b, c]);
+            raster_triangle(depth, width, height, [a, c, d]);
+        }
+        drawn += 1;
+    }
+
+    drawn
+}
+
+/// Tests candidate boxes against a w-buffer built by `rasterize_occluders`.
+///
+/// A candidate is occluded when every pixel of its screen rectangle is covered by a
+/// surface at least `depth_bias` closer (in 1/w terms). `inset` shrinks the test
+/// rectangle by that many pixels so a one-pixel silhouette sliver does not keep an
+/// entire object alive. Rectangles larger than `max_pixels` are reported visible:
+/// testing them costs more than drawing them. Writes one byte per candidate.
+#[no_mangle]
+pub extern "C" fn test_occlusion(
+    boxes: *const f32,
+    box_count: usize,
+    view_proj: *const f32,
+    width: usize,
+    height: usize,
+    depth: *const f32,
+    depth_bias: f32,
+    inset: u32,
+    max_pixels: u32,
+    out_flags: *mut u8,
+) -> u32 {
+    if boxes.is_null() || view_proj.is_null() || depth.is_null() || out_flags.is_null() {
+        return 0;
+    }
+    if width == 0 || height == 0 || box_count == 0 {
+        return 0;
+    }
+
+    let vp = unsafe { std::slice::from_raw_parts(view_proj, 16) };
+    let depth = unsafe { std::slice::from_raw_parts(depth, width * height) };
+    let boxes = unsafe { std::slice::from_raw_parts(boxes, box_count * 6) };
+    let flags = unsafe { std::slice::from_raw_parts_mut(out_flags, box_count) };
+    let bias = if depth_bias > 0.0 { 1.0 + depth_bias } else { 1.0 };
+
+    let mut occluded = 0u32;
+
+    for index in 0..box_count {
+        flags[index] = 0;
+        let Some(corners) = box_corners(boxes, index) else {
+            continue;
+        };
+
+        let mut min_x = f32::INFINITY;
+        let mut max_x = f32::NEG_INFINITY;
+        let mut min_y = f32::INFINITY;
+        let mut max_y = f32::NEG_INFINITY;
+        let mut nearest = 0.0f32;
+        let mut clipped = false;
+
+        for corner in 0..8 {
+            let (x, y, z) = corners[corner];
+            match project_corner(vp, x, y, z) {
+                Some((ndc_x, ndc_y, inv_w)) => {
+                    let sx = screen_x(ndc_x, width);
+                    let sy = screen_y(ndc_y, height);
+                    if sx < min_x {
+                        min_x = sx;
+                    }
+                    if sx > max_x {
+                        max_x = sx;
+                    }
+                    if sy < min_y {
+                        min_y = sy;
+                    }
+                    if sy > max_y {
+                        max_y = sy;
+                    }
+                    if inv_w > nearest {
+                        nearest = inv_w;
+                    }
+                }
+                None => {
+                    clipped = true;
+                    break;
+                }
+            }
+        }
+        if clipped {
+            continue;
+        }
+
+        let pad = inset as f32;
+        let start_x = (min_x + pad).floor().max(0.0) as isize;
+        let end_x = (max_x - pad).ceil().min((width - 1) as f32) as isize;
+        let start_y = (min_y + pad).floor().max(0.0) as isize;
+        let end_y = (max_y - pad).ceil().min((height - 1) as f32) as isize;
+        if start_x > end_x || start_y > end_y {
+            continue;
+        }
+
+        let span_x = (end_x - start_x + 1) as usize;
+        let span_y = (end_y - start_y + 1) as usize;
+        if max_pixels > 0 && span_x * span_y > max_pixels as usize {
+            continue;
+        }
+
+        let threshold = nearest * bias;
+        let mut covered = true;
+        'outer: for py in start_y..=end_y {
+            let row = py as usize * width;
+            for px in start_x..=end_x {
+                if depth[row + px as usize] <= threshold {
+                    covered = false;
+                    break 'outer;
+                }
+            }
+        }
+
+        if covered {
+            flags[index] = 1;
+            occluded += 1;
+        }
+    }
+
+    occluded
+}

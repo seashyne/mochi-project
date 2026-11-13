@@ -124,6 +124,7 @@ Goal: worlds bigger than one screenful, at frame rate.
 Shipped 7.5 on 2026-11-13 - details in `docs/PROGRESS.md`.
 Shipped 7.1 on 2026-11-13 - details in `docs/PROGRESS.md`.
 Shipped 7.2 on 2026-11-13 - details in `docs/PROGRESS.md`.
+Shipped 7.3 on 2026-11-13 - details in `docs/PROGRESS.md`.
 
 ## 7. Phase 8 - Platform
 
@@ -139,7 +140,7 @@ platform is a liability.
 
 ## 8. Cross-cutting rule: compute belongs in the kernel
 
-The kernel is `mochi-physics-wasm` (Rust, 44 KB, 11 exports today). It is not a
+The kernel is `mochi-physics-wasm` (Rust, 47 KB, 13 exports today). It is not a
 physics module with a few extras; it is where every CPU-bound loop in this project
 is supposed to live. The rule is already in `AGENTS.md`; this section records what
 it means for the phases above, so nothing gets written twice in TypeScript by

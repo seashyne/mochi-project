@@ -8,6 +8,7 @@ import { StudioObject, StudioVec3 } from '../studio/types';
 import { loadWorldFromManifest } from './sceneLoader';
 import { loadChunkedWorld, parseChunkedManifest, type ChunkedWorldLoadResult } from './chunkedWorldLoader';
 import { SceneBinding } from './sceneBindings';
+import { setOccludersFromPhysics } from './occlusionCulling';
 import { AdvancedFeatureRuntime } from '../studio/advancedRuntime';
 import { AnimationPlayer, createMeshResolver } from '../animation/animationPlayer';
 import { AnimationStateMachineRuntime } from '../animation/stateMachineRuntime';
@@ -114,6 +115,10 @@ export function attachWorld(
     const features = new AdvancedFeatureRuntime(scene, physicsWorld);
     features.mount(result.objects);
     startClips(result.meshes);
+    // Solid static bodies are the occluders. Model colliders arrive with `ready`,
+    // so the set is refreshed once they land.
+    setOccludersFromPhysics(physicsWorld);
+    void result.ready.then(() => setOccludersFromPhysics(physicsWorld)).catch(() => {});
     return {
       ...animationControls,
       animationBridge,
@@ -140,6 +145,7 @@ export function attachWorld(
       features.mount(result.objects);
       mountedObjectCount = result.objects.length;
       startClips(result.meshes);
+      setOccludersFromPhysics(physicsWorld);
       return result.spawnPoint;
     });
 
@@ -161,7 +167,9 @@ export function attachWorld(
         if (loaded.objects.length !== mountedObjectCount) {
           features.mount(loaded.objects);
           mountedObjectCount = loaded.objects.length;
-          // Chunk residency changed: rebind clips to the resident meshes.
+          // Chunk residency changed: rebind clips to the resident meshes and
+          // rebuild the occluder set from the new bodies.
+          setOccludersFromPhysics(physicsWorld);
           if (clips.length) { player.stopAll(); startClips(loaded.meshes); }
         }
       }

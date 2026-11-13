@@ -6,6 +6,7 @@ import { PhysicsWorld, RigidBody } from './physics';
 import { FollowCamera } from './camera/followCamera';
 import { configureModelLoader } from './assets/modelLoader';
 import { updateDistanceCulling } from './scene/distanceCulling';
+import { updateOcclusionCulling } from './scene/occlusionCulling';
 import { RenderDiagnostics } from './scene/renderBudget';
 import { FpsMeter } from './scene/fpsMeter';
 import { detectRendererCapabilities, type RendererCapabilities } from './rendererCapabilities';
@@ -289,6 +290,7 @@ export class RuntimeEngine {
     }
 
     updateDistanceCulling(this.camera);
+    updateOcclusionCulling(this.camera);
     this.renderer.render(this.scene, this.camera);
     this.renderDiagnostics.capture(this.renderer);
   }
