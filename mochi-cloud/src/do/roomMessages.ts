@@ -5,6 +5,7 @@
 import type { PlayerPresence, RoomEvent } from '../types/api';
 import type { ServerLuaRuntime } from '../services/serverLua';
 import type { RoomRateLimiter } from '../services/roomRateLimiter';
+import { parseTransformDelta } from './transformDelta';
 
 export interface RoomSession {
   playerId: string;
@@ -19,6 +20,8 @@ export interface RoomMessageContext {
   luaRuntime: ServerLuaRuntime;
   nextTick(): number;
   broadcast(event: RoomEvent): void;
+  /** Broadcasts to everyone except one player; used for high-rate relays. */
+  broadcastFrom(senderPlayerId: string, event: RoomEvent): void;
   broadcastPlayerState(senderPlayerId: string, presence: PlayerPresence): void;
   sendTo(ws: WebSocket, event: RoomEvent): void;
   close(ws: WebSocket): void;
@@ -79,6 +82,20 @@ export function handleRoomMessage(
           data: payload
         });
       }
+      break;
+    }
+
+    case 'transform_delta': {
+      // Object transforms at 10 Hz. Relayed to everyone but the sender, whose own
+      // authority already owns those objects, and only after the shape check.
+      const payload = parseTransformDelta(event.data);
+      if (!payload) break;
+      context.broadcastFrom(session.playerId, {
+        type: 'transform_delta',
+        senderId: session.playerId,
+        timestamp: Date.now(),
+        data: payload
+      });
       break;
     }
 

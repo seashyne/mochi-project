@@ -12,6 +12,8 @@ export const DEFAULT_ROOM_LIMITS: Record<string, ChannelLimit> = {
   chat: { ratePerSecond: 3, burst: 6 },
   script_rpc: { ratePerSecond: 20, burst: 40 },
   world_op: { ratePerSecond: 30, burst: 60 },
+  // Object transforms publish at 10 Hz; the headroom absorbs a burst after a stall.
+  transform_delta: { ratePerSecond: 20, burst: 40 },
   ping: { ratePerSecond: 2, burst: 4 },
   leave: { ratePerSecond: 2, burst: 4 }
 };

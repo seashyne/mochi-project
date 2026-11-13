@@ -7,6 +7,7 @@ import { DEFAULT_INTEREST_RADIUS, encodePlayerStateFrame, withinInterest } from 
 import { handleRoomHttp } from './roomHttp';
 import { ensureRoomScript } from './roomScriptBundle';
 import { RoomPlayerData } from './roomPlayerData';
+import { broadcastFromPlayer, broadcastToSessions, sendToSession, socketForPlayer } from './roomBroadcast';
 import { handleRoomMessage, type RoomMessageContext, type RoomSession } from './roomMessages';
 
 // Cloudflare Durable Object for multiplayer game rooms with WebSocket presence
@@ -46,6 +47,7 @@ export class GameRoomDO {
       luaRuntime: this.luaRuntime,
       nextTick: () => ++this.tick,
       broadcast: (event) => this.broadcast(event),
+      broadcastFrom: (playerId, event) => this.broadcastFrom(playerId, event),
       broadcastPlayerState: (playerId, presence) => this.broadcastPlayerState(playerId, presence),
       sendTo: (ws, event) => this.send(ws, event),
       close: (ws) => this.closeSession(ws)
@@ -229,36 +231,21 @@ export class GameRoomDO {
     }
   }
 
-  // Broadcast event to all active sessions (optional exclusion of sender)
   private broadcast(event: RoomEvent, excludeWs?: WebSocket) {
-    const payload = JSON.stringify(event);
-    for (const [ws] of this.sessions) {
-      if (ws === excludeWs) continue;
-      try {
-        ws.send(payload);
-      } catch {
-        this.closeSession(ws);
-      }
-    }
+    broadcastToSessions(this.sessions, event, excludeWs, (ws) => this.closeSession(ws));
   }
 
-  // Send event to a specific client
+  private broadcastFrom(playerId: string, event: RoomEvent) {
+    broadcastFromPlayer(this.sessions, playerId, event, (ws) => this.closeSession(ws));
+  }
+
   private send(ws: WebSocket, event: RoomEvent) {
-    try {
-      ws.send(JSON.stringify(event));
-    } catch {
-      this.closeSession(ws);
-    }
+    sendToSession(ws, event, (socket) => this.closeSession(socket));
   }
 
-  // Send event to a specific player ID
   private sendToPlayer(targetPlayerId: string, event: RoomEvent) {
-    for (const [ws, session] of this.sessions) {
-      if (session.playerId === targetPlayerId) {
-        this.send(ws, event);
-        break;
-      }
-    }
+    const ws = socketForPlayer(this.sessions, targetPlayerId);
+    if (ws) this.send(ws, event);
   }
 
   // Clean up disconnected session and persist that player's scripted data

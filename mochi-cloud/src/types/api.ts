@@ -192,6 +192,7 @@ export type RoomEventType =
   | 'pong'
   | 'script_rpc'
   | 'state_replicate'
+  | 'transform_delta'
   | 'world_op';
 
 export interface ScriptRpcPayload {
