@@ -2,6 +2,10 @@
 
 Status legend: `DONE` shipped and verified, `WIP` in progress this milestone, `PLANNED` agreed but not started, `BACKLOG` candidate.
 
+This file tracks **engine capability** (Phases 1-4, all shipped). What makes the
+product competitive against Roblox - creator floor, trust, scale, platform - is a
+separate document: [`docs/PLATFORM_ROADMAP.md`](docs/PLATFORM_ROADMAP.md).
+
 ## Delivered so far
 
 | Area | What shipped | Status |
