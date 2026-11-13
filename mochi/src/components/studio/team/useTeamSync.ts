@@ -7,6 +7,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { StudioObject } from '@/engine/studio/types';
+import type { MochiAnimationClip } from '@/engine/animation/clip';
+import type { AnimStateMachineDef } from '@/engine/animation/stateMachine';
 import {
   getTeamWebSocketUrl,
   TeamAwareness,
@@ -31,6 +33,8 @@ export interface TeamSyncOptions {
   objects: StudioObject[];
   scriptCode: string;
   environment: unknown;
+  animations: MochiAnimationClip[];
+  animationStateMachine: AnimStateMachineDef | null;
   selectedIds: string[];
   onRemoteObjects: (objects: StudioObject[]) => void;
   onRemoteFields: (fields: Record<string, unknown>) => void;
@@ -107,7 +111,10 @@ export function useTeamSync(options: TeamSyncOptions): TeamSyncApi {
   const callbacks = useRef(options);
   callbacks.current = options;
   const objectsRef = useRef(options.objects);
-  const fieldsRef = useRef<Fields>({ scriptCode: options.scriptCode, language: 'lua', environment: options.environment });
+  const fieldsRef = useRef<Fields>({
+    scriptCode: options.scriptCode, language: 'lua', environment: options.environment,
+    animations: options.animations, animationStateMachine: options.animationStateMachine
+  });
   const lastObjectsRef = useRef(options.objects);
   const lastFieldsRef = useRef<Fields>(fieldsRef.current);
   const remoteSnapshots = useRef(new Set<StudioObject[]>());
@@ -207,16 +214,19 @@ export function useTeamSync(options: TeamSyncOptions): TeamSyncApi {
     for (const chunk of chunkOps(ops)) client.send({ kind: 'op', op: { kind: 'bulk', ops: chunk } });
   }, [options.objects]);
 
-  // Script code and environment state are owner/editor patchable manifest fields.
+  // Script, environment, clips and the state graph are patchable manifest fields.
   useEffect(() => {
-    const next: Fields = { scriptCode: options.scriptCode, language: 'lua', environment: options.environment };
+    const next: Fields = {
+      scriptCode: options.scriptCode, language: 'lua', environment: options.environment,
+      animations: options.animations, animationStateMachine: options.animationStateMachine
+    };
     fieldsRef.current = next;
     const fields = diffManifestFields(lastFieldsRef.current, next);
     lastFieldsRef.current = next;
     if (Object.keys(fields).length === 0) return;
     clientRef.current?.send({ kind: 'op', op: { kind: 'manifest_patch', fields } });
     // environmentKey keeps the effect stable when the object is re-created.
-  }, [options.scriptCode, environmentKey]);
+  }, [options.scriptCode, environmentKey, options.animations, options.animationStateMachine]);
 
   // Selection doubles as an object lock so two editors cannot fight a drag.
   useEffect(() => {

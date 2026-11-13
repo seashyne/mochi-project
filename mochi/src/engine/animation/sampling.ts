@@ -3,6 +3,7 @@
 // the keyframes that define it; step easing holds the left keyframe's value.
 
 import type { AnimationKeyframe, AnimationTrack, AnimationVec3 } from './clip';
+import { cubicBezierEase, DEFAULT_EASE } from './bezier';
 
 export interface SampledTransform {
   position?: AnimationVec3;
@@ -36,7 +37,8 @@ function sampleChannel(track: AnimationTrack, channel: Channel, time: number): A
   const value = left[channel]!;
   if (left.easing === 'step') return { ...value };
   const span = right.time - left.time;
-  const t = span > 0 ? (time - left.time) / span : 0;
+  const linear = span > 0 ? (time - left.time) / span : 0;
+  const t = left.easing === 'bezier' ? cubicBezierEase(left.ease ?? DEFAULT_EASE, linear) : linear;
   return lerpVec3(value, right[channel]!, t);
 }
 

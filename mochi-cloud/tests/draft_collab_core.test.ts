@@ -94,6 +94,21 @@ describe('DraftCollabCore', () => {
     expect(room.getVersion()).toBe(0);
   });
 
+  it('lets an editor patch animation clips and the state graph', () => {
+    const room = core();
+    const clips = [{ id: 'idle', name: 'Idle', duration: 1, loop: true, tracks: [] }];
+    const graph = { states: [{ id: 'idle', clipId: 'idle' }], transitions: [] };
+
+    expect(room.applyOp({ kind: 'manifest_patch', fields: { animations: clips } }, editor).ok).toBe(true);
+    expect(room.applyOp({ kind: 'manifest_patch', fields: { animationStateMachine: graph } }, editor).ok).toBe(true);
+
+    const stored = JSON.parse(room.serializeManifest());
+    expect(stored.animations).toHaveLength(1);
+    expect(stored.animationStateMachine.states[0].id).toBe('idle');
+
+    expect(room.applyOp({ kind: 'manifest_patch', fields: { animations: [] } }, viewer).ok).toBe(false);
+  });
+
   it('restricts manifest patches by role and never replaces the object array', () => {
     const room = core();
     expect(room.applyOp({

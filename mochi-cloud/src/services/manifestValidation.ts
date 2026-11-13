@@ -2,6 +2,12 @@
 // world chunks and binary assets are content-addressed R2 objects referenced by
 // hash, so published games can total many gigabytes without large D1 rows.
 
+import {
+  validateAnimationClips,
+  validateAnimationReferences,
+  validateAnimationStateMachine
+} from './animationValidation';
+
 export const MAX_DRAFT_MANIFEST_BYTES = 64 * 1024;
 export const MAX_PUBLISH_MANIFEST_BYTES = 256 * 1024;
 export const MAX_V2_CHUNKS = 4096;
@@ -155,6 +161,10 @@ export function validateManifestV2(root: Record<string, unknown>): string[] {
   if (assets.length > MAX_V2_ASSETS) return [...errors, `assets exceeds ${MAX_V2_ASSETS} entries`];
   assets.forEach((asset, index) => validateAssetRef(asset, `assets[${index}]`, errors));
 
+  errors.push(...validateAnimationClips(root.animations));
+  errors.push(...validateAnimationStateMachine(root.animationStateMachine));
+  errors.push(...validateAnimationReferences(root));
+
   return errors;
 }
 
@@ -184,6 +194,13 @@ export function inspectManifest(
   }
 
   const version = String(parsed.manifestVersion || '1.0');
-  const errors = version === '2.0' ? validateManifestV2(parsed) : [];
+  // v1 manifests are inline JSON: same animation rules, no chunk/asset graph.
+  const errors = version === '2.0'
+    ? validateManifestV2(parsed)
+    : [
+        ...validateAnimationClips(parsed.animations),
+        ...validateAnimationStateMachine(parsed.animationStateMachine),
+        ...validateAnimationReferences(parsed)
+      ];
   return { valid: errors.length === 0, errors, manifestVersion: version };
 }

@@ -84,7 +84,9 @@ describe('Team Create op convergence', () => {
     expect(chunks[2]).toHaveLength(5);
     expect(chunkOps([])).toEqual([]);
 
-    expect([...ALLOWED_MANIFEST_PATCH_KEYS]).toEqual(['scriptCode', 'language', 'environment']);
+    expect([...ALLOWED_MANIFEST_PATCH_KEYS]).toEqual([
+      'scriptCode', 'language', 'environment', 'animations', 'animationStateMachine'
+    ]);
     expect(diffManifestFields(
       { scriptCode: 'a', language: 'lua', title: 'ignored' },
       { scriptCode: 'b', language: 'lua', title: 'changed' }
@@ -93,6 +95,14 @@ describe('Team Create op convergence', () => {
       { environment: { sky: 'day' } },
       { environment: { sky: 'night' } }
     )).toEqual({ environment: { sky: 'night' } });
+    expect(diffManifestFields(
+      { animationStateMachine: { states: [{ id: 'idle', clipId: 'idle' }], transitions: [] } },
+      { animationStateMachine: { states: [{ id: 'walk', clipId: 'walk' }], transitions: [] } }
+    )).toEqual({ animationStateMachine: { states: [{ id: 'walk', clipId: 'walk' }], transitions: [] } });
+    expect(diffManifestFields(
+      { animations: [{ id: 'a' }] },
+      { animations: [{ id: 'a' }, { id: 'b' }] }
+    )).toEqual({ animations: [{ id: 'a' }, { id: 'b' }] });
   });
 });
 

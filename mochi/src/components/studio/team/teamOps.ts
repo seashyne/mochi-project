@@ -11,7 +11,11 @@ export type TeamOp =
   | { kind: 'bulk'; ops: TeamOp[] }
   | { kind: 'manifest_patch'; fields: Record<string, unknown> };
 
-export const SYNCED_MANIFEST_FIELDS = ['scriptCode', 'language', 'environment'] as const;
+// Animation clips and the state graph travel with the manifest so a second
+// editor sees the same graph the first one authored.
+export const SYNCED_MANIFEST_FIELDS = [
+  'scriptCode', 'language', 'environment', 'animations', 'animationStateMachine'
+] as const;
 export const MAX_BULK_OPS = 200;
 export const ALLOWED_MANIFEST_PATCH_KEYS = new Set<string>(SYNCED_MANIFEST_FIELDS);
 

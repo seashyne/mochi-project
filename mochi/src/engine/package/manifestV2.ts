@@ -49,6 +49,8 @@ export interface MochiManifestV2 {
   remoteEvents?: RemoteEventDef[];
   /** Keyframed transform clips played by the runtime animation player. */
   animations?: MochiAnimationClip[];
+  /** Optional parameter-driven state graph over `animations`. */
+  animationStateMachine?: import('../animation/stateMachine').AnimStateMachineDef;
   spawn?: StudioVec3;
   chunking: ManifestChunking;
   chunks?: ManifestChunkRef[];

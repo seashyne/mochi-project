@@ -25,5 +25,28 @@ export interface AnimationTranslations {
   deleteKey: string;
   easingLinear: string;
   easingStep: string;
+  easingBezier: string;
   seconds: string;
+  graphTitle: string;
+  graphHint: string;
+  graphCreate: string;
+  graphStates: string;
+  graphParameters: string;
+  graphTransitions: string;
+  graphAddState: string;
+  graphAddParameter: string;
+  graphAddTransition: string;
+  graphAnyState: string;
+  graphStateId: string;
+  graphClip: string;
+  graphSpeed: string;
+  graphLoop: string;
+  graphFrom: string;
+  graphTo: string;
+  graphDuration: string;
+  graphExitTime: string;
+  graphCondition: string;
+  graphNoParameters: string;
+  graphIssues: string;
+  graphRemove: string;
 }

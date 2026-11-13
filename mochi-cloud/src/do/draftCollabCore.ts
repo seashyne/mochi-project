@@ -50,7 +50,9 @@ const MAX_OP_IDS = 500;
 // Editors may co-author client-side content; only the owner may touch the
 // server-authority declarations. Nothing here may replace the object array,
 // because that would bypass the per-object lock policy.
-const EDITOR_PATCH_FIELDS = new Set(['scriptCode', 'language', 'environment', 'version']);
+const EDITOR_PATCH_FIELDS = new Set([
+  'scriptCode', 'language', 'environment', 'version', 'animations', 'animationStateMachine'
+]);
 const OWNER_PATCH_FIELDS = new Set([
   ...EDITOR_PATCH_FIELDS,
   'serverScripts',

@@ -7,6 +7,19 @@ import type { StudioObject } from '../../engine/studio/types';
 import { useI18n } from '../../i18n/context';
 import { AnimationTimeline } from './AnimationTimeline';
 import { isAnimatableObject, type CaptureChannels, type StudioAnimationsApi } from './useStudioAnimations';
+import type { AnimationEasing } from '../../engine/animation/clip';
+
+const NEXT_EASING: Record<AnimationEasing, AnimationEasing> = {
+  linear: 'step', step: 'bezier', bezier: 'linear'
+};
+
+const EASING_GLYPH: Record<AnimationEasing, string> = { linear: '╱', step: '⌐', bezier: '~' };
+
+const EASING_LABEL: Record<AnimationEasing, (copy: { easingLinear: string; easingStep: string; easingBezier: string }) => string> = {
+  linear: (copy) => copy.easingLinear,
+  step: (copy) => copy.easingStep,
+  bezier: (copy) => copy.easingBezier
+};
 
 export interface StudioAnimationEditorProps {
   api: StudioAnimationsApi;
@@ -186,11 +199,11 @@ export const StudioAnimationEditor: React.FC<StudioAnimationEditorProps> = ({ ap
                       <button
                         type="button"
                         className="hover:text-studio-accent"
-                        onClick={() => api.setKeyframeEasing(track.target, keyframe.time, keyframe.easing === 'step' ? 'linear' : 'step')}
-                        title={keyframe.easing === 'step' ? t.animation.easingStep : t.animation.easingLinear}
+                        onClick={() => api.setKeyframeEasing(track.target, keyframe.time, NEXT_EASING[keyframe.easing ?? 'linear'])}
+                        title={EASING_LABEL[keyframe.easing ?? 'linear'](t.animation)}
                         data-testid={`animation-easing-${track.target}-${keyframe.time}`}
                       >
-                        {keyframe.easing === 'step' ? '⌐' : '╱'}
+                        {EASING_GLYPH[keyframe.easing ?? 'linear']}
                       </button>
                       <button
                         type="button"

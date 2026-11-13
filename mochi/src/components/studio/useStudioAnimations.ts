@@ -9,6 +9,8 @@ import { instancedKindFor } from '../../engine/scene/instancedBatch';
 import { AnimationPlayer, createMeshResolver, type AnimationHandle } from '../../engine/animation/animationPlayer';
 import { createEmptyClip, type AnimationEasing, type AnimationKeyframe, type MochiAnimationClip } from '../../engine/animation/clip';
 import { applySampledTransform, removeKeyframe, sampleTrack, upsertKeyframe } from '../../engine/animation/sampling';
+import type { AnimStateMachineDef } from '../../engine/animation/stateMachine';
+import { DEFAULT_EASE } from '../../engine/animation/bezier';
 
 export interface CaptureChannels {
   position: boolean;
@@ -18,6 +20,9 @@ export interface CaptureChannels {
 
 export interface StudioAnimationsApi {
   clips: MochiAnimationClip[];
+  // Optional parameter-driven graph. Null means "just play the clips".
+  graph: AnimStateMachineDef | null;
+  setGraph: (graph: AnimStateMachineDef | null) => void;
   selectedClipId: string | null;
   selectedClip: MochiAnimationClip | null;
   playhead: number;
@@ -47,6 +52,7 @@ const round = (value: number) => Math.round(value * 1000) / 1000;
 
 export function useStudioAnimations(sceneEngine: StudioScene, objects: StudioObject[]): StudioAnimationsApi {
   const [clips, setClips] = useState<MochiAnimationClip[]>([]);
+  const [graph, setGraph] = useState<AnimStateMachineDef | null>(null);
   const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
   const [playhead, setPlayhead] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -234,12 +240,14 @@ export function useStudioAnimations(sceneEngine: StudioScene, objects: StudioObj
     mutateTrack(id, target, (track) => ({
       ...track,
       keyframes: track.keyframes.map((keyframe) =>
-        Math.abs(keyframe.time - time) <= 1e-6 ? { ...keyframe, easing } : keyframe)
+        Math.abs(keyframe.time - time) <= 1e-6
+          ? { ...keyframe, easing, ease: easing === 'bezier' ? keyframe.ease ?? DEFAULT_EASE : keyframe.ease }
+          : keyframe)
     }));
   }, [mutateTrack]);
 
   return {
-    clips, selectedClipId, selectedClip, playhead, isPlaying,
+    clips, graph, setGraph, selectedClipId, selectedClip, playhead, isPlaying,
     selectClip: (id) => { stop(); setSelectedClipId(id); },
     createClip, deleteClip, updateClip, replaceClips,
     addTrack, removeTrack, captureKeyframe, deleteKeyframe, setKeyframeEasing,

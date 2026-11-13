@@ -6,6 +6,7 @@ import { useCallback, useRef } from 'react';
 import type { StudioProjectDraft } from '@/api/studioDrafts';
 import type { StudioObject } from '@/engine/studio/types';
 import type { MochiAnimationClip } from '@/engine/animation/clip';
+import type { AnimStateMachineDef } from '@/engine/animation/stateMachine';
 import type { StudioDocumentApi } from '../useStudioDocument';
 import type { ServerManifestController } from '../useServerManifest';
 import type { TeamCreateApi } from './useTeamCreate';
@@ -27,6 +28,9 @@ export interface StudioTeamBridgeOptions {
   setLastSavedAt: (value: string) => void;
   replaceEnvironment: (next: unknown) => void;
   replaceAnimations?: (clips: MochiAnimationClip[]) => void;
+  animations: MochiAnimationClip[];
+  animationStateMachine: AnimStateMachineDef | null;
+  replaceAnimationStateMachine?: (graph: AnimStateMachineDef | null) => void;
   serverManifest: ServerManifestController;
   markSaved: () => void;
 }
@@ -65,6 +69,9 @@ export function useStudioTeamBridge(options: StudioTeamBridgeOptions): TeamCreat
     if (manifest.environment) current.replaceEnvironment(manifest.environment);
     current.serverManifest.replaceManifest(manifest);
     if (Array.isArray(manifest.animations)) current.replaceAnimations?.(manifest.animations as MochiAnimationClip[]);
+    if (manifest.animationStateMachine !== undefined) {
+      current.replaceAnimationStateMachine?.((manifest.animationStateMachine as AnimStateMachineDef | null) ?? null);
+    }
   }, []);
 
   useStudioDraftLoader({ mapId: options.mapId, token: options.token, onLoaded: handleDraftLoaded });
@@ -73,6 +80,10 @@ export function useStudioTeamBridge(options: StudioTeamBridgeOptions): TeamCreat
     const current = ref.current;
     if (typeof fields.scriptCode === 'string') current.setScriptCode(fields.scriptCode);
     if (fields.environment) current.replaceEnvironment(fields.environment);
+    if (Array.isArray(fields.animations)) current.replaceAnimations?.(fields.animations as MochiAnimationClip[]);
+    if (fields.animationStateMachine !== undefined) {
+      current.replaceAnimationStateMachine?.((fields.animationStateMachine as AnimStateMachineDef | null) ?? null);
+    }
   }, []);
 
   const handleSaved = useCallback(() => {
@@ -87,6 +98,8 @@ export function useStudioTeamBridge(options: StudioTeamBridgeOptions): TeamCreat
     objects: options.doc.objects,
     scriptCode: options.scriptCode,
     environment: options.environment,
+    animations: options.animations,
+    animationStateMachine: options.animationStateMachine,
     selectedIds: options.doc.selectedIds,
     onRemoteObjects: options.doc.applyRemoteObjects,
     onRemoteFields: handleRemoteFields,

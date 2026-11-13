@@ -3,6 +3,7 @@
 import { ApiClient, defaultApiClient } from './client';
 import { StudioObject } from '../engine/studio/types';
 import type { EnvironmentState } from '../engine/environment/environmentTypes';
+import type { AnimStateMachineDef } from '../engine/animation/stateMachine';
 import type { MochiAnimationClip } from '../engine/animation/clip';
 
 export interface StudioProjectDraft {
@@ -36,6 +37,7 @@ export interface SaveDraftPayload {
   serverScripts?: unknown[];
   remoteEvents?: unknown[];
   animations?: MochiAnimationClip[];
+  animationStateMachine?: AnimStateMachineDef;
 }
 
 export class StudioDraftsApi {
@@ -56,7 +58,8 @@ export class StudioDraftsApi {
       ...(payload.environment ? { environment: payload.environment } : {}),
       ...(payload.serverScripts ? { serverScripts: payload.serverScripts } : {}),
       ...(payload.remoteEvents ? { remoteEvents: payload.remoteEvents } : {}),
-      ...(payload.animations?.length ? { animations: payload.animations } : {})
+      ...(payload.animations?.length ? { animations: payload.animations } : {}),
+      ...(payload.animationStateMachine ? { animationStateMachine: payload.animationStateMachine } : {})
     });
 
     return this.client.post<{ draft: StudioProjectDraft }>(

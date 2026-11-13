@@ -2,13 +2,15 @@
 // objects or model bones. Rotations are radians (engine convention); the
 // editor UI converts to degrees for display.
 
+import { isValidEase } from './bezier';
+
 export interface AnimationVec3 {
   x: number;
   y: number;
   z: number;
 }
 
-export type AnimationEasing = 'linear' | 'step';
+export type AnimationEasing = 'linear' | 'step' | 'bezier';
 
 export interface AnimationKeyframe {
   time: number;
@@ -16,6 +18,9 @@ export interface AnimationKeyframe {
   rotation?: AnimationVec3;
   scale?: AnimationVec3;
   easing?: AnimationEasing;
+  // Control points for `easing: 'bezier'`, in CSS order (x1, y1, x2, y2).
+  // Missing or malformed values fall back to DEFAULT_EASE at sample time.
+  ease?: import('./bezier').BezierPoints;
 }
 
 export interface AnimationTrack {
@@ -85,8 +90,11 @@ export function validateClip(clip: unknown): string[] {
           errors.push(`${keyLabel}.${channel} must be a finite vec3`);
         }
       }
-      if (keyframe.easing !== undefined && keyframe.easing !== 'linear' && keyframe.easing !== 'step') {
-        errors.push(`${keyLabel}.easing must be linear or step`);
+      if (keyframe.easing !== undefined && !['linear', 'step', 'bezier'].includes(keyframe.easing)) {
+        errors.push(`${keyLabel}.easing must be linear, step or bezier`);
+      }
+      if (keyframe.ease !== undefined && !isValidEase(keyframe.ease)) {
+        errors.push(`${keyLabel}.ease must be four numbers with x controls in 0..1`);
       }
       if (keyframe.position === undefined && keyframe.rotation === undefined && keyframe.scale === undefined) {
         errors.push(`${keyLabel} must key at least one channel`);

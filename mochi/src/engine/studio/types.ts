@@ -58,6 +58,9 @@ export interface StudioSceneSnapshot {
   objects: StudioObject[];
   createdAt: string;
   animations?: import('../animation/clip').MochiAnimationClip[];
+  // Optional parameter-driven state graph. When present the runtime plays clips
+  // through transitions instead of starting them all at once.
+  animationStateMachine?: import('../animation/stateMachine').AnimStateMachineDef;
 }
 
 export const OBJECT_TYPE_DEFAULTS: Record<

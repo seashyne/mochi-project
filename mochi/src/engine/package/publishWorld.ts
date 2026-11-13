@@ -4,6 +4,7 @@
 
 import { StudioObject } from '../studio/types';
 import { RemoteEventDef, ServerScript } from '../scripting/serverManifest';
+import type { AnimStateMachineDef } from '../animation/stateMachine';
 import type { MochiAnimationClip } from '../animation/clip';
 import { assetsApi } from '../../api/assets';
 import { UploadedAsset } from '../../api/multipartUpload';
@@ -29,6 +30,7 @@ export interface PublishWorldOptions {
   serverScripts?: ServerScript[];
   remoteEvents?: RemoteEventDef[];
   animations?: MochiAnimationClip[];
+  animationStateMachine?: AnimStateMachineDef;
   token?: string;
   forceChunked?: boolean;
   onProgress?: (
@@ -98,7 +100,7 @@ export function collectModelAssets(objects: StudioObject[]): ManifestAssetRef[] 
 export async function buildPublishManifest(
   options: PublishWorldOptions
 ): Promise<string> {
-  const { objects, title, version, scriptCode, token, serverScripts, remoteEvents, animations } = options;
+  const { objects, title, version, scriptCode, token, serverScripts, remoteEvents, animations, animationStateMachine } = options;
 
   if (!shouldUseChunkedPublish(options)) {
     return JSON.stringify({
@@ -107,6 +109,7 @@ export async function buildPublishManifest(
       ...(serverScripts?.length ? { serverScripts } : {}),
       ...(remoteEvents?.length ? { remoteEvents } : {}),
       ...(animations?.length ? { animations } : {}),
+      ...(animationStateMachine ? { animationStateMachine } : {}),
       version
     });
   }
@@ -142,6 +145,7 @@ export async function buildPublishManifest(
     ...(serverScripts?.length ? { serverScripts } : {}),
     ...(remoteEvents?.length ? { remoteEvents } : {}),
     ...(animations?.length ? { animations } : {}),
+    ...(animationStateMachine ? { animationStateMachine } : {}),
     ...(world.spawn ? { spawn: world.spawn } : {}),
     ...(modelAssets.length > 0 ? { assets: modelAssets } : {}),
     chunking: world.chunking,
