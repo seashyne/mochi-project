@@ -69,3 +69,20 @@ Object, not the wasm kernel. AGENTS.md section 4 explicitly leaves cloud edge
 handlers in JS, and for tens of players a spatial hash is cheaper than a wasm
 boundary. `roomGuards.ts` groups the four per-room guards so `GameRoomDO` stays
 under the size ceiling. 11 tests cover the index and per-observer delivery.
+
+**7.2 shipped** (2026-11-13): imported models now carry a real decimated level
+instead of jumping from full detail to a box. `simplify_mesh` in the kernel clusters
+vertices on a uniform grid and represents each cluster by its member closest to the
+centroid, so the reduced surface stays on the original geometry and every attribute
+(UV, colour) can be read from a real source vertex - averaging a UV across a texture
+seam would smear the whole map. Levels are full mesh at 0 m, decimated at 45 m, box
+proxy at 120 m, switched by three.js from the render camera.
+
+The grid targets a triangle budget rather than a ratio: a sphere measures 24,320 ->
+7,590 triangles, 48,768 -> 8,162 and 97,792 -> 8,706, so a heavier source buys a
+bigger saving and the mid level stays around 8k regardless. Skinned meshes,
+multi-material meshes, vertex-coloured meshes and morph targets are left at full
+detail; a model that cannot shed 20% of its triangles keeps two levels rather than
+paying memory for a level nobody sees. The kernel is 44 KB / 11 exports, and
+`meshSimplification.ts` keeps the TypeScript reference the parity test compares
+against, cell for cell.
