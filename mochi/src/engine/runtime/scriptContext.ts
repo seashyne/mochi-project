@@ -10,6 +10,7 @@ import { buildRuntimeGlobals } from './luaGlobals';
 import { RuntimeApiDeps } from './luaNodeApi';
 import { LiveNode } from './liveNode';
 import { composeScript } from './luaPrelude';
+import { setActiveCFrameFactory } from './cframeBridge';
 import { parseLuaErrorLine } from './sessionConsole';
 import { formatLuaArgs } from './types';
 
@@ -33,6 +34,8 @@ export class ScriptContext {
   private disposed = false;
   private started = false;
   private readonly timers = new Set<ReturnType<typeof setTimeout>>();
+  /** This VM's CFrame factory. Published while the script runs, cleared after. */
+  private cframeFactory: ((...args: number[]) => unknown) | null = null;
 
   constructor(options: ScriptContextOptions) {
     this.node = options.node;
@@ -77,6 +80,11 @@ export class ScriptContext {
       const step = engine.global.get('__mochi_step');
       if (typeof step !== 'function') return;
       this.stepFn = step as () => unknown;
+
+      // The prelude defines the factory. A CFrame can only be created by the VM that
+      // will hold it, so this one is published only while this script is executing.
+      const cframe = engine.global.get('__mochi_cframe');
+      this.cframeFactory = typeof cframe === 'function' ? (cframe as (...args: number[]) => unknown) : null;
       // `coroutine.create` only builds the thread; run it to its first yield.
       this.step();
     } catch (err) {
@@ -95,6 +103,7 @@ export class ScriptContext {
     this.disposed = true;
     this.suspended = false;
     this.stepFn = null;
+    this.cframeFactory = null;
     for (const timer of this.timers) clearTimeout(timer);
     this.timers.clear();
     if (!this.engine) return;
@@ -111,12 +120,17 @@ export class ScriptContext {
     if (!stepFn || this.disposed) return;
 
     let raw: unknown;
+    setActiveCFrameFactory(this.cframeFactory);
     try {
       raw = stepFn();
     } catch (err) {
       this.suspended = false;
       this.reportError(err);
       return;
+    } finally {
+      // Cleared even on a throw: a stale factory would hand another script's VM a
+      // value it cannot own.
+      setActiveCFrameFactory(null);
     }
 
     const result = (raw ?? {}) as { ok?: boolean; delay?: number; status?: string; message?: string };

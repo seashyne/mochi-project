@@ -6,6 +6,8 @@ import { GameState } from './gameState';
 import { LiveNode, TouchHandler, UpdateHandler } from './liveNode';
 import { resolveLuaClass } from './nodeFactory';
 import { defineAlias } from './luaProxyUtils';
+import { rotationMatrix } from '../physics/oriented';
+import { makeCFrameValue, readCFrameValue } from './cframeBridge';
 import { routeSound } from './audioRouting';
 export { createPlayerApi } from './luaPlayerApi';
 import { RuntimeWorld } from './objectRegistry';
@@ -166,6 +168,17 @@ export function createLuaNode(node: LiveNode, deps: RuntimeApiDeps): Record<stri
     node.setScale(vec.x, vec.y, vec.z);
   };
   proxy.setColor = (value: unknown) => node.setColor(parseColor(value, node.def.color));
+  defineAlias(
+    proxy,
+    ['CFrame'],
+    () => makeCFrameValue(node.position, rotationMatrix(node.rotation)),
+    (value) => {
+      const parsed = readCFrameValue(value);
+      if (!parsed) return;
+      node.setPosition(parsed.position.x, parsed.position.y, parsed.position.z);
+      node.setRotation(parsed.rotation.x, parsed.rotation.y, parsed.rotation.z);
+    }
+  );
   proxy.rotateY = (degrees: unknown) => {
     const radians = ((Number(degrees) || 0) * Math.PI) / 180;
     node.setRotation(node.rotation.x, node.rotation.y + radians, node.rotation.z);

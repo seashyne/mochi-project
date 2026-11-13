@@ -252,3 +252,31 @@ doc promised.
 Chrome, asks the font set for both families and both weights with Thai sample text,
 and fails on any request that still reaches a font CDN. Result: 10 faces declared, 7
 files served with 200, 0 external requests.
+**CFrame** (2026-11-13): scripts positioned parts with `position` and rotated them with
+`rotateY(degrees)` - enough for a spinning coin, useless for anything that needs an
+oriented transform. `CFrame` now exists: `CFrame.new`, `CFrame.Angles`, `cf * cf`,
+`Position` / `LookVector` / `RightVector` / `UpVector`, `:Inverse()`, `:Lerp()`,
+`:ToEulerAnglesXYZ()`, and `part.CFrame` as a property a script can assign.
+
+The type lives in the Lua prelude rather than in JS, because composition needs the `*`
+operator and only Lua can attach a metamethod. The bridge converts at the boundary -
+Euler to matrix on read, matrix to Euler on write - using the same row-major convention
+as the oriented colliders, so a CFrame a script writes lands where physics says it
+should.
+
+The interop trap cost the most time. A CFrame created in Lua and returned through a JS
+getter keeps its `__mul` metamethod but loses `__index`. The first version put
+`Position` and the methods behind `__index`, so `part.CFrame.Position` read as nil -
+while a CFrame built entirely in Lua worked, which made the failure look like a flaky
+test rather than a rule about the boundary. Every property and method is now a raw
+field set at construction, so both paths behave identically.
+
+A CFrame can only be created by the VM that will hold it, so the script context
+publishes its factory only while that script is executing, and clears it in a
+`finally`. A stale factory would hand one script a value belonging to another's VM.
+
+The parity document claimed `Rotation` is in degrees. It is radians; `rotateY` is the
+degree-based helper. Corrected, because a script following the old note would rotate
+by a fifty-seventh of what it meant.
+
+Deliberately absent: `cf * Vector3` and `CFrame.lookAt`.
