@@ -223,3 +223,8 @@ resolves asset URLs to hostnames that answer nothing.
 
 A variable that silently falls back to a hardcoded string is how this gap
 survived. The gate turns that fallback into a checked invariant.
+
+The real `.env.*` files are gitignored, so the tracked templates in
+`mochi/config/env.*.example` are the checked source of truth. Copy one to
+`mochi/.env.development` or `mochi/.env.production` before a build; the gate also
+validates those copies when they exist.

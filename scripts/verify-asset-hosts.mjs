@@ -46,22 +46,29 @@ for (const [name, host] of [['PUBLIC_ASSETS_URL', publicHost], ['ACCESS_ASSETS_U
 check(publicHost !== accessHost, 'public and gated assets must not share an origin');
 
 // The client must resolve access assets on the same host the server hands out.
-for (const envFile of ['mochi/.env.development', 'mochi/.env.production']) {
+// The .env files themselves are gitignored, so the tracked templates are the
+// checked source of truth; real files are validated only when a developer has one.
+const serverHost = String(vars.ACCESS_ASSETS_URL).replace(/\/+$/, '');
+const validateClientEnv = (envFile, optional) => {
+  const absolute = path.join(root, envFile);
+  if (optional && !fs.existsSync(absolute)) return;
   const contents = read(envFile);
   const match = contents.match(/^VITE_ACCESS_ASSETS_URL=(.*)$/m);
   check(Boolean(match), `${envFile} has no VITE_ACCESS_ASSETS_URL`);
-  if (match) {
-    const configured = match[1].trim().replace(/\/+$/, '');
-    const serverHost = String(vars.ACCESS_ASSETS_URL).replace(/\/+$/, '');
-    // An explicit empty value is the documented local-dev opt-out: assets are
-    // served from the app's own origin there. Production must match exactly.
-    const devOptOut = envFile.endsWith('.development') && configured === '';
-    check(
-      devOptOut || configured === serverHost,
-      `${envFile} points at ${configured || 'same-origin'}, but the server resolves ${serverHost}`
-    );
-  }
-}
+  if (!match) return;
+  const configured = match[1].trim().replace(/\/+$/, '');
+  // An empty value is the documented local-dev opt-out (same-origin assets).
+  const devOptOut = envFile.includes('development') && configured === '';
+  check(
+    devOptOut || configured === serverHost,
+    `${envFile} points at ${configured || 'same-origin'}, but the server resolves ${serverHost}`
+  );
+};
+
+validateClientEnv('mochi/config/env.development.example', false);
+validateClientEnv('mochi/config/env.production.example', false);
+validateClientEnv('mochi/.env.development', true);
+validateClientEnv('mochi/.env.production', true);
 
 // The baked-in fallback in the client must match as well, or a build without the
 // env file silently uses a different host.
