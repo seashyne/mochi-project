@@ -121,6 +121,41 @@ describe('React-Lua Declarative UI & Dialogue Bridge Suite', () => {
     expect(card?.size).toBe('lg');
   });
 
+  it('runs the documented RUNTIME.md example without errors', async () => {
+    // Byte-for-byte the example in docs/RUNTIME_UI.md.
+    await engine.executeScript(`
+      ui.setHud("score", { title = "Score", value = 0, font = "display", size = "lg" })
+      ui.setHud("health", { title = "Health", value = "100 HP", progress = 1.0, color = "#10b981" })
+      ui.setHud("score", { value = 250 })
+      ui.removeHud("health")
+    `);
+
+    const hud = store.getHudElements();
+    expect(hud).toHaveLength(1);
+    expect(hud[0].id).toBe('score');
+    expect(hud[0].value).toBe(250);
+    // A value-only update must not reset the style the first call set.
+    expect(hud[0].font).toBe('display');
+    expect(hud[0].size).toBe('lg');
+  });
+
+  it('does not notify when a HUD call changes nothing', async () => {
+    let notifications = 0;
+    const unsubscribe = store.subscribe(() => { notifications += 1; });
+
+    await engine.executeScript(`ui.setHud("steady", { title = "Steady", value = 1 })`);
+    expect(notifications).toBe(1);
+
+    // Same values again: the overlay must not re-render.
+    await engine.executeScript(`ui.setHud("steady", { title = "Steady", value = 1 })`);
+    expect(notifications).toBe(1);
+
+    await engine.executeScript(`ui.setHud("steady", { value = 2 })`);
+    expect(notifications).toBe(2);
+
+    unsubscribe();
+  });
+
   it('defaults the HUD to the mono family it has always used', async () => {
     await engine.executeScript(`ui.setHud("plain", { title = "Plain", value = 1 })`);
     const card = store.getHudElements().find((h) => h.id === 'plain');

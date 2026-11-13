@@ -233,3 +233,22 @@ runtime API and the legacy script bridge. Each carried its own whitelist, so the
 first version of this change worked on one path and silently dropped the field on the
 other - caught by the test, fixed by extracting `lua/hudStyle.ts` so both read one
 list. Two whitelists for one contract is a bug waiting to happen.
+**UI API documented, and a no-op bug found while writing it** (2026-11-13): `ui.*`
+had no creator-facing documentation at all - sections 6-8 of `RUNTIME.md` cover
+animation, movement and agents, and the HUD surface was simply absent. It now has a
+section with the call table, the typography options, a runnable example and the
+contract, guarded by a test that executes the example byte for byte.
+
+Writing the contract caught a false claim before it shipped: the draft said the store
+only notifies when something changes, and it did not - `setHud` re-notified on every
+call, so a script updating a HUD each frame re-rendered React every frame. The code
+now compares the merged card and returns early when nothing moved, which is what the
+doc promised.
+
+`RUNTIME.md` hit the 300-line ceiling, so section 9 moved to `RUNTIME_UI.md` beside
+`RUNTIME_AGENTS.md` - the same split section 8 already used.
+
+`npm run verify:fonts` closes the loop on the self-hosting work: it loads the shell in
+Chrome, asks the font set for both families and both weights with Thai sample text,
+and fails on any request that still reaches a font CDN. Result: 10 faces declared, 7
+files served with 200, 0 external requests.

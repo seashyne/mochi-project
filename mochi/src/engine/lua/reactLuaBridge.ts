@@ -10,6 +10,17 @@ import {
 } from './types';
 import { pickHudFont, pickHudSize } from './hudStyle';
 
+function sameHudElement(a: LuaHudElement, b: LuaHudElement): boolean {
+  return (
+    a.title === b.title &&
+    a.value === b.value &&
+    a.progress === b.progress &&
+    a.color === b.color &&
+    a.font === b.font &&
+    a.size === b.size
+  );
+}
+
 export class ReactLuaUIStore {
   private activeDialogue: LuaDialogueOptions | null = null;
   private hudElements: Map<string, LuaHudElement> = new Map();
@@ -67,6 +78,9 @@ export class ReactLuaUIStore {
       font: element.font ?? existing?.font ?? 'mono',
       size: element.size ?? existing?.size ?? 'md'
     };
+    // A script may call setHud every frame. Notifying with identical values would
+    // re-render the overlay for nothing, so an unchanged card is a no-op.
+    if (existing && sameHudElement(existing, updated)) return;
     this.hudElements.set(id, updated);
     this.notify();
   }

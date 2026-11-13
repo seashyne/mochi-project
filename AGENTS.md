@@ -128,6 +128,7 @@ A change is not done until all of these are true:
 | `npm run benchmark:room` | 30-peer room tick cost |
 | `npm run benchmark:client` | Render counters in real Chrome (needs Chrome; reports draw calls, not fps) |
 | `npm run benchmark:kernel` | Kernel versus TypeScript timings; see `docs/KERNEL_AUDIT.md` |
+| `npm run verify:fonts` | Proves the self-hosted fonts load in a real browser (needs Chrome) |
 
 ## 8. Product decisions already made
 

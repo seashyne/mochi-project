@@ -31,7 +31,8 @@
     "benchmark:room": "cd mochi-cloud && npx vitest run tests/room_benchmark.test.ts --reporter=verbose",
     "benchmark:client": "node scripts/benchmark-client.mjs",
     "benchmark:kernel": "cd mochi && npx vitest run tests/kernel_benchmark.test.ts --reporter=verbose",
-    "fonts": "node scripts/fetch-fonts.mjs"
+    "fonts": "node scripts/fetch-fonts.mjs",
+    "verify:fonts": "node scripts/verify-fonts.mjs"
   },
   "license": "UNLICENSED",
   "devDependencies": {

@@ -292,5 +292,8 @@ end
 
 ## 8. Agent NPCs (`agent.*`)
 
-The `agent` object type, its Lua surface and its movement contract live in
-[`RUNTIME_AGENTS.md`](./RUNTIME_AGENTS.md), next to this file.
+See [`RUNTIME_AGENTS.md`](./RUNTIME_AGENTS.md).
+
+## 9. HUD and Dialogue (`ui.*`)
+
+See [`RUNTIME_UI.md`](./RUNTIME_UI.md).
