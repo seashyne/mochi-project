@@ -203,46 +203,19 @@ export async function getModelAnimations(url: string): Promise<THREE.AnimationCl
   return animationsCache.get(url) ?? [];
 }
 
-export const MODEL_LOD_PROXY_DISTANCE = 120;
-
 export interface MountModelOptions {
   lod?: boolean;
 }
 
-function sampleModelColor(model: THREE.Object3D): THREE.Color {
-  let found: THREE.Color | undefined;
-  model.traverse((child) => {
-    if (found || !(child instanceof THREE.Mesh)) return;
-    const material = Array.isArray(child.material) ? child.material[0] : child.material;
-    const color = (material as { color?: THREE.Color } | undefined)?.color;
-    if (color instanceof THREE.Color) found = color.clone();
-  });
-  return found ?? new THREE.Color(0x64748b);
-}
+// Full mesh up close, decimated geometry at the mid distance, box proxy beyond.
+// Three.js drives level switching from the render camera automatically.
+import { buildModelLod } from './modelLod';
 
-// Full mesh up close, bounds-fit box beyond the proxy distance. Three.js drives
-// level switching from the render camera automatically.
-export function buildModelLod(model: THREE.Object3D, bounds: ModelBounds): THREE.LOD {
-  const lod = new THREE.LOD();
-  lod.name = 'model_lod';
-  lod.addLevel(model, 0);
-
-  const sizeX = Math.max(0.01, bounds.x);
-  const sizeY = Math.max(0.01, bounds.y);
-  const sizeZ = Math.max(0.01, bounds.z);
-  const proxy = new THREE.Mesh(
-    new THREE.BoxGeometry(sizeX, sizeY, sizeZ),
-    new THREE.MeshStandardMaterial({
-      color: sampleModelColor(model),
-      roughness: 0.7,
-      metalness: 0.1
-    })
-  );
-  proxy.name = 'model_lod_proxy';
-  proxy.position.y = sizeY / 2;
-  lod.addLevel(proxy, MODEL_LOD_PROXY_DISTANCE);
-  return lod;
-}
+export {
+  buildModelLod,
+  MODEL_LOD_DECIMATE_DISTANCE,
+  MODEL_LOD_PROXY_DISTANCE
+} from './modelLod';
 
 // Mounts a model inside a container object. Returns a cancel handle so callers
 // can avoid attaching meshes after the container has been removed.

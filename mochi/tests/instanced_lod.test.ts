@@ -12,8 +12,10 @@ import {
 } from '../src/engine/scene/instancedBatch';
 import {
   buildModelLod,
+  MODEL_LOD_DECIMATE_DISTANCE,
   MODEL_LOD_PROXY_DISTANCE
 } from '../src/engine/assets/modelLoader';
+import { countTriangles } from '../src/engine/assets/modelLod';
 
 function obj(
   id: string,
@@ -223,5 +225,72 @@ describe('model LOD pipeline', () => {
     expect(size.x).toBeGreaterThan(0);
     expect(size.y).toBeGreaterThan(0);
     expect(size.z).toBeGreaterThan(0);
+  });
+});
+
+describe('decimated mid level', () => {
+  function makeHeavyModel(): THREE.Group {
+    const model = new THREE.Group();
+    // 128 x 96 segments = 24,576 triangles, above the 20k threshold.
+    const mesh = new THREE.Mesh(
+      new THREE.SphereGeometry(1, 128, 96),
+      new THREE.MeshStandardMaterial({ color: 0x22aa66 })
+    );
+    model.add(mesh);
+    return model;
+  }
+
+  it('adds a decimated level between the full mesh and the proxy', () => {
+    const lod = buildModelLod(makeHeavyModel(), { x: 2, y: 2, z: 2 });
+
+    expect(lod.levels).toHaveLength(3);
+    expect(lod.levels[0].distance).toBe(0);
+    expect(lod.levels[1].distance).toBe(MODEL_LOD_DECIMATE_DISTANCE);
+    expect(lod.levels[2].distance).toBe(MODEL_LOD_PROXY_DISTANCE);
+  });
+
+  it('sheds most of the triangles without touching the authored mesh', () => {
+    const model = makeHeavyModel();
+    const authored = (model.children[0] as THREE.Mesh).geometry;
+    const authoredTriangles = countTriangles(model);
+
+    const lod = buildModelLod(model, { x: 2, y: 2, z: 2 });
+    const midTriangles = countTriangles(lod.levels[1].object);
+
+    expect(midTriangles).toBeLessThan(authoredTriangles * 0.5);
+    expect(midTriangles).toBeGreaterThan(0);
+    // Level 0 keeps the exact geometry object: decimation works on a clone.
+    expect((model.children[0] as THREE.Mesh).geometry).toBe(authored);
+    expect(countTriangles(model)).toBe(authoredTriangles);
+  });
+
+  it('carries UVs across the merge so textures still sample', () => {
+    const lod = buildModelLod(makeHeavyModel(), { x: 2, y: 2, z: 2 });
+    const mid = lod.levels[1].object as THREE.Object3D;
+    let checked = 0;
+
+    mid.traverse((child) => {
+      if (!(child instanceof THREE.Mesh)) return;
+      const uv = child.geometry.getAttribute('uv');
+      expect(uv).toBeDefined();
+      expect(uv.itemSize).toBe(2);
+      for (let entry = 0; entry < uv.count; entry += 1) {
+        expect(Number.isFinite(uv.getX(entry))).toBe(true);
+        expect(Number.isFinite(uv.getY(entry))).toBe(true);
+      }
+      checked += 1;
+    });
+
+    expect(checked).toBeGreaterThan(0);
+  });
+
+  it('keeps two levels for a model below the triangle threshold', () => {
+    const model = new THREE.Group();
+    model.add(
+      new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial())
+    );
+    const lod = buildModelLod(model, { x: 1, y: 1, z: 1 });
+    expect(lod.levels).toHaveLength(2);
+    expect(lod.levels[1].distance).toBe(MODEL_LOD_PROXY_DISTANCE);
   });
 });

@@ -2,6 +2,7 @@
 // Proprietary and Confidential - Copyright (c) 2026 Mochi Platform
 
 use std::alloc::{alloc, dealloc, Layout};
+use std::collections::{HashMap, HashSet};
 
 /// Allocate f32 buffer in WebAssembly linear memory for zero-copy data passing
 #[no_mangle]
@@ -749,4 +750,185 @@ fn le_u32(bytes: &[u8], at: usize) -> u32 {
         | ((bytes[at + 1] as u32) << 8)
         | ((bytes[at + 2] as u32) << 16)
         | ((bytes[at + 3] as u32) << 24)
+}
+
+/// Vertex-clustering mesh decimation for level-of-detail generation.
+///
+/// Vertices are snapped to a uniform grid of `cell_size` anchored at the mesh
+/// minimum; every vertex sharing a cell becomes one cluster. Each cluster is
+/// represented by its member closest to the cluster centroid, so the reduced mesh
+/// stays on the original surface and every attribute (UV, colour) can be carried
+/// over from that same source vertex. Triangles whose corners collapse onto the
+/// same cluster, and duplicate triangles, are dropped.
+///
+/// `out_positions` needs room for `vertex_count * 3` floats and `out_indices` for
+/// `index_count` u32s: clustering only ever removes vertices and triangles, so the
+/// input sizes are always a safe capacity. `out_source` receives one u32 per
+/// output vertex - the index of the source vertex that represents that cluster.
+/// `out_counts` receives `[vertex_count_out, index_count_out]`.
+///
+/// Returns the number of triangles written, or 0 when the input is refused: null
+/// pointers, a non-finite position, `cell_size` not positive and finite, an index
+/// count that is not a positive multiple of three, or an out-of-range index. A
+/// mesh that collapses to nothing also returns 0; callers must keep the original
+/// level in that case.
+#[no_mangle]
+pub extern "C" fn simplify_mesh(
+    positions: *const f32,
+    vertex_count: usize,
+    indices: *const u32,
+    index_count: usize,
+    cell_size: f32,
+    out_positions: *mut f32,
+    out_indices: *mut u32,
+    out_source: *mut u32,
+    out_counts: *mut u32,
+) -> u32 {
+    if positions.is_null()
+        || indices.is_null()
+        || out_positions.is_null()
+        || out_indices.is_null()
+        || out_source.is_null()
+        || out_counts.is_null()
+    {
+        return 0;
+    }
+    if vertex_count == 0
+        || index_count < 3
+        || index_count % 3 != 0
+        || !(cell_size > 0.0)
+        || !cell_size.is_finite()
+    {
+        return 0;
+    }
+
+    let verts = unsafe { std::slice::from_raw_parts(positions, vertex_count * 3) };
+    let tris = unsafe { std::slice::from_raw_parts(indices, index_count) };
+
+    // The grid is anchored at the mesh minimum, which keeps every cell index
+    // non-negative and makes the key packing below unambiguous.
+    let mut min = [f32::INFINITY; 3];
+    for index in 0..vertex_count {
+        for axis in 0..3 {
+            let value = verts[index * 3 + axis];
+            if !value.is_finite() {
+                return 0;
+            }
+            if value < min[axis] {
+                min[axis] = value;
+            }
+        }
+    }
+
+    let mut clusters: HashMap<(u32, u32, u32), u32> = HashMap::new();
+    let mut cluster_of_vertex = vec![0u32; vertex_count];
+    // f64 accumulation: the TypeScript reference sums in JS numbers, so both
+    // sides agree on the centroid and therefore on the representative vertex.
+    let mut sums: Vec<[f64; 3]> = Vec::new();
+    let mut counts: Vec<u32> = Vec::new();
+
+    for index in 0..vertex_count {
+        let mut key = (0u32, 0u32, 0u32);
+        for axis in 0..3 {
+            let raw = (verts[index * 3 + axis] - min[axis]) / cell_size;
+            // Clamp before the cast: a tiny cell size must not overflow.
+            let cell = if !(raw > 0.0) {
+                0.0
+            } else if raw > 1_000_000.0 {
+                1_000_000.0
+            } else {
+                raw
+            };
+            let cell = cell.floor() as u32;
+            match axis {
+                0 => key.0 = cell,
+                1 => key.1 = cell,
+                _ => key.2 = cell,
+            }
+        }
+
+        let slot = match clusters.get(&key) {
+            Some(found) => *found,
+            None => {
+                let id = sums.len() as u32;
+                clusters.insert(key, id);
+                sums.push([0.0; 3]);
+                counts.push(0);
+                id
+            }
+        };
+
+        cluster_of_vertex[index] = slot;
+        let base = index * 3;
+        for axis in 0..3 {
+            sums[slot as usize][axis] += verts[base + axis] as f64;
+        }
+        counts[slot as usize] += 1;
+    }
+
+    // Representative vertex per cluster: the member closest to the centroid.
+    // Strictly-less keeps the first member on a tie, which the TypeScript
+    // reference reproduces by scanning in the same order.
+    let cluster_count = sums.len();
+    let mut best_source = vec![0u32; cluster_count];
+    let mut best_distance = vec![f64::INFINITY; cluster_count];
+    for index in 0..vertex_count {
+        let slot = cluster_of_vertex[index] as usize;
+        let divisor = counts[slot].max(1) as f64;
+        let base = index * 3;
+        let mut distance = 0.0f64;
+        for axis in 0..3 {
+            let delta = verts[base + axis] as f64 - sums[slot][axis] / divisor;
+            distance += delta * delta;
+        }
+        if distance < best_distance[slot] {
+            best_distance[slot] = distance;
+            best_source[slot] = index as u32;
+        }
+    }
+
+    let out_pos = unsafe { std::slice::from_raw_parts_mut(out_positions, cluster_count * 3) };
+    let out_src = unsafe { std::slice::from_raw_parts_mut(out_source, cluster_count) };
+    for slot in 0..cluster_count {
+        let source = best_source[slot] as usize;
+        out_src[slot] = best_source[slot];
+        for axis in 0..3 {
+            out_pos[slot * 3 + axis] = verts[source * 3 + axis];
+        }
+    }
+
+    let mut seen: HashSet<(u32, u32, u32)> = HashSet::new();
+    let out_idx = unsafe { std::slice::from_raw_parts_mut(out_indices, index_count) };
+    let mut written = 0usize;
+    for tri in 0..(index_count / 3) {
+        let base = tri * 3;
+        let mut corners = [0u32; 3];
+        for corner in 0..3 {
+            let raw = tris[base + corner] as usize;
+            if raw >= vertex_count {
+                return 0;
+            }
+            corners[corner] = cluster_of_vertex[raw];
+        }
+        if corners[0] == corners[1] || corners[1] == corners[2] || corners[0] == corners[2] {
+            continue;
+        }
+        let mut key = corners;
+        key.sort_unstable();
+        if !seen.insert((key[0], key[1], key[2])) {
+            continue;
+        }
+        out_idx[written] = corners[0];
+        out_idx[written + 1] = corners[1];
+        out_idx[written + 2] = corners[2];
+        written += 3;
+    }
+
+    unsafe {
+        let counts_out = std::slice::from_raw_parts_mut(out_counts, 2);
+        counts_out[0] = cluster_count as u32;
+        counts_out[1] = written as u32;
+    }
+
+    (written / 3) as u32
 }

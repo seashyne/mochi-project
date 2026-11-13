@@ -51,7 +51,8 @@ const expected = [
   'bake_nav_grid',
   'resolve_overlaps',
   'image_dimensions',
-  'audio_duration_ms'
+  'audio_duration_ms',
+  'simplify_mesh'
 ];
 
 const module = await WebAssembly.instantiate(fs.readFileSync(destination), {});
