@@ -110,6 +110,7 @@ export function useStudioSavePublish(input: UseStudioSavePublishInput): StudioSa
       remoteEvents: serverManifest.remoteEvents,
       animations: target.animations,
       animationStateMachine: target.animationStateMachine,
+      environment: target.environment,
       token,
       userId
     });

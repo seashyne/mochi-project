@@ -8,6 +8,7 @@ import { buildPublishManifest } from '../../engine/package/publishWorld';
 import { StudioObject } from '../../engine/studio/types';
 import { RemoteEventDef, ServerScript } from '../../engine/scripting/serverManifest';
 import type { AnimStateMachineDef } from '../../engine/animation/stateMachine';
+import type { EnvironmentState } from '../../engine/environment/environmentTypes';
 import type { MochiAnimationClip } from '../../engine/animation/clip';
 import { TranslationDictionary } from '../../i18n/types';
 
@@ -22,6 +23,7 @@ export interface StudioPublishInput {
   remoteEvents?: RemoteEventDef[];
   animations?: MochiAnimationClip[];
   animationStateMachine?: AnimStateMachineDef | null;
+  environment?: EnvironmentState;
   token: string;
   userId: string;
 }
@@ -54,6 +56,7 @@ export function useStudioPublish(
           remoteEvents: input.remoteEvents,
           animations: input.animations,
           animationStateMachine: input.animationStateMachine ?? undefined,
+          environment: input.environment,
           token: input.token,
           onProgress: (stage, completed, total) => {
             setPublishProgress(

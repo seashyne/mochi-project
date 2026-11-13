@@ -51,6 +51,8 @@ export interface MochiManifestV2 {
   animations?: MochiAnimationClip[];
   /** Optional parameter-driven state graph over `animations`. */
   animationStateMachine?: import('../animation/stateMachine').AnimStateMachineDef;
+  /** Skybox, sun, ambient and fog the creator chose. Absent means the starter scene. */
+  environment?: import('../environment/environmentTypes').EnvironmentState;
   spawn?: StudioVec3;
   chunking: ManifestChunking;
   chunks?: ManifestChunkRef[];

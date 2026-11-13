@@ -82,7 +82,7 @@ export const PlayerViewport: React.FC<PlayerViewportProps> = ({ activeGame }) =>
     roomClientRef.current = roomClient;
     setActiveRoomClient(roomClient);
 
-    engine.init(canvas);
+    engine.init(canvas, { showcase: false }); // demo meshes and lights are not part of a game
     input.attach(canvas);
 
     const scene = engine.getScene();
@@ -115,7 +115,7 @@ export const PlayerViewport: React.FC<PlayerViewportProps> = ({ activeGame }) =>
       unsubscribeBeforePhysics = engine.onBeforePhysics((dt) => { runtime?.prePhysics(); attachment?.tick?.(dt); });
 
       scene.add(avatar.root);
-      attachment = attachWorld(scene, rawManifest, engine.getPhysicsWorld());
+      attachment = attachWorld(scene, rawManifest, engine.getPhysicsWorld(), { renderer: engine.getRenderer() ?? undefined });
       manifestScript = attachment.scriptCode;
       worldCleanup = attachment.dispose; worldUpdate = attachment.update;
       runtime.setAnimationBridge(attachment.animationBridge);
@@ -277,7 +277,7 @@ export const PlayerViewport: React.FC<PlayerViewportProps> = ({ activeGame }) =>
 
         <LuaUIOverlay />
         {hudState && <GameHud state={hudState} hint="" />}
-        <SessionTerminal session={consoleSession} title="Game Output" containerClassName="absolute bottom-12 left-3 right-3 z-30" className="h-[210px]" hotkey defaultOpen={false} />
+        <SessionTerminal session={consoleSession} title="Game Output" containerClassName="absolute bottom-12 start-3 end-3 z-30" className="h-[210px]" hotkey defaultOpen={false} />
         <RoomInviteChip roomClient={activeRoomClient} />
 
         <PlayerChatDrawer
@@ -287,7 +287,7 @@ export const PlayerViewport: React.FC<PlayerViewportProps> = ({ activeGame }) =>
           roomClient={activeRoomClient}
         />
 
-        <div className="absolute bottom-3 left-3 right-3 flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#090b10]/85 backdrop-blur-md border border-white/[0.08] text-[11px] font-mono text-slate-300 pointer-events-none">
+        <div className="absolute bottom-3 start-3 end-3 flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#090b10]/85 backdrop-blur-md border border-white/[0.08] text-[11px] font-mono text-slate-300 pointer-events-none">
           <Terminal className="w-3.5 h-3.5 text-[#38bdf8]" />
           <span>{t.player.inputController}: {activeInputSummary}</span>
         </div>

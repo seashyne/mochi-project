@@ -74,6 +74,9 @@ export class SceneEnvironment {
     options: ApplyEnvironmentOptions = {}
   ): Promise<void> {
     this.applyLighting(state);
+    // Exposure is meaningless without a mode: three defaults to NoToneMapping, so the
+    // slider used to do nothing and bright skyboxes clipped to white.
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = state.exposure;
 
     const preset = getSkyboxPreset(state.skyboxId);

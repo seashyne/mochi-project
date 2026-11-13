@@ -2,9 +2,10 @@
 
 import * as THREE from 'three';
 import { MultiplayerManager } from './multiplayerManager';
-import { PhysicsWorld, RigidBody } from './physics';
+import { PhysicsWorld } from './physics';
 import { FollowCamera } from './camera/followCamera';
 import { configureModelLoader } from './assets/modelLoader';
+import { buildShowcaseScene } from './scene/showcaseScene';
 import { updateDistanceCulling } from './scene/distanceCulling';
 import { updateOcclusionCulling } from './scene/occlusionCulling';
 import { RenderDiagnostics } from './scene/renderBudget';
@@ -29,8 +30,6 @@ export class RuntimeEngine {
   // Scene objects
   private centralMesh: THREE.Mesh | null = null;
   private orbitingMesh: THREE.Mesh | null = null;
-  private ringMesh: THREE.Mesh | null = null;
-  private particleSystem: THREE.Points | null = null;
   private dynamicLight: THREE.PointLight | null = null;
   private multiplayerManager: MultiplayerManager | null = null;
   private physicsWorld: PhysicsWorld = new PhysicsWorld();
@@ -58,7 +57,12 @@ export class RuntimeEngine {
   private capabilities: RendererCapabilities | null = null;
   private beforePhysicsListeners: Set<(dt: number) => void> = new Set();
 
-  public init(canvas: HTMLCanvasElement): void {
+  /**
+   * `showcase` builds the demo scene - lights, meshes, particle stars, a physics
+   * floor. It defaults on for the engine demo and the portal hero; a real game passes
+   * `false`, because that content used to appear on top of every published world.
+   */
+  public init(canvas: HTMLCanvasElement, options: { showcase?: boolean } = {}): void {
     const width = canvas.clientWidth || 800;
     const height = canvas.clientHeight || 450;
 
@@ -76,55 +80,19 @@ export class RuntimeEngine {
     this.camera.position.set(0, 5, 10);
     this.camera.lookAt(0, 0, 0);
 
-    this.buildProceduralScene();
+    if (options.showcase !== false) this.buildProceduralScene();
+  }
+
+  public getRenderer(): THREE.WebGLRenderer | null {
+    return this.renderer;
   }
 
   private buildProceduralScene(): void {
     if (!this.scene) return;
-
-    // Ambient, Directional and Orbiting Point Lights
-    this.scene.add(new THREE.AmbientLight(0x1e293b, 1.5));
-    const dirLight = new THREE.DirectionalLight(0x6366f1, 2.5);
-    dirLight.position.set(5, 10, 7);
-    this.scene.add(dirLight);
-
-    this.dynamicLight = new THREE.PointLight(0x38bdf8, 3, 20);
-    this.dynamicLight.position.set(3, 2, 3);
-    this.scene.add(this.dynamicLight);
-
-    // Ground Grid & Physics floor
-    const grid = new THREE.GridHelper(30, 30, 0x6366f1, 0x1e293b);
-    grid.position.y = -2;
-    this.scene.add(grid);
-    this.physicsWorld.addBody(new RigidBody({
-      id: 'ground_floor',
-      type: 'static',
-      position: { x: 0, y: -2.5, z: 0 },
-      shape: { type: 'box', halfExtents: { x: 25, y: 0.5, z: 25 } }
-    }));
-
-    this.centralMesh = new THREE.Mesh(new THREE.IcosahedronGeometry(1.8, 0), new THREE.MeshStandardMaterial({ color: 0x6366f1, roughness: 0.25, metalness: 0.8 }));
-    this.scene.add(this.centralMesh);
-
-    this.orbitingMesh = new THREE.Mesh(new THREE.OctahedronGeometry(0.7, 0), new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.2, metalness: 0.9 }));
-    this.scene.add(this.orbitingMesh);
-
-    this.ringMesh = new THREE.Mesh(new THREE.TorusGeometry(3.2, 0.04, 16, 80), new THREE.MeshBasicMaterial({ color: 0x818cf8, transparent: true, opacity: 0.6 }));
-    this.ringMesh.rotation.x = Math.PI / 2;
-    this.scene.add(this.ringMesh);
-
-    // Particle Stars
-    const particleCount = 200;
-    const positions = new Float32Array(particleCount * 3);
-    for (let i = 0; i < particleCount * 3; i += 3) {
-      positions[i] = (Math.random() - 0.5) * 30;
-      positions[i + 1] = Math.random() * 15 - 2;
-      positions[i + 2] = (Math.random() - 0.5) * 30;
-    }
-    const particleGeom = new THREE.BufferGeometry();
-    particleGeom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    this.particleSystem = new THREE.Points(particleGeom, new THREE.PointsMaterial({ color: 0xa5b4fc, size: 0.12, transparent: true, opacity: 0.75 }));
-    this.scene.add(this.particleSystem);
+    const showcase = buildShowcaseScene(this.scene, this.physicsWorld);
+    this.centralMesh = showcase.centralMesh;
+    this.orbitingMesh = showcase.orbitingMesh;
+    this.dynamicLight = showcase.orbitingLight;
   }
 
   public start(): void {

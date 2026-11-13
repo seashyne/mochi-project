@@ -17,6 +17,9 @@ import type { AnimStateMachineDef } from '../animation/stateMachine';
 import type { AnimationBridge } from '../runtime/luaNodeApi';
 import { validateClip, type MochiAnimationClip } from '../animation/clip';
 import type { MochiManifestV2 } from '../package/manifestV2';
+import { SceneEnvironment } from '../environment/SceneEnvironment';
+import { normalizeEnvironmentState, STARTER_ENVIRONMENT } from '../environment/environmentTypes';
+import { isValidSkyboxId } from '../environment/skyboxPresets';
 
 export interface WorldAttachment {
   scriptCode?: string;
@@ -72,15 +75,53 @@ function parseStateMachine(
   return definition;
 }
 
+export interface AttachWorldOptions {
+  /**
+   * Enables image-based lighting. Without it the skybox, fog and sun still apply -
+   * PMREM needs a renderer, but the creator's lighting choice does not.
+   */
+  renderer?: THREE.WebGLRenderer;
+}
+
+/**
+ * The creator's environment, or the starter scene when the manifest has none.
+ * Exported because it is the whole data path between publish and the renderer, and
+ * the renderer-dependent half cannot be exercised headlessly.
+ */
+export function resolveWorldEnvironment(rawManifest: string | undefined, chunked: MochiManifestV2 | null) {
+  if (chunked?.environment) {
+    return normalizeEnvironmentState(chunked.environment, isValidSkyboxId);
+  }
+  try {
+    const parsed = JSON.parse(rawManifest ?? '') as { environment?: unknown };
+    return normalizeEnvironmentState(parsed.environment, isValidSkyboxId);
+  } catch {
+    return STARTER_ENVIRONMENT;
+  }
+}
+
 export function attachWorld(
   scene: THREE.Scene,
   rawManifest: string | undefined,
-  physicsWorld: PhysicsWorld
+  physicsWorld: PhysicsWorld,
+  options: AttachWorldOptions = {}
 ): WorldAttachment {
   const chunked = parseChunkedManifest(rawManifest);
   const clips = parseAnimationClips(rawManifest, chunked);
   const stateMachine = parseStateMachine(rawManifest, chunked);
   const player = new AnimationPlayer();
+  // Owned here rather than by the viewport: the world decides how it is lit, and the
+  // environment has to come and go with the world. Only built when a renderer is
+  // supplied - PMREM needs one, and a headless caller has nothing to light.
+  const renderer = options.renderer;
+  const environment = renderer ? new SceneEnvironment(scene) : null;
+  if (environment && renderer) {
+    void environment
+      .apply(resolveWorldEnvironment(rawManifest, chunked), renderer, {
+        onError: (error) => console.warn('Environment failed to load', error)
+      })
+      .catch(() => {});
+  }
   let machine: AnimationStateMachineRuntime | null = null;
 
   // A state graph replaces blanket playback: clips are entered through
@@ -127,7 +168,13 @@ export function attachWorld(
       ready: result.ready.then(() => result.spawnPoint),
       update: () => true,
       tick: (dt) => { features.update(dt); if (machine) machine.update(dt); else player.update(dt); },
-      dispose: () => { machine?.dispose(); player.dispose(); features.dispose(); result.dispose(); }
+      dispose: () => {
+        machine?.dispose();
+        player.dispose();
+        features.dispose();
+        environment?.dispose();
+        result.dispose();
+      }
     };
   }
 
@@ -181,6 +228,7 @@ export function attachWorld(
       machine?.dispose();
       player.dispose();
       features.dispose();
+      environment?.dispose();
       loaded?.dispose();
     }
   };

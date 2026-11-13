@@ -5,6 +5,7 @@
 import { StudioObject } from '../studio/types';
 import { RemoteEventDef, ServerScript } from '../scripting/serverManifest';
 import type { AnimStateMachineDef } from '../animation/stateMachine';
+import type { EnvironmentState } from '../environment/environmentTypes';
 import type { MochiAnimationClip } from '../animation/clip';
 import { assetsApi } from '../../api/assets';
 import { UploadedAsset } from '../../api/multipartUpload';
@@ -31,6 +32,7 @@ export interface PublishWorldOptions {
   remoteEvents?: RemoteEventDef[];
   animations?: MochiAnimationClip[];
   animationStateMachine?: AnimStateMachineDef;
+  environment?: EnvironmentState;
   token?: string;
   forceChunked?: boolean;
   onProgress?: (
@@ -100,7 +102,7 @@ export function collectModelAssets(objects: StudioObject[]): ManifestAssetRef[] 
 export async function buildPublishManifest(
   options: PublishWorldOptions
 ): Promise<string> {
-  const { objects, title, version, scriptCode, token, serverScripts, remoteEvents, animations, animationStateMachine } = options;
+  const { objects, title, version, scriptCode, token, serverScripts, remoteEvents, animations, animationStateMachine, environment } = options;
 
   if (!shouldUseChunkedPublish(options)) {
     return JSON.stringify({
@@ -110,6 +112,8 @@ export async function buildPublishManifest(
       ...(remoteEvents?.length ? { remoteEvents } : {}),
       ...(animations?.length ? { animations } : {}),
       ...(animationStateMachine ? { animationStateMachine } : {}),
+    ...(environment ? { environment } : {}),
+      ...(environment ? { environment } : {}),
       version
     });
   }
@@ -146,6 +150,7 @@ export async function buildPublishManifest(
     ...(remoteEvents?.length ? { remoteEvents } : {}),
     ...(animations?.length ? { animations } : {}),
     ...(animationStateMachine ? { animationStateMachine } : {}),
+    ...(environment ? { environment } : {}),
     ...(world.spawn ? { spawn: world.spawn } : {}),
     ...(modelAssets.length > 0 ? { assets: modelAssets } : {}),
     chunking: world.chunking,

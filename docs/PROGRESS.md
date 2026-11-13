@@ -280,3 +280,30 @@ degree-based helper. Corrected, because a script following the old note would ro
 by a fifty-seventh of what it meant.
 
 Deliberately absent: `cf * Vector3` and `CFrame.lookAt`.
+**Games get the creator's environment, and stop inheriting the demo scene** (2026-11-13):
+`SceneEnvironment` - skybox, sun, ambient, fog, IBL - existed but was instantiated only
+by the Studio viewport, so a published game was lit by whatever `RuntimeEngine` had
+built for its own showcase.
+
+That showcase turned out to be the bigger problem. `init()` built it unconditionally:
+a glowing torus ring at the origin, an icosahedron, an orbiting octahedron, 200
+particle stars, a 50x50 physics floor at y = -2.5, and indigo/cyan demo lights. Every
+published game contained all of it on top of the world it actually loaded - the ring
+sat around the spawn point. Nothing ever removed it.
+
+The scene is now `buildShowcaseScene`, opt-in through `init(canvas, { showcase })`,
+and the player passes `false`. The portal hero and the engine demo keep it.
+
+The environment travels with the world: `attachWorld` owns it, reads the creator's
+choice from the manifest, and normalises it through the existing validator so a
+corrupt or hostile draft falls back to the starter scene. The choice was already
+saved on the draft - it just never reached publish, so `MochiManifestV2` gained the
+field and the publish chain forwards it.
+
+Tone mapping was a dead switch: `toneMappingExposure` was set on a renderer that never
+had a mode, so it stayed `NoToneMapping` and the Studio exposure slider did nothing.
+`SceneEnvironment.apply` now sets ACES filmic, which is where the decision belongs.
+
+Shadows remain off. `sun.castShadow` and the mesh flags are set, but the game renderer
+never enables `shadowMap`; turning it on is a cost decision that needs the client
+benchmark first.
