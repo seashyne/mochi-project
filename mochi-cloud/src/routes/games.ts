@@ -17,6 +17,7 @@ import {
 } from '../services/db';
 import { authMiddleware } from '../middleware/auth';
 import { inspectManifest } from '../services/manifestValidation';
+import { d1AccessRefLookup, validateAccessRefs } from '../services/assetRefs';
 import { validateManifestAssets } from '../services/manifestAssets';
 
 export const gamesRouter = new Hono<{
@@ -179,6 +180,18 @@ gamesRouter.post('/:id/publish', authMiddleware, async (c) => {
           manifestVersion: inspection.manifestVersion
         }, 400);
       }
+    }
+
+    // Access ids can sit in object properties or inside Lua text. A publish that
+    // references one the publisher cannot use would fail on a player's machine, so
+    // it is refused here instead.
+    const accessErrors = await validateAccessRefs(
+      d1AccessRefLookup(c.env.DB),
+      manifestJson,
+      { userId: user.id, role: user.role ?? null, shareTokenHash: null }
+    );
+    if (accessErrors.length) {
+      return c.json({ error: 'Invalid asset references', details: accessErrors }, 400);
     }
 
     const now = new Date().toISOString();

@@ -52,3 +52,29 @@ and the reference the parity test compares against.
   about its accessor counts is not caught here; three.js will fail later.
 
 Each of these is a known hole, listed so nobody assumes the guardrail is total.
+
+## Access ids at publish
+
+A manifest may reference an uploaded file by access id (`acc_` plus 20 hex digits),
+either in an object property or inside Lua text. Publishing validates every id it
+finds:
+
+| Situation | Result |
+| --- | --- |
+| Id does not exist | Refused: `unknown asset access id` |
+| Key is blocked | Refused: `not available to this publisher (blocked)` |
+| Upload never finished | Refused: `not available to this publisher (pending)` |
+| File row is gone | Refused: `the file behind this id no longer exists` |
+| Another creator's private file, no grant | Refused: `not available to this publisher (forbidden)` |
+| Own file, or public, or granted | Accepted |
+
+Every problem is reported at once, not just the first, so a creator can fix the
+manifest in one pass. The scan runs over the serialised manifest, which is how a
+reference embedded in a script is caught as well as one in a property.
+
+The point is where the failure lands: without this, a bad id surfaces as a missing
+texture or a silent sound on a player's machine. With it, the publish call returns
+`Invalid asset references` and names the id.
+
+The validator lives in `services/assetRefs.ts` and is called from the publish route
+with D1-backed lookups; its tests drive the same function with an in-memory lookup.
