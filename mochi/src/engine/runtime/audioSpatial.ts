@@ -103,6 +103,26 @@ export function dopplerRatio(
   return Number.isFinite(ratio) ? clamp(ratio, 0.5, 2) : 1;
 }
 
+export interface SpatialResult {
+  gain: number;
+  pan: number;
+  /** Doppler pitch multiplier; 1 without a velocity. */
+  ratio: number;
+}
+
+/** Everything a positioned one-shot needs, in one call. */
+export function spatialFor(
+  listener: SpatialListener,
+  position: SpatialPoint,
+  velocity?: SpatialPoint
+): SpatialResult {
+  return {
+    gain: attenuationGain(distance3d(listener, position)),
+    pan: panFor(listener, position),
+    ratio: velocity ? dopplerRatio(listener, position, velocity) : 1
+  };
+}
+
 /** Converts a pitch ratio to the cents value an oscillator's detune expects. */
 export function ratioToCents(ratio: number): number {
   return 1200 * Math.log2(clamp(ratio, 0.5, 2));

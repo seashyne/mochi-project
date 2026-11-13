@@ -93,6 +93,13 @@ a message naming the limit and the actual value. The binary scans
 references and a parity test; the limits and the holes that remain are in
 `docs/ASSET_LIMITS.md`.
 
+**5.3 shipped** (2026-11-13): `world.playSound` accepts an access id, a URL or a
+recipe name and routes accordingly. Uploaded files go through the same `prepare()`
+as synthesis, so attenuation, panning, Doppler and buses behave identically. Ids
+resolve through the existing asset service, which is what keeps a blocked or
+unauthorised file from ever producing a URL. `world.loadSound` warms the cache,
+because a one-shot cannot wait for a decode.
+
 5.1 was the highest value per unit of work in this document: it unlocks the
 largest population of creators and it was testable without any UI.
 

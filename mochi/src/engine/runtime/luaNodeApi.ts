@@ -5,6 +5,9 @@ import { AudioBus } from './audioBus';
 import { GameState } from './gameState';
 import { LiveNode, TouchHandler, UpdateHandler } from './liveNode';
 import { resolveLuaClass } from './nodeFactory';
+import { defineAlias } from './luaProxyUtils';
+import { routeSound } from './audioRouting';
+export { createPlayerApi } from './luaPlayerApi';
 import { RuntimeWorld } from './objectRegistry';
 import {
   parseColor,
@@ -82,17 +85,6 @@ function firstString(args: unknown[]): string | undefined {
     if (typeof arg === 'string') return arg;
   }
   return undefined;
-}
-
-function defineAlias(
-  target: Record<string, unknown>,
-  names: string[],
-  get: () => unknown,
-  set: (value: unknown) => void
-): void {
-  for (const name of names) {
-    Object.defineProperty(target, name, { get, set, enumerable: true, configurable: true });
-  }
 }
 
 function applyPosition(node: LiveNode, args: unknown[]): void {
@@ -194,49 +186,6 @@ export function createLuaNode(node: LiveNode, deps: RuntimeApiDeps): Record<stri
   return proxy;
 }
 
-/** Player proxy backed by the real character controller. */
-export function createPlayerApi(deps: RuntimeApiDeps): Record<string, unknown> {
-  const api: Record<string, unknown> = {};
-  defineAlias(api, ['position', 'Position'], () => deps.player.getPosition(), (value) => {
-    const vec = toVec3(value);
-    deps.player.setPosition(vec.x, vec.y, vec.z);
-  });
-  defineAlias(api, ['health', 'Health'], () => deps.player.getHealth(), (value) => {
-    deps.player.setHealth(Number(value) || 0);
-  });
-  defineAlias(api, ['maxHealth', 'MaxHealth'], () => deps.player.getMaxHealth(), () => undefined);
-  defineAlias(api, ['name', 'Name', 'username', 'Username'], () => deps.player.name, () => undefined);
-  api.id = deps.player.id;
-
-  api.addScore = (category: unknown, amount: unknown) => {
-    const label = String(category ?? 'Score');
-    const total = deps.state.addScore(label, Number(amount) || 0);
-    deps.log('info', `Score ${label} = ${total} (+${Number(amount) || 0})`, 'player');
-    return total;
-  };
-  api.getScore = (category: unknown) => deps.state.getScore(String(category ?? 'Score'));
-  api.setVelocity = (x: unknown, y: unknown, z: unknown) => deps.player.setVelocity(Number(x) || 0, Number(y) || 0, Number(z) || 0);
-  api.applyImpulse = (x: unknown, y: unknown, z: unknown) => deps.player.applyImpulse(Number(x) || 0, Number(y) || 0, Number(z) || 0);
-  api.respawn = () => {
-    deps.player.respawn();
-    deps.audio.play('swoosh');
-  };
-  api.damage = (amount: unknown) => deps.player.damage(Number(amount) || 0);
-  api.heal = (amount: unknown) => deps.player.heal(Number(amount) || 0);
-  // Scripted walking through the navigation grid; no-ops without a bridge.
-  api.moveTo = (x: unknown, z: unknown, speed?: unknown) => {
-    const targetX = Number(x);
-    const targetZ = Number(z);
-    if (!Number.isFinite(targetX) || !Number.isFinite(targetZ)) return false;
-    const started = deps.navigation?.moveTo(targetX, targetZ, Number(speed)) ?? false;
-    deps.log('info', `[Nav] moveTo(${targetX}, ${targetZ}) ${started ? 'started' : 'unreachable'}`, 'player');
-    return started;
-  };
-  api.stopMoving = () => deps.navigation?.stop();
-  api.isMoving = () => deps.navigation?.isMoving() ?? false;
-  return api;
-}
-
 /** World proxy backed by the runtime registry, physics gravity and audio bus. */
 export function createWorldApi(deps: RuntimeApiDeps): Record<string, unknown> {
   const api: Record<string, unknown> = {};
@@ -244,8 +193,15 @@ export function createWorldApi(deps: RuntimeApiDeps): Record<string, unknown> {
   api.playSound = (...args: unknown[]) => {
     const name = firstString(args) ?? 'click';
     const position = args.find((arg) => arg && typeof arg === 'object') as RuntimeVec3 | undefined;
-    deps.audio.play(name, { position: position ? toVec3(position) : undefined });
+    // Access id or URL -> uploaded sample; anything else -> built-in recipe.
+    routeSound(deps.audio, name, position ? toVec3(position) : undefined);
     deps.log('info', `[Audio] ${name}`, 'world');
+  };
+
+  /** Warms the sample cache, so a first play is not silent. */
+  api.loadSound = (source: unknown) => {
+    const name = String(source ?? '');
+    if (name) void deps.audio.loadSample(name);
   };
 
   api.createPart = (options: unknown) => {

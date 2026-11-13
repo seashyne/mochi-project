@@ -5,13 +5,14 @@
 import { RuntimeVec3 } from './types';
 import {
   MAX_AUDIBLE_DISTANCE,
-  attenuationGain,
   distance3d,
-  dopplerRatio,
-  panFor,
   ratioToCents,
+  spatialFor,
   type SpatialListener
 } from './audioSpatial';
+import { createRecipes, type Recipe } from './audioRecipes';
+import { decodeSampleFromUrl, resolveAccessAssetUrl } from './audioSamples';
+import { createSampleLibrary } from './sampleLibrary';
 
 export type AudioBusName = 'sfx' | 'music';
 
@@ -23,8 +24,6 @@ export interface PlayOptions {
   bus?: AudioBusName;
 }
 
-type Recipe = (bus: AudioBus, gain: number) => void;
-
 export class AudioBus {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
@@ -35,39 +34,15 @@ export class AudioBus {
   private listener: SpatialListener = { x: 0, y: 0, z: 0, yaw: 0 };
   private volume = 0.65;
   private muted = false;
-  private recipes: Record<string, Recipe> = {};
+  private readonly recipes: Record<string, Recipe> = createRecipes();
   /** Sink for the recipe being rendered right now: a panner, or the bus itself. */
   private output: AudioNode | null = null;
   private detuneCents = 0;
-
-  constructor() {
-    this.recipes = {
-      coin_pickup: (bus, gain) => {
-        bus.tone(880, 1320, 0.1, 'square', gain * 0.5);
-        bus.tone(1320, 1760, 0.12, 'square', gain * 0.36, 0.06);
-      },
-      jump_boost: (bus, gain) => {
-        bus.tone(220, 880, 0.24, 'sawtooth', gain * 0.32);
-      },
-      hazard: (bus, gain) => {
-        bus.burst(0.32, gain * 0.5, 900);
-        bus.tone(180, 60, 0.3, 'sawtooth', gain * 0.34);
-      },
-      checkpoint: (bus, gain) => {
-        bus.tone(660, 990, 0.16, 'triangle', gain * 0.4);
-        bus.tone(990, 1320, 0.18, 'triangle', gain * 0.32, 0.09);
-      },
-      victory: (bus, gain) => {
-        [523.25, 659.25, 783.99, 1046.5].forEach((freq, index) => {
-          bus.tone(freq, freq * 1.01, 0.18, 'triangle', gain * 0.36, index * 0.1);
-        });
-      },
-      click: (bus, gain) => bus.tone(520, 760, 0.05, 'sine', gain * 0.3),
-      ui_pop: (bus, gain) => bus.tone(640, 900, 0.06, 'sine', gain * 0.28),
-      hit: (bus, gain) => bus.burst(0.12, gain * 0.45, 1800),
-      swoosh: (bus, gain) => bus.tone(300, 120, 0.18, 'sine', gain * 0.26)
-    };
-  }
+  /** Uploaded sounds, decoded once and shared by every play call. */
+  private readonly samples = createSampleLibrary({
+    decode: (url) => (this.ctx ? decodeSampleFromUrl(this.ctx, url) : Promise.resolve(null)),
+    resolve: resolveAccessAssetUrl
+  });
 
   /** Must be called from a user gesture before the first sound can play. */
   unlock(): void {
@@ -141,33 +116,41 @@ export class AudioBus {
     return this.buses[bus] ?? this.master;
   }
 
-  /** Plays a named effect, attenuated, panned and pitch-shifted by its position. */
-  play(name: string, options: PlayOptions = {}): void {
-    if (this.muted) return;
+  /**
+   * Shared front half of every sound: bus routing, attenuation, panning and the
+   * Doppler ratio. Returns null when the sound should not play at all.
+   */
+  private prepare(options: PlayOptions): { sink: AudioNode; gain: number; ratio: number } | null {
+    if (this.muted) return null;
     this.unlock();
-    if (!this.ctx || !this.master) return;
+    if (!this.ctx || !this.master) return null;
 
-    const busName = options.bus ?? 'sfx';
-    const busNode = this.busNode(busName);
-    if (!busNode) return;
+    const busNode = this.busNode(options.bus ?? 'sfx');
+    if (!busNode) return null;
 
     let gain = options.volume ?? 1;
     let pan = 0;
-    let detune = 0;
+    let ratio = 1;
 
     if (options.position) {
-      const distance = distance3d(this.listener, options.position);
-      if (distance >= MAX_AUDIBLE_DISTANCE) return;
-      gain *= attenuationGain(distance);
-      pan = panFor(this.listener, options.position);
-      if (options.velocity) {
-        detune = ratioToCents(dopplerRatio(this.listener, options.position, options.velocity));
-      }
+      if (distance3d(this.listener, options.position) >= MAX_AUDIBLE_DISTANCE) return null;
+      const spatial = spatialFor(this.listener, options.position, options.velocity);
+      gain *= spatial.gain;
+      pan = spatial.pan;
+      ratio = spatial.ratio;
     }
 
-    const sink = pan === 0 ? busNode : this.createPanner(pan, busNode);
-    this.output = sink;
-    this.detuneCents = detune;
+    return { sink: pan === 0 ? busNode : this.createPanner(pan, busNode), gain, ratio };
+  }
+
+  /** Plays a named effect, attenuated, panned and pitch-shifted by its position. */
+  play(name: string, options: PlayOptions = {}): void {
+    const prepared = this.prepare(options);
+    if (!prepared) return;
+
+    const gain = prepared.gain;
+    this.output = prepared.sink;
+    this.detuneCents = ratioToCents(prepared.ratio);
 
     try {
       const key = String(name ?? '')
@@ -185,6 +168,38 @@ export class AudioBus {
       this.output = null;
       this.detuneCents = 0;
     }
+  }
+
+  /** Starts loading a sample without playing it. */
+  async loadSample(url: string): Promise<boolean> {
+    this.unlock();
+    if (!this.ctx) return false;
+    return this.samples.load(url);
+  }
+
+  /**
+   * Plays an uploaded sound. Returns false when the buffer is not decoded yet, and
+   * starts loading it so the next call works; a one-shot cannot wait for a fetch.
+   */
+  playSample(url: string, options: PlayOptions = {}): boolean {
+    const buffer = this.samples.peek(url);
+    if (!buffer) {
+      void this.samples.load(url);
+      return false;
+    }
+
+    const prepared = this.prepare(options);
+    const ctx = this.ctx;
+    if (!prepared || !ctx) return false;
+
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.playbackRate.value = prepared.ratio;
+    const gain = ctx.createGain();
+    gain.gain.value = Math.max(0.02, Math.min(1, prepared.gain));
+    source.connect(gain).connect(prepared.sink);
+    source.start();
+    return true;
   }
 
   private createPanner(pan: number, destination: AudioNode): AudioNode {

@@ -43,3 +43,35 @@ velocity today, so Doppler only engages for engine-driven sounds.
 - Every effect is a one-shot recipe. There is no looping ambience and no
   positional music bed yet.
 - Nothing streams from disk, so a creator cannot ship a recorded sound file.
+
+## Uploaded samples
+
+A creator's own audio plays through the same spatial pipeline as the synthesised
+recipes: attenuation, panning, Doppler and bus routing are identical because both
+paths go through one `prepare()` in the bus.
+
+```lua
+world.loadSound("acc_0123456789abcdef0123")   -- warm the cache
+world.playSound("acc_0123456789abcdef0123", part.position)
+```
+
+`world.playSound` classifies its first argument:
+
+| Form | Treated as |
+| --- | --- |
+| `acc_<20 hex>` | An access id, resolved through `/api/v1/access/assets/:id` |
+| `http(s)://...`, `/path/file.mp3`, `data:audio/...` | A URL to fetch directly |
+| Anything else | A built-in recipe name |
+
+Access ids are the creator-facing handle and the one that should ship: they are
+permissioned by the asset service, so a blocked or unauthorised file never yields a
+URL. A bare URL bypasses that gate and is only appropriate for assets the creator
+hosts elsewhere.
+
+**The first call is silent.** Decoding is asynchronous and a one-shot cannot wait,
+so `playSound` starts the fetch and returns. Call `world.loadSound` once during
+setup - the sample cache then serves every later call.
+
+The cache (`sampleLibrary.ts`) decodes each source once, shares the in-flight
+promise between concurrent calls, keeps the 24 most recent buffers, and records a
+failed decode so a broken file is not refetched every frame.
