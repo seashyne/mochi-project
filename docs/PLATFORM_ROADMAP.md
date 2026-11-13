@@ -206,8 +206,9 @@ accident.
 1. **Spike coroutines** (5.1): prove wasmoon can suspend and resume a script from
    the host. One test, no product code. If it fails, the fallback is a
    generator-based rewrite of the script runner, which is a different estimate.
-2. **Build the benchmark** (7.5): 30 synthetic players, fixed scene, report fps and
-   draw calls. G2 must stop being "unknown".
+2. **Finish the benchmark** (7.5): the room half is shipped, and the client harness
+   now reports draw calls and culling cost in real Chrome. The frame-rate half still
+   needs a run on real hardware, because a headless browser rasterises in software.
 3. **Write the parity checklist** (5.4): it turns "we should support Roblox
    developers" into a finite, ordered list of work.
 4. **Audit for kernel candidates**: profile the frame loop and the replication

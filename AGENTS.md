@@ -119,6 +119,8 @@ A change is not done until all of these are true:
 | `npm run notices` | Regenerate third-party attribution |
 | `npm run verify:standards` | lint + notices + decoupling |
 | `npm run verify:decoupling` | Player/Studio import isolation |
+| `npm run benchmark:room` | 30-peer room tick cost |
+| `npm run benchmark:client` | Render counters in real Chrome (needs Chrome; reports draw calls, not fps) |
 
 ## 8. Product decisions already made
 

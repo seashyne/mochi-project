@@ -28,7 +28,8 @@
     "mobile:sync": "npm run cap:sync --workspace=mochi",
     "mobile:build:ios": "npm run build:mobile:ios --workspace=mochi",
     "mobile:build:android": "npm run build:mobile:android --workspace=mochi",
-    "benchmark:room": "cd mochi-cloud && npx vitest run tests/room_benchmark.test.ts --reporter=verbose"
+    "benchmark:room": "cd mochi-cloud && npx vitest run tests/room_benchmark.test.ts --reporter=verbose",
+    "benchmark:client": "node scripts/benchmark-client.mjs"
   },
   "license": "UNLICENSED",
   "devDependencies": {

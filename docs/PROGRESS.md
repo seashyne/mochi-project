@@ -132,3 +132,21 @@ Honest limit: each batch is its own `loadWorldFromManifest` call, so a streamed 
 costs one instanced batch set per flush instead of one per chunk. Only large chunks
 take this path, and the objects that make a chunk large are usually scripted, which
 means one mesh each anyway.
+**G2 client half instrumented** (2026-11-13): `npm run benchmark:client` loads a fixed
+6x6 room world - 36 chunks, 396 objects - in real Chrome and reports what the culling
+passes change, measuring the same scene with occlusion on and off.
+
+From inside a room, 24 of 36 chunk targets are occluded: draw calls fall 36 -> 12 and
+triangles 4,752 -> 1,584. From an overhead view where nothing can be occluded, draw
+calls are unchanged and the pass costs 0.004 ms of test time per frame plus a
+0.008 ms rebuild. That is the trade the 7.3 decision needed: it pays where there is
+cover and costs about 0.03-0.04 ms of CPU submission where there is none.
+
+The 6x6 room grid is a favourable shape for occlusion - a maze - so -66% is a
+ceiling, not a typical number.
+
+What this does not do is report a frame rate. The headless browser rasterises in
+software (SwiftShader), so the only honest timing is CPU command submission
+(~0.08 ms either way). Draw calls and triangle counts are exact and hardware
+independent; G2's "30 fps on a mid-range laptop" still needs a run on real hardware.
+This harness is what makes that run comparable.
