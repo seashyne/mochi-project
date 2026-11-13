@@ -129,7 +129,7 @@ that agents walk, avoid and path in shipped code.
 | --- | --- | --- | --- |
 | 4.1 | Delta state replication with authority per object | `modules/multiplayer/scene_replication_interface.cpp` | DONE |
 | 4.2 | 3D audio attenuation, Doppler and bus effects | `scene/3d/audio_stream_player_3d.cpp` | DONE |
-| 4.3 | Transport for `transform_delta` (room event, client + cloud) | `scene_replication_interface.cpp` | BACKLOG |
+| 4.3 | Transport for `transform_delta` (room event, client + cloud) | `scene_replication_interface.cpp` | DONE |
 
 **4.1 shipped** as `engine/multiplayer/replication.ts`, a transport-free channel:
 per-object authority, a delta of only what moved (1 cm / 0.02 rad epsilons,
@@ -151,6 +151,19 @@ stereo panner per positioned sound, and detune from Doppler. The playtest runtim
 feeds the follow camera's yaw, so panning matches the view. `docs/AUDIO.md`
 records the model and its limits: mono point sources, no occlusion, no reverb, no
 looping ambience, nothing streamed from disk.
+
+**4.3 shipped**: `transform_delta` is a real room event end to end. `GameRuntime`
+ticks a `ReplicationBridge` at 10 Hz over the agents and runtime spawns it owns,
+the adapter hands payloads to `MultiplayerManager`, the Durable Object validates
+the shape (`do/transformDelta.ts`) and relays to everyone **but the sender** under
+a 20/s bucket, and the receiver applies it to the nodes that resolve. Publishing
+claims authority, so an echo or a second writer is refused rather than fought over.
+`GameRoomDO` lost its socket fan-out to `do/roomBroadcast.ts` to stay under the
+size ceiling.
+
+Limits, documented in `docs/REPLICATION.md`: first writer wins per object (no
+server arbiter), position and yaw only, and remote objects snap to each sample -
+`MultiplayerManager` interpolates player avatars, not replicated objects.
 
 ## Explicitly out of scope
 

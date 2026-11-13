@@ -52,14 +52,33 @@ shadow copy instead of freezing it in place.
 `chunkPayload(payload, maxEntries)` splits a payload so no message exceeds the
 transport's size limit. Order is preserved and removals ride in the first chunk.
 
-## Not wired yet
+## Transport
 
-The channel is complete and tested, but nothing sends a `DeltaPayload` over a
-socket today:
+`transform_delta` is a first-class room event. The path end to end:
 
-1. The room protocol has no `transform_delta` event (`mochi/src/api/types.ts`,
-   `mochi-cloud/src/do/roomMessages.ts`).
-2. `RuntimeNetworkAdapter` exposes world ops and script RPCs, not transforms.
+1. `GameRuntime.update` ticks a `ReplicationBridge` at 10 Hz. It samples the nodes
+   this peer replicates (agents, plus runtime spawns it created) and publishes.
+2. `RuntimeNetworkAdapter.sendTransformDelta` hands the payload to
+   `MultiplayerManager`, which sends `{ type: 'transform_delta' }` over the room
+   socket.
+3. `mochi-cloud` validates the shape (`do/transformDelta.ts`) and relays it to
+   every session **except the sender**, under a 20/s token bucket.
+4. On the receiving side `MultiplayerManager` emits the payload with the sender's
+   id, the bridge applies it, and the nodes that resolve move. Entries for objects
+   the receiver owns are refused, so an echo cannot win.
 
-Until those land, the only replicated motion is `player_state`, which
-`MultiplayerManager` throttles to 20 Hz. Roadmap item 4.3 covers the transport.
+A peer publishes only `agent` objects and the dynamic nodes it spawned; static
+geometry is never replicated, because it arrives with the world manifest.
+
+## Limits
+
+- First writer wins per object. There is no server arbiter: whoever publishes an
+  object first claims it, and a later claim from another peer is ignored rather
+  than resolved.
+- Position and yaw only. Pitch and roll stay local.
+- No interpolation or extrapolation on the receiving side yet: a remote agent
+  snaps to each 10 Hz sample. `MultiplayerManager` interpolates player avatars,
+  not replicated objects.
+- No interest management for objects. Every peer receives every delta, unlike
+  `player_state`, which is filtered by radius.
+
