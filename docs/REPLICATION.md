@@ -82,3 +82,33 @@ geometry is never replicated, because it arrives with the world manifest.
 - No interest management for objects. Every peer receives every delta, unlike
   `player_state`, which is filtered by radius.
 
+
+## Server authority for player movement (6.1)
+
+A `player_state` report is a claim, not a fact. The room runs it through
+`validateMovement` (`do/roomMovement.ts`) and keeps the verdict:
+
+| Rule | Default | On violation |
+| --- | --- | --- |
+| Horizontal speed | 18 m/s | Step shortened along the same direction |
+| Distance in one report | 25 m | Previous position kept (`teleport`) |
+| Vertical change in one report | 40 m | Previous position kept (`teleport`) |
+| Non-finite coordinates | - | Previous position kept |
+| World bounds (optional) | - | Clamped to the box |
+
+The elapsed time comes from the sender's last accepted report, with a 50 ms floor
+matching the 20 Hz broadcast. A lagging client therefore is not punished for a
+legitimately long step.
+
+When the room overrules a report, it broadcasts the corrected presence to the
+other players **and** sends the same correction straight back to the sender with
+`corrected: <reason>`. `MultiplayerManager` recognises its own id, emits the
+position to a snap listener, and `createPlayerSession` moves the local body there
+and zeroes its velocity. That round trip is what makes a client that edits its own
+position rubber-band back.
+
+**Not full authority yet.** The client still runs its own physics and the server
+only validates reported outcomes. There is no client prediction, no replay of
+inputs and no server-side collision simulation, so a cheater can still get small
+advantages inside the allowed envelope. Object transforms (4.2) remain
+first-writer-wins; 6.2 moves their ownership to the room.

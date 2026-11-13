@@ -109,6 +109,13 @@ export function createMultiplayerNetwork(multiplayer: MultiplayerManager): Runti
 export function createPlayerSession(options: PlayerSessionOptions): PlayerSession {
   const player = createPlayerHandle(options.controller, options.body, options.playerId, options.playerName);
   const network = createMultiplayerNetwork(options.multiplayer);
+
+  // When the room overrules a position, snap the local body to its verdict.
+  options.multiplayer.setLocalPlayerId(options.playerId);
+  const detachCorrection = options.multiplayer.onCorrection((position) => {
+    options.body.setPosition(position.x, position.y, position.z);
+    options.body.setVelocity(0, 0, 0);
+  });
   const runtime = new GameRuntime({
     scene: options.scene,
     physics: options.physics,
@@ -122,6 +129,7 @@ export function createPlayerSession(options: PlayerSessionOptions): PlayerSessio
     runtime,
     player,
     dispose: () => {
+      detachCorrection();
       runtime.dispose();
       network.dispose();
     }

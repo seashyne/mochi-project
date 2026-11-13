@@ -4,6 +4,15 @@
 import * as THREE from 'three';
 import { RealtimeRoomClient } from '../api/rooms';
 import { PlayerPresence, RoomEvent, TransformDeltaPayload } from '../api/types';
+import { createPeerAvatar } from './peerAvatar';
+
+// Every subscription is the same shape: add, return the remover.
+function addListener<T>(set: Set<T>, listener: T): () => void {
+  set.add(listener);
+  return () => {
+    set.delete(listener);
+  };
+}
 
 export interface RemotePeer {
   id: string;
@@ -24,6 +33,8 @@ export class MultiplayerManager {
   private scriptRpcListeners: Set<(eventName: string, data: unknown) => void> = new Set();
   private stateReplicateListeners: Set<(key: string, value: unknown) => void> = new Set();
   private worldOpListeners: Set<(op: unknown) => void> = new Set();
+  private localPlayerId: string | null = null;
+  private correctionListeners = new Set<(position: { x: number; y: number; z: number }) => void>();
   private transformDeltaListeners: Set<
     (payload: TransformDeltaPayload, senderId: string) => void
   > = new Set();
@@ -95,13 +106,11 @@ export class MultiplayerManager {
   }
 
   public onScriptRpc(listener: (eventName: string, data: unknown) => void): () => void {
-    this.scriptRpcListeners.add(listener);
-    return () => this.scriptRpcListeners.delete(listener);
+    return addListener(this.scriptRpcListeners, listener);
   }
 
   public onStateReplicate(listener: (key: string, value: unknown) => void): () => void {
-    this.stateReplicateListeners.add(listener);
-    return () => this.stateReplicateListeners.delete(listener);
+    return addListener(this.stateReplicateListeners, listener);
   }
 
   /** Relays a runtime world edit (object spawned/destroyed) to the other players. */
@@ -111,8 +120,17 @@ export class MultiplayerManager {
   }
 
   public onWorldOp(listener: (op: unknown) => void): () => void {
-    this.worldOpListeners.add(listener);
-    return () => this.worldOpListeners.delete(listener);
+    return addListener(this.worldOpListeners, listener);
+  }
+
+  /** This client's own player id, so a server correction can be recognised. */
+  public setLocalPlayerId(id: string | null): void {
+    this.localPlayerId = id;
+  }
+
+  /** Fires when the room overrules this client's position. */
+  public onCorrection(listener: (position: { x: number; y: number; z: number }) => void): () => void {
+    return addListener(this.correctionListeners, listener);
   }
 
   /** Relays a delta of object transforms to the other players in the room. */
@@ -180,8 +198,14 @@ export class MultiplayerManager {
         break;
       }
       case 'player_state': {
-        const presence = event.data as PlayerPresence | undefined;
-        if (presence && presence.id) {
+        const presence = event.data as (PlayerPresence & { corrected?: string }) | undefined;
+        if (presence?.id) {
+          // A correction about this client: snap instead of drawing a peer.
+          if (presence.corrected && presence.id === this.localPlayerId) {
+            const position = { x: presence.x ?? 0, y: presence.y ?? 0, z: presence.z ?? 0 };
+            this.correctionListeners.forEach((listener) => listener(position));
+            break;
+          }
           this.upsertPeer(presence);
         }
         break;
@@ -202,7 +226,7 @@ export class MultiplayerManager {
     let peer = this.peers.get(presence.id);
 
     if (!peer) {
-      const group = this.createAvatarMesh(presence.username);
+      const group = createPeerAvatar(presence.username);
       this.scene.add(group);
       peer = {
         id: presence.id,
@@ -233,53 +257,4 @@ export class MultiplayerManager {
     }
   }
 
-  // Construct stylized 3D avatar for remote players with glowing visor
-  private createAvatarMesh(username: string): THREE.Group {
-    const group = new THREE.Group();
-    group.name = `avatar_${username}`;
-
-    // Body Capsule/Cylinder
-    const bodyGeom = new THREE.CylinderGeometry(0.35, 0.35, 1.1, 16);
-    const bodyMat = new THREE.MeshStandardMaterial({
-      color: 0x38bdf8,
-      roughness: 0.3,
-      metalness: 0.7
-    });
-    const body = new THREE.Mesh(bodyGeom, bodyMat);
-    body.position.y = 0.55;
-    group.add(body);
-
-    // Head Sphere
-    const headGeom = new THREE.SphereGeometry(0.3, 16, 16);
-    const headMat = new THREE.MeshStandardMaterial({
-      color: 0x0f172a,
-      roughness: 0.2,
-      metalness: 0.9
-    });
-    const head = new THREE.Mesh(headGeom, headMat);
-    head.position.y = 1.35;
-    group.add(head);
-
-    // Glowing Neon Visor
-    const visorGeom = new THREE.BoxGeometry(0.35, 0.12, 0.2);
-    const visorMat = new THREE.MeshBasicMaterial({ color: 0x00a2ff });
-    const visor = new THREE.Mesh(visorGeom, visorMat);
-    visor.position.set(0, 1.35, 0.22);
-    group.add(visor);
-
-    // Cyber Base Ring
-    const ringGeom = new THREE.RingGeometry(0.4, 0.45, 24);
-    const ringMat = new THREE.MeshBasicMaterial({
-      color: 0x38bdf8,
-      side: THREE.DoubleSide,
-      transparent: true,
-      opacity: 0.6
-    });
-    const ring = new THREE.Mesh(ringGeom, ringMat);
-    ring.rotation.x = -Math.PI / 2;
-    ring.position.y = 0.02;
-    group.add(ring);
-
-    return group;
-  }
 }

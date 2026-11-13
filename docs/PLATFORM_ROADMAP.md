@@ -114,6 +114,14 @@ Goal: a multiplayer session where the server is the source of truth.
 | 6.3 | World-op validation (bounds, rate, object shape) | TS (edge) | A malformed or out-of-bounds spawn is rejected at the edge |
 | 6.4 | Baseline anti-cheat (speed, teleport, score sanity) | Rust (checks) | Documented thresholds, enforced server-side, logged |
 
+**6.1 shipped** (2026-11-13): the room validates every player position against
+speed, teleport, vertical step, finite values and optional world bounds. A rejected
+report is corrected, and the sender gets the verdict back so the local body snaps
+within one round trip. The client still simulates physics - this is validation of
+outcomes, not replay of inputs - so the remaining half of full authority is
+prediction and server-side collision. Gate G3 now passes for blatant cheats; a
+cheater inside the allowed envelope can still gain a small advantage.
+
 Without 6.1 and 6.2, anything competitive (racing, combat, score attack) is
 trivially cheatable, so no amount of rendering work matters.
 

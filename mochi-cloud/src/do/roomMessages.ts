@@ -6,12 +6,15 @@ import type { PlayerPresence, RoomEvent } from '../types/api';
 import type { ServerLuaRuntime } from '../services/serverLua';
 import type { RoomRateLimiter } from '../services/roomRateLimiter';
 import { parseTransformDelta } from './transformDelta';
+import { validateMovement } from './roomMovement';
 
 export interface RoomSession {
   playerId: string;
   username: string;
   binary: boolean;
   ws: WebSocket;
+  /** Last accepted movement report, for the speed check. */
+  lastMoveAt?: number;
 }
 
 export interface RoomMessageContext {
@@ -40,12 +43,28 @@ export function handleRoomMessage(
       const data = event.data as Partial<PlayerPresence> | undefined;
       const current = context.players.get(session.playerId);
       if (current && data) {
-        if (typeof data.x === 'number') current.x = data.x;
-        if (typeof data.y === 'number') current.y = data.y;
-        if (typeof data.z === 'number') current.z = data.z;
+        const now = Date.now();
+        const elapsed = session.lastMoveAt ? now - session.lastMoveAt : 50;
+        const verdict = validateMovement(current, data, elapsed);
+        session.lastMoveAt = now;
+
+        // The room keeps the verdict, not the claim. A speed violation keeps the
+        // direction but shortens the step; a teleport is refused outright.
+        current.x = verdict.x;
+        current.y = verdict.y;
+        current.z = verdict.z;
         if (typeof data.rotation === 'number') current.rotation = data.rotation;
 
         context.broadcastPlayerState(session.playerId, current);
+
+        if (!verdict.accepted) {
+          context.sendTo(session.ws, {
+            type: 'player_state',
+            senderId: 'server',
+            timestamp: now,
+            data: { ...current, id: session.playerId, corrected: verdict.reason }
+          });
+        }
       }
       break;
     }
