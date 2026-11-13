@@ -598,3 +598,155 @@ pub extern "C" fn resolve_overlaps(
 
     applied
 }
+
+/// Reads the pixel dimensions of a PNG or JPEG header.
+///
+/// Writes `width, height` into `out_ptr` and returns 1 on success, 0 for an
+/// unknown or truncated format. Only the header is inspected, so this is cheap
+/// enough to run on every image an import pulls in.
+#[no_mangle]
+pub extern "C" fn image_dimensions(data: *const u8, len: usize, out: *mut u32) -> u32 {
+    if data.is_null() || out.is_null() || len < 24 {
+        return 0;
+    }
+    let bytes = unsafe { std::slice::from_raw_parts(data, len) };
+
+    // PNG: 89 50 4E 47 0D 0A 1A 0A, then IHDR with width and height big-endian.
+    if bytes[0] == 0x89 && bytes[1] == 0x50 && bytes[2] == 0x4E && bytes[3] == 0x47 {
+        let width = be_u32(bytes, 16);
+        let height = be_u32(bytes, 20);
+        if width == 0 || height == 0 {
+            return 0;
+        }
+        unsafe {
+            *out = width;
+            *out.add(1) = height;
+        }
+        return 1;
+    }
+
+    // JPEG: walk the segment chain until a start-of-frame marker shows up.
+    if bytes[0] == 0xFF && bytes[1] == 0xD8 {
+        let mut index = 2usize;
+        while index + 9 < len {
+            if bytes[index] != 0xFF {
+                index += 1;
+                continue;
+            }
+            let marker = bytes[index + 1];
+            // Standalone markers carry no length field.
+            if marker == 0xD8 || marker == 0x01 || (0xD0..=0xD7).contains(&marker) {
+                index += 2;
+                continue;
+            }
+            if marker == 0xD9 || marker == 0xDA {
+                break;
+            }
+            let segment_len = be_u16(bytes, index + 2) as usize;
+            if segment_len < 2 {
+                return 0;
+            }
+            let is_sof = (0xC0..=0xCF).contains(&marker)
+                && marker != 0xC4
+                && marker != 0xC8
+                && marker != 0xCC;
+            if is_sof {
+                let height = be_u16(bytes, index + 5) as u32;
+                let width = be_u16(bytes, index + 7) as u32;
+                if width == 0 || height == 0 {
+                    return 0;
+                }
+                unsafe {
+                    *out = width;
+                    *out.add(1) = height;
+                }
+                return 1;
+            }
+            index += 2 + segment_len;
+        }
+    }
+
+    0
+}
+
+/// Duration of a WAV or MP3 file in milliseconds. Returns 0 when unknown.
+///
+/// WAV is exact (data size over byte rate). MP3 is an estimate from the first
+/// frame's bitrate, which is what a CBR file needs and what a VBR file gets
+/// approximated by; good enough to reject a ten-minute file at import.
+#[no_mangle]
+pub extern "C" fn audio_duration_ms(data: *const u8, len: usize) -> u32 {
+    if data.is_null() || len < 16 {
+        return 0;
+    }
+    let bytes = unsafe { std::slice::from_raw_parts(data, len) };
+
+    if &bytes[0..4] == b"RIFF" && &bytes[8..12] == b"WAVE" {
+        let mut index = 12usize;
+        let mut byte_rate = 0u32;
+        while index + 8 <= len {
+            let id = &bytes[index..index + 4];
+            let size = le_u32(bytes, index + 4) as usize;
+            if id == b"fmt " && index + 20 <= len {
+                byte_rate = le_u32(bytes, index + 16);
+            } else if id == b"data" && byte_rate > 0 {
+                let data_size = size.min(len - (index + 8));
+                return ((data_size as u64 * 1000) / byte_rate as u64) as u32;
+            }
+            index += 8 + size + (size & 1);
+        }
+        return 0;
+    }
+
+    // MP3: skip an ID3v2 tag, then read bitrate and sample rate from a frame head.
+    let mut start = 0usize;
+    if len > 10 && &bytes[0..3] == b"ID3" {
+        let tag_size = ((bytes[6] as usize & 0x7F) << 21)
+            | ((bytes[7] as usize & 0x7F) << 14)
+            | ((bytes[8] as usize & 0x7F) << 7)
+            | (bytes[9] as usize & 0x7F);
+        start = 10 + tag_size;
+    }
+    while start + 4 <= len {
+        if bytes[start] == 0xFF && (bytes[start + 1] & 0xE0) == 0xE0 {
+            let version = (bytes[start + 1] >> 3) & 0x03;
+            let layer = (bytes[start + 1] >> 1) & 0x03;
+            let bitrate_index = (bytes[start + 2] >> 4) & 0x0F;
+            // Layer III, MPEG-1 only: the common case, and the only table worth
+            // carrying in the kernel.
+            if layer == 1 && version == 3 && bitrate_index > 0 && bitrate_index < 15 {
+                let kbps = MP3_BITRATES[(bitrate_index - 1) as usize];
+                if kbps > 0 {
+                    let audio_bytes = len - start;
+                    return ((audio_bytes as u64 * 8) / kbps as u64) as u32;
+                }
+            }
+            break;
+        }
+        start += 1;
+    }
+
+    0
+}
+
+const MP3_BITRATES: [u32; 14] = [
+    32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320,
+];
+
+fn be_u16(bytes: &[u8], at: usize) -> u16 {
+    ((bytes[at] as u16) << 8) | bytes[at + 1] as u16
+}
+
+fn be_u32(bytes: &[u8], at: usize) -> u32 {
+    ((bytes[at] as u32) << 24)
+        | ((bytes[at + 1] as u32) << 16)
+        | ((bytes[at + 2] as u32) << 8)
+        | bytes[at + 3] as u32
+}
+
+fn le_u32(bytes: &[u8], at: usize) -> u32 {
+    (bytes[at] as u32)
+        | ((bytes[at + 1] as u32) << 8)
+        | ((bytes[at + 2] as u32) << 16)
+        | ((bytes[at + 3] as u32) << 24)
+}

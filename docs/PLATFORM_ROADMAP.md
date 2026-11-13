@@ -86,6 +86,13 @@ did not break. Semantics and the handler caveat are in `docs/SCRIPTING.md`; the
 spike that preceded it confirmed wasmoon can resume a coroutine from the host,
 which was the risk this item carried.
 
+**5.2 shipped** (2026-11-13): models and audio are checked at import - triangles,
+mesh count, texture edge, file size and audio length - and a breach is refused with
+a message naming the limit and the actual value. The binary scans
+(`image_dimensions`, `audio_duration_ms`) run in the kernel with TypeScript
+references and a parity test; the limits and the holes that remain are in
+`docs/ASSET_LIMITS.md`.
+
 5.1 was the highest value per unit of work in this document: it unlocks the
 largest population of creators and it was testable without any UI.
 

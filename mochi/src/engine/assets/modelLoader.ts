@@ -4,6 +4,7 @@
 
 import * as THREE from 'three';
 import { GLTFLoader, GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { describeViolations, validateModel } from './assetGuardrails';
 import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js';
@@ -107,6 +108,15 @@ async function parseModel(url: string): Promise<THREE.Group> {
   } catch {
     // Cache/fetch unavailable: let the loader own the network request.
     data = null;
+  }
+
+  // Guardrails run on the bytes we already have, so an oversized model is refused
+  // before three.js decodes a single triangle.
+  if (data instanceof ArrayBuffer) {
+    const report = validateModel(data);
+    if (report.violations.length > 0) {
+      throw new Error(`Model rejected: ${describeViolations(report)}`);
+    }
   }
 
   return new Promise<THREE.Group>((resolve, reject) => {

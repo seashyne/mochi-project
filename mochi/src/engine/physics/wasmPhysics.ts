@@ -72,6 +72,8 @@ export interface WasmPhysicsExports {
     positionsPtr: number, radiiPtr: number, weightsPtr: number,
     count: number, maxStep: number, iterations: number
   ) => number;
+  image_dimensions: (dataPtr: number, len: number, outPtr: number) => number;
+  audio_duration_ms: (dataPtr: number, len: number) => number;
 }
 
 let wasmInstance: WasmPhysicsExports | null = null;

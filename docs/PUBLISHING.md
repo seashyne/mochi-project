@@ -4,6 +4,10 @@ This document defines the creator publishing workflow, game bundle manifest form
 
 ---
 
+Import limits for models and audio are enforced before upload; see
+[`ASSET_LIMITS.md`](./ASSET_LIMITS.md).
+
+
 ## 1. Publishing Lifecycle Overview
 
 Publishing a game on Mochi progresses through five deterministic phases:
