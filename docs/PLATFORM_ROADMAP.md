@@ -72,12 +72,12 @@ G2 is unknown, not failing. Measuring it before optimising is the first task.
 
 Goal: a Roblox developer can do their normal work here without relearning.
 
-| # | Item | Why it blocks | Done when |
-| --- | --- | --- | --- |
-| 5.1 | Coroutine scheduler so `task.wait` yields | Every loop pattern from Roblox uses it; today it only schedules a callback | `while true do task.wait(1) ... end` runs and a test proves the script suspends and resumes |
-| 5.2 | Import guardrails (triangles, texture size, audio length) | A 500k-triangle GLB loads today and quietly eats the frame budget | An oversized asset is rejected with a message naming the limit and the actual value |
-| 5.3 | Uploaded audio | No game ships without its own sound | Upload a file, `world.playSound` plays it with the same rolloff, pan and Doppler as synthesis |
-| 5.4 | API parity checklist | Creators discover gaps one at a time, then leave | A table in the docs maps every Roblox call a beginner uses to its equivalent or to a documented "not supported" |
+| # | Item | Engine | Why it blocks | Done when |
+| --- | --- | --- | --- | --- |
+| 5.1 | Coroutine scheduler so `task.wait` yields | TS | Every loop pattern from Roblox uses it; today it only schedules a callback | `while true do task.wait(1) ... end` runs and a test proves the script suspends and resumes |
+| 5.2 | Import guardrails (triangles, texture size, audio length) | Rust (parse) + TS (messages) | A 500k-triangle GLB loads today and quietly eats the frame budget | An oversized asset is rejected with a message naming the limit and the actual value |
+| 5.3 | Uploaded audio | TS (WebAudio) | No game ships without its own sound | Upload a file, `world.playSound` plays it with the same rolloff, pan and Doppler as synthesis |
+| 5.4 | API parity checklist | docs | Creators discover gaps one at a time, then leave | A table in the docs maps every Roblox call a beginner uses to its equivalent or to a documented "not supported" |
 
 5.1 is the highest value per unit of work in this document: it unlocks the
 largest population of creators and it is testable without any UI.
@@ -86,12 +86,12 @@ largest population of creators and it is testable without any UI.
 
 Goal: a multiplayer session where the server is the source of truth.
 
-| # | Item | Done when |
-| --- | --- | --- |
-| 6.1 | Authoritative player movement with client prediction and correction | A client that teleports itself snaps back within one round trip |
-| 6.2 | Server-side ownership for replicated objects (replaces first-writer-wins) | The room assigns owners; a delta from a non-owner is dropped server-side, not client-side |
-| 6.3 | World-op validation (bounds, rate, object shape) | A malformed or out-of-bounds spawn is rejected at the edge |
-| 6.4 | Baseline anti-cheat (speed, teleport, score sanity) | Documented thresholds, enforced server-side, logged |
+| # | Item | Engine | Done when |
+| --- | --- | --- | --- |
+| 6.1 | Authoritative player movement with client prediction and correction | Rust (prediction + reconcile) | A client that teleports itself snaps back within one round trip |
+| 6.2 | Server-side ownership for replicated objects (replaces first-writer-wins) | Rust codec + TS room | The room assigns owners; a delta from a non-owner is dropped server-side, not client-side |
+| 6.3 | World-op validation (bounds, rate, object shape) | TS (edge) | A malformed or out-of-bounds spawn is rejected at the edge |
+| 6.4 | Baseline anti-cheat (speed, teleport, score sanity) | Rust (checks) | Documented thresholds, enforced server-side, logged |
 
 Without 6.1 and 6.2, anything competitive (racing, combat, score attack) is
 trivially cheatable, so no amount of rendering work matters.
@@ -100,13 +100,13 @@ trivially cheatable, so no amount of rendering work matters.
 
 Goal: worlds bigger than one screenful, at frame rate.
 
-| # | Item | Why |
-| --- | --- | --- |
-| 7.1 | Interest management for transforms | Every peer receives every delta today; `player_state` is already radius-filtered |
-| 7.2 | LOD (distance swap or decimation) | 1.5M triangles per frame is the whole budget; one hero model can eat it |
-| 7.3 | Occlusion culling | Geometry behind walls is drawn |
-| 7.4 | Instance-level streaming | Chunks are all-or-nothing at 64 MB |
-| 7.5 | Benchmark harness (30 players, fixed scene) | G2 needs a number before and after every change |
+| # | Item | Engine | Why |
+| --- | --- | --- | --- |
+| 7.1 | Interest management for transforms | Rust (spatial query) | Every peer receives every delta today; `player_state` is already radius-filtered |
+| 7.2 | LOD (distance swap or decimation) | Rust (decimation) + TS (swap) | 1.5M triangles per frame is the whole budget; one hero model can eat it |
+| 7.3 | Occlusion culling | Rust (raster test) | Geometry behind walls is drawn |
+| 7.4 | Instance-level streaming | Rust (index) + TS (loader) | Chunks are all-or-nothing at 64 MB |
+| 7.5 | Benchmark harness (30 players, fixed scene) | TS (harness) | G2 needs a number before and after every change |
 
 ## 7. Phase 8 - Platform
 
@@ -120,14 +120,54 @@ Goal: the parts that need people, money and lawyers, not commits.
 Nothing here starts before Phases 5 and 6 are done: a marketplace on a cheatable
 platform is a liability.
 
-## 8. Deliberately out of scope
+## 8. Cross-cutting rule: compute belongs in the kernel
+
+The kernel is `mochi-physics-wasm` (Rust, 29 KB, 8 exports today). It is not a
+physics module with a few extras; it is where every CPU-bound loop in this project
+is supposed to live. The rule is already in `AGENTS.md`; this section records what
+it means for the phases above, so nothing gets written twice in TypeScript by
+accident.
+
+**Goes to Rust, always:**
+
+- Broad-phase and spatial queries: interest management, neighbour lookups, the nav
+  bake, avoidance, BVH. Anything that is O(n) or worse per frame over scene data.
+- Geometry work: LOD decimation, occlusion rasterisation, mesh validation on import
+  (triangle counting, bounds), collider generation.
+- Movement authority: client prediction and server reconciliation for 6.1, plus the
+  anti-cheat thresholds that read the same numbers.
+- Wire codecs: delta encode/decode, quantisation, bit packing. Small inputs, hot
+  path, and the place where a JS object allocation per entry hurts most.
+
+**Stays in TypeScript, on purpose:**
+
+- Anything touching the DOM, WebAudio, or the React tree. A kernel boundary there
+  buys latency and a copy, not speed.
+- Scheduling and orchestration: the coroutine scheduler (5.1), the replication
+  bridge tick, the frame loop. These are bookkeeping, not computation.
+- Cloud edge handlers. A Durable Object runs JS; pulling a wasm module into the
+  room only pays off for the codec, and only after it is measured.
+
+**How a Rust item ships:**
+
+1. Kernel function in `mochi-physics-wasm/src/lib.rs`, flat C ABI, buffers passed
+   by pointer.
+2. `npm run build:wasm` rebuilds and verifies the export list, so a stale artifact
+   fails the build instead of silently missing the function.
+3. A TypeScript reference implementation next to the call site, kept as the
+   fallback for a kernel that never loaded.
+4. A parity test comparing the two, because a kernel that quietly disagrees with
+   the reference is worse than a slow one. `navigation_wasm_bake.test.ts` and
+   `agent_avoidance.test.ts` are the pattern.
+
+## 9. Deliberately out of scope
 
 - Native console clients and store certification.
 - Renderer replacement (Forward+/GI/SDFGI): impossible on WebGL2.
 - A full Luau type system. Lua compatibility is enough for G1.
 - Matching Roblox's avatar economy or its asset library size.
 
-## 9. Risks and unknowns
+## 10. Risks and unknowns
 
 | Risk | Why it matters | Mitigation |
 | --- | --- | --- |
@@ -136,7 +176,7 @@ platform is a liability.
 | Authoritative simulation cost per room | A Durable Object per room simulating physics may not pay for itself | Model cost per concurrent room before Phase 6 |
 | Moderation cost | Platform-scale UGC needs human review | Stay invite-only until Phase 8 is funded |
 
-## 10. Next three actions
+## 11. Next three actions
 
 1. **Spike coroutines** (5.1): prove wasmoon can suspend and resume a script from
    the host. One test, no product code. If it fails, the fallback is a
@@ -145,3 +185,8 @@ platform is a liability.
    draw calls. G2 must stop being "unknown".
 3. **Write the parity checklist** (5.4): it turns "we should support Roblox
    developers" into a finite, ordered list of work.
+4. **Audit for kernel candidates**: profile the frame loop and the replication
+   tick, list every O(n) pass over scene data that still runs in TypeScript, and
+   move the ones the profile actually shows. The rule in section 8 says where
+   compute belongs; profiling says which one to move first, and guessing has a
+   habit of optimising the thing that was never slow.

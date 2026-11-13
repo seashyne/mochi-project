@@ -70,6 +70,13 @@ the parity test fails.
 - `engine open source/` is a read-only reference shelf. It is gitignored. Never
   import from it, never copy a file from it without going through the vendor
   process above.
+- **CPU-bound work belongs in `mochi-physics-wasm`**, not in a TypeScript loop:
+  spatial queries and interest management, the nav bake, avoidance, LOD
+  decimation, occlusion tests, mesh validation, movement reconciliation, and wire
+  codecs. Every kernel function ships with a TypeScript reference and a parity
+  test; `npm run build:wasm` verifies the export list so a stale artifact cannot
+  ship. The full boundary, including what must stay in TypeScript, is
+  `docs/PLATFORM_ROADMAP.md` section 8.
 
 ## 5. Working in parallel with other agents
 
@@ -97,6 +104,7 @@ A change is not done until all of these are true:
 - [ ] `npx vitest run` passes, or the only failures are pre-existing and proven so
 - [ ] New user-facing copy exists in all four languages
 - [ ] No new dependency, or the dependency is permissive and notices regenerated
+- [ ] CPU-bound work is in the kernel, or the handoff says why it is not
 - [ ] The handoff states exactly which files changed and which checks were run
 
 ## 7. Commands

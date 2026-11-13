@@ -181,5 +181,8 @@ server arbiter), position and yaw only, and remote objects snap to each sample -
 
 - Every file stays `<= 300` lines; new capability ships with tests in the same change.
 - Studio UI uses CSS tokens only, and user-facing text goes through the 4-locale dictionaries.
-- CPU-heavy ports (navmesh bake, RVO, BVH) go to `mochi-physics-wasm`, not to TypeScript loops.
+- CPU-heavy work goes to `mochi-physics-wasm`, not to TypeScript loops: the nav
+  bake, avoidance, spatial queries and interest management, LOD, occlusion, mesh
+  validation, movement reconciliation and wire codecs. The boundary and the
+  reference-plus-parity-test workflow are in `docs/PLATFORM_ROADMAP.md` section 8.
 - Each phase must keep `npm test`, `typecheck`, `lint:lines` and `verify:decoupling` green.
