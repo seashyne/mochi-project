@@ -27,6 +27,18 @@ export function isAllowedContentType(value: string): boolean {
   );
 }
 
+// Content types a browser may render inline from the asset origin. Anything else
+// is served as an attachment, so a stray HTML or XML file cannot become a document
+// that runs on the asset domain.
+const INLINE_SAFE_PREFIXES = ['model/', 'image/', 'audio/', 'video/', 'font/'];
+
+export function isInlineSafeContentType(value: string): boolean {
+  const type = value.split(';')[0].trim().toLowerCase();
+  // SVG can carry script; it is refused at upload and never served inline.
+  if (type === 'image/svg+xml') return false;
+  return INLINE_SAFE_PREFIXES.some((prefix) => type.startsWith(prefix));
+}
+
 // 64 MiB parts stay under the Cloudflare Worker request body limit while
 // keeping the part count low for multi-gigabyte assets.
 export const MIN_PART_SIZE_BYTES = 64 * MIB;

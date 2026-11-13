@@ -8,6 +8,7 @@ import { optionalAuthMiddleware } from '../middleware/auth';
 import { findFilesByObjectKey } from '../services/fileDb';
 import { canRead, evaluateFileAccess, hashShareToken, type Visibility } from '../services/assetAccess';
 import { listGrantsForFile } from '../services/assetAccessDb';
+import { isInlineSafeContentType } from '../services/assetPipeline';
 
 export const assetFilesRouter = new Hono<{ Bindings: MochiEnv; Variables: AppVariables }>();
 
@@ -104,9 +105,14 @@ assetFilesRouter.get('/file/:key{.+}', async (c) => {
   );
   if (!object || !object.body) return c.json({ error: 'Asset not found' }, 404);
 
+  const contentType = object.httpMetadata?.contentType || 'application/octet-stream';
   const headers: Record<string, string> = {
-    'Content-Type':
-      object.httpMetadata?.contentType || 'application/octet-stream',
+    'Content-Type': contentType,
+    // User uploads live on their own origin, but a mislabelled file must still not
+    // be sniffed into a document or run script there.
+    'X-Content-Type-Options': 'nosniff',
+    'Content-Security-Policy': "default-src 'none'; sandbox",
+    ...(isInlineSafeContentType(contentType) ? {} : { 'Content-Disposition': 'attachment' }),
     'Cache-Control': gated
       ? 'private, no-store'
       : object.httpMetadata?.cacheControl || CACHE_CONTROL,

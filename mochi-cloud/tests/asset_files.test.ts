@@ -11,7 +11,7 @@ import {
 
 const BODY = '0123456789';
 
-function makeEnv(): MochiEnv {
+function makeEnv(contentType = 'application/json'): MochiEnv {
   return {
     DB: createMockDb(),
     ASSETS: {
@@ -28,7 +28,7 @@ function makeEnv(): MochiEnv {
           etag: 'etag-1',
           httpEtag: '"etag-1"',
           httpMetadata: {
-            contentType: 'application/json',
+            contentType,
             cacheControl: 'public, max-age=31536000, immutable'
           }
         })
@@ -59,6 +59,40 @@ describe('asset file serving', () => {
     expect(res.headers.get('Cache-Control')).toContain('immutable');
     expect(res.headers.get('Access-Control-Allow-Origin')).toBe('*');
     expect(await res.text()).toBe(BODY);
+  });
+
+  it('refuses to let a browser sniff or render an upload as a document', async () => {
+    const res = await app.request(
+      '/api/v1/assets/file/assets/sha256/abc',
+      { method: 'GET' },
+      env
+    );
+    expect(res.headers.get('X-Content-Type-Options')).toBe('nosniff');
+    expect(res.headers.get('Content-Security-Policy')).toContain("default-src 'none'");
+    // application/json is not something a browser should render as a page.
+    expect(res.headers.get('Content-Disposition')).toBe('attachment');
+  });
+
+  it('serves audio inline so it can be decoded and played', async () => {
+    const audioEnv = makeEnv('audio/mpeg');
+    const res = await app.request(
+      '/api/v1/assets/file/assets/sha256/abc',
+      { method: 'GET' },
+      audioEnv
+    );
+    expect(res.headers.get('Content-Type')).toBe('audio/mpeg');
+    expect(res.headers.get('Content-Disposition')).toBeNull();
+    expect(res.headers.get('X-Content-Type-Options')).toBe('nosniff');
+  });
+
+  it('downloads an svg instead of serving it inline', async () => {
+    const svgEnv = makeEnv('image/svg+xml');
+    const res = await app.request(
+      '/api/v1/assets/file/assets/sha256/abc',
+      { method: 'GET' },
+      svgEnv
+    );
+    expect(res.headers.get('Content-Disposition')).toBe('attachment');
   });
 
   it('serves byte ranges as 206 responses', async () => {

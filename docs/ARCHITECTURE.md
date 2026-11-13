@@ -151,3 +151,32 @@ Player Browser          mochi-cloud Worker          Cloudflare D1 / R2
 2. Content Security Policy (CSP): Strict HTTP headers disallow loading unapproved external scripts or exfiltrating data to arbitrary origins.
 3. Asset Integrity: Runtime verifies SHA-256 checksum of every asset prior to instantiation. Tampered or corrupted assets are rejected before execution.
 4. Presigned Storage Uploads: Creator clients never receive long-lived R2 credentials; all asset uploads use short-lived presigned URLs generated on the edge worker.
+
+### Asset origins
+
+User uploads are served from their own host, not from the app or API origin:
+
+| Origin | Serves | Why separate |
+| --- | --- | --- |
+| App | HTML, JS, CSS | Anything here runs with the user's session |
+| API | `/api/v1/*` | Cookies and bearer tokens live here |
+| `PUBLIC_ASSETS_URL` | Content-addressed public files | Immutable cache, no credentials |
+| `ACCESS_ASSETS_URL` | Gated files, resolved per request | Same, plus a permission check before a URL exists |
+
+Splitting them is not cosmetic. A user-uploaded file that renders as a document on
+the app origin can read the session and call the API as the viewer. On its own
+origin it can do neither, and the app's CSP can name the asset host explicitly
+instead of allowing everything.
+
+Every asset response also carries, from `routes/assetFiles.ts`:
+
+- `X-Content-Type-Options: nosniff`, so a mislabelled upload is never sniffed into
+  a different type.
+- `Content-Security-Policy: default-src 'none'; sandbox`, so even a document that
+  somehow renders cannot load or run anything.
+- `Content-Disposition: attachment` for any content type outside `model/`, `image/`,
+  `audio/`, `video/` and `font/`. SVG is explicitly excluded from the inline list
+  because it can carry script, and it is refused at upload anyway.
+
+The client never sends credentials to the asset host: `resolveAccessAssetUrl` calls
+the API with `credentials: 'include'`, and the returned URL is fetched without them.
