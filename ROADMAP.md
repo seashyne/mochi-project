@@ -127,8 +127,30 @@ that agents walk, avoid and path in shipped code.
 
 | # | Item | Godot reference | Status |
 | --- | --- | --- | --- |
-| 4.1 | Delta state replication with authority per object | `modules/multiplayer/scene_replication_interface.cpp` | BACKLOG |
-| 4.2 | 3D audio attenuation, Doppler and bus effects | `scene/3d/audio_stream_player_3d.cpp` | BACKLOG |
+| 4.1 | Delta state replication with authority per object | `modules/multiplayer/scene_replication_interface.cpp` | DONE |
+| 4.2 | 3D audio attenuation, Doppler and bus effects | `scene/3d/audio_stream_player_3d.cpp` | DONE |
+| 4.3 | Transport for `transform_delta` (room event, client + cloud) | `scene_replication_interface.cpp` | BACKLOG |
+
+**4.1 shipped** as `engine/multiplayer/replication.ts`, a transport-free channel:
+per-object authority, a delta of only what moved (1 cm / 0.02 rad epsilons,
+quantised before the change test), a removal list, and chunking for message size.
+`apply` refuses entries for objects the local peer owns, which is what stops two
+peers fighting over one transform. Idle peers publish `null` - no packet at all.
+`docs/REPLICATION.md` is the contract.
+
+What did **not** ship: the wire. The room protocol has no `transform_delta` event
+and `RuntimeNetworkAdapter` carries world ops, not transforms, so the only motion
+that actually crosses the network is still `player_state` at 20 Hz. 4.3 keeps the
+transport on the backlog rather than pretending 4.1 is end-to-end.
+
+**4.2 shipped** in two halves: `engine/runtime/audioSpatial.ts` holds the maths
+(inverse-distance rolloff with a taper at the 34 m limit, stereo pan from the
+listener's right vector, Doppler from radial closing speed clamped to an octave),
+and `AudioBus` gained `sfx`/`music` buses with independent level and mute, a
+stereo panner per positioned sound, and detune from Doppler. The playtest runtime
+feeds the follow camera's yaw, so panning matches the view. `docs/AUDIO.md`
+records the model and its limits: mono point sources, no occlusion, no reverb, no
+looping ambience, nothing streamed from disk.
 
 ## Explicitly out of scope
 
