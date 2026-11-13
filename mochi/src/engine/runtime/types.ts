@@ -2,6 +2,7 @@
 // Kept free of Three.js so HUD/UI layers can consume it without pulling WebGL in.
 
 import type { StudioObject, StudioObjectType } from '../studio/types';
+import type { TransformDeltaPayload } from '../../api/types';
 
 export interface RuntimeVec3 {
   x: number;
@@ -60,6 +61,11 @@ export interface RuntimeNetworkAdapter {
   getState?(key: string): unknown;
   sendWorldOp?(op: WorldOp): void;
   onWorldOp?(handler: (op: WorldOp) => void): () => void;
+  /** Replicated object transforms; absent when the transport cannot carry them. */
+  sendTransformDelta?(payload: TransformDeltaPayload): void;
+  onTransformDelta?(
+    handler: (payload: TransformDeltaPayload, senderId: string) => void
+  ): () => void;
 }
 
 /** Declarative spawn request used by `Instance.new` and `world.createPart`. */

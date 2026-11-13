@@ -10,13 +10,15 @@ import { GameState } from './gameState';
 import { RuntimeApiDeps, createPlayerApi, type AnimationBridge } from './luaNodeApi';
 import { createRuntimeNavigation, type RuntimeNavigation } from './runtimeNavigation';
 import { createRuntimeAgents, type RuntimeAgents } from './runtimeAgents';
-import { serializeNode } from './worldOpSerialize';
+import { WorldOpRelay } from './worldOpRelay';
+import { ReplicationChannel } from '../multiplayer/replication';
+import { createReplicationBridge, type ReplicationBridge } from '../multiplayer/replicationBridge';
 import { LiveNode } from './liveNode';
 import { RuntimeWorld } from './objectRegistry';
 import { ScriptContext } from './scriptContext';
 import { SessionConsole, parseLuaErrorLine } from './sessionConsole';
 import { handlePlayerTrigger, TouchContext } from './touchRules';
-import { RuntimeLogSink, RuntimeNetworkAdapter, RuntimePlayerHandle, RuntimeVec3, WorldOp } from './types';
+import { RuntimeLogSink, RuntimeNetworkAdapter, RuntimePlayerHandle, RuntimeVec3 } from './types';
 
 export interface GameRuntimeOptions {
   scene: THREE.Scene;
@@ -47,7 +49,9 @@ export class GameRuntime {
   private readonly touch: TouchContext;
   private readonly detachTrigger: (() => void) | null;
   private detachWorldOps: (() => void) | null = null;
-  private applyingRemote = false;
+  private readonly relay: WorldOpRelay;
+  private readonly replication: ReplicationBridge | null;
+  private detachTransformDelta: (() => void) | null = null;
   private spawnPoint: RuntimeVec3;
   private elapsed = 0;
   private disposed = false;
@@ -76,10 +80,28 @@ export class GameRuntime {
         });
       },
       {
-        onNodeCreated: (node) => this.broadcastSpawn(node),
-        onNodeDestroyed: (node) => this.broadcastDestroy(node)
+        onNodeCreated: (node) => this.relay.spawn(node),
+        onNodeDestroyed: (node) => this.relay.destroy(node)
       }
     );
+    this.relay = new WorldOpRelay(
+      this.world,
+      options.network,
+      (id) => this.disposeContext(id),
+      () => this.disposed
+    );
+    // Transform replication only runs when the transport carries deltas.
+    const network = options.network;
+    this.replication =
+      network?.sendTransformDelta && network.onTransformDelta
+        ? createReplicationBridge({
+            channel: new ReplicationChannel(),
+            owner: options.player.id,
+            bodies: () => this.world.getAll(),
+            shouldReplicate: (node) => node.type === 'agent' || (node.dynamic && !node.remote),
+            send: (payload) => network.sendTransformDelta?.(payload)
+          })
+        : null;
     // NPC keys are object ids or display names, both resolved against the registry.
     // The player is a static body for spacing: agents step around it, never shove it.
     this.agents = createRuntimeAgents(
@@ -112,7 +134,13 @@ export class GameRuntime {
       audio: this.audio
     };
     this.detachTrigger = options.physics.onTrigger(this.handleTrigger);
-    this.detachWorldOps = options.network?.onWorldOp?.((op) => this.applyWorldOp(op)) ?? null;
+    this.detachWorldOps = this.relay.attach();
+    this.detachTransformDelta =
+      this.replication && network?.onTransformDelta
+        ? network.onTransformDelta((payload, senderId) =>
+            this.replication?.receive(payload, senderId)
+          )
+        : null;
     this.consoleSession.setCommandHandler((code) => this.executeCode(code));
   }
 
@@ -206,6 +234,7 @@ export class GameRuntime {
     this.elapsed += dt;
     this.navigation.update(dt);
     this.agents.update(dt);
+    this.replication?.update(dt);
     for (const node of this.world.getAll()) {
       node.dispatchUpdate(dt);
       if (node.def.type === 'coin' && node.visible) node.def.rotation.y += dt * 2.2;
@@ -225,6 +254,7 @@ export class GameRuntime {
     this.navigation.stop();
     this.agents.stopAll();
     this.detachWorldOps?.();
+    this.detachTransformDelta?.();
     this.contexts.forEach((context) => context.dispose());
     this.contexts.clear();
     this.world.clear();
@@ -232,36 +262,6 @@ export class GameRuntime {
     this.state.dispose();
     if (this.ownsConsole) this.consoleSession.dispose();
   }
-
-  private broadcastSpawn(node: LiveNode): void {
-    if (this.applyingRemote || !node.dynamic || node.remote) return;
-    this.options.network?.sendWorldOp?.({ kind: 'spawn', object: serializeNode(node.def) });
-  }
-
-  private broadcastDestroy(node: LiveNode): void {
-    if (this.applyingRemote || !node.dynamic || node.remote) return;
-    this.options.network?.sendWorldOp?.({ kind: 'destroy', id: node.id });
-  }
-
-  /** Replays a peer's world edit without echoing it back. */
-  private applyWorldOp = (op: WorldOp): void => {
-    if (this.disposed) return;
-    this.applyingRemote = true;
-    try {
-      if (op.kind === 'spawn' && op.object) {
-        if (this.world.get(op.object.id)) return;
-        const node = this.world.spawn({ ...op.object, luaScript: undefined }, { dynamic: true });
-        node.remote = true;
-        return;
-      }
-      if (op.kind === 'destroy' && op.id) {
-        this.disposeContext(op.id);
-        this.world.destroy(op.id);
-      }
-    } finally {
-      this.applyingRemote = false;
-    }
-  };
 
   /** Resolves once every started script has finished loading and run. */
   async whenIdle(): Promise<void> {

@@ -118,6 +118,9 @@ export class ReplicationChannel {
       };
 
       const previous = this.shadow.get(sample.id);
+      // Publishing claims authority, so a peer's later delta for this object is
+      // refused instead of fighting frame after frame.
+      if (!this.authority.has(sample.id)) this.authority.set(sample.id, owner);
       if (!previous || this.changed(previous, next)) {
         entries.push(next);
         this.shadow.set(sample.id, next);

@@ -95,6 +95,8 @@ export function createMultiplayerNetwork(multiplayer: MultiplayerManager): Runti
     getState: (key) => replicated.get(key),
     sendWorldOp: (op) => multiplayer.sendWorldOp(op),
     onWorldOp: (handler) => multiplayer.onWorldOp((op) => handler(op as WorldOp)),
+    sendTransformDelta: (payload) => multiplayer.sendTransformDelta(payload),
+    onTransformDelta: (handler) => multiplayer.onTransformDelta(handler),
     dispose: () => {
       unsubscribeRpc();
       unsubscribeState();

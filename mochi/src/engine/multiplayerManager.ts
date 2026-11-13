@@ -3,7 +3,7 @@
 
 import * as THREE from 'three';
 import { RealtimeRoomClient } from '../api/rooms';
-import { PlayerPresence, RoomEvent } from '../api/types';
+import { PlayerPresence, RoomEvent, TransformDeltaPayload } from '../api/types';
 
 export interface RemotePeer {
   id: string;
@@ -24,6 +24,9 @@ export class MultiplayerManager {
   private scriptRpcListeners: Set<(eventName: string, data: unknown) => void> = new Set();
   private stateReplicateListeners: Set<(key: string, value: unknown) => void> = new Set();
   private worldOpListeners: Set<(op: unknown) => void> = new Set();
+  private transformDeltaListeners: Set<
+    (payload: TransformDeltaPayload, senderId: string) => void
+  > = new Set();
 
   public attach(scene: THREE.Scene, client: RealtimeRoomClient): void {
     this.scene = scene;
@@ -112,6 +115,19 @@ export class MultiplayerManager {
     return () => this.worldOpListeners.delete(listener);
   }
 
+  /** Relays a delta of object transforms to the other players in the room. */
+  public sendTransformDelta(payload: TransformDeltaPayload): void {
+    if (!this.roomClient || !this.roomClient.isConnected()) return;
+    this.roomClient.send({ type: 'transform_delta', timestamp: Date.now(), data: payload });
+  }
+
+  public onTransformDelta(
+    listener: (payload: TransformDeltaPayload, senderId: string) => void
+  ): () => void {
+    this.transformDeltaListeners.add(listener);
+    return () => this.transformDeltaListeners.delete(listener);
+  }
+
   private handleRoomEvent(event: RoomEvent): void {
     switch (event.type) {
       case 'script_rpc': {
@@ -125,6 +141,14 @@ export class MultiplayerManager {
         const payload = event.data as { key?: string; value?: unknown } | undefined;
         if (payload?.key) {
           this.stateReplicateListeners.forEach((listener) => listener(payload.key!, payload.value));
+        }
+        break;
+      }
+      case 'transform_delta': {
+        const payload = event.data as TransformDeltaPayload | undefined;
+        if (payload && Array.isArray(payload.entries)) {
+          const senderId = event.senderId ?? 'peer';
+          this.transformDeltaListeners.forEach((listener) => listener(payload, senderId));
         }
         break;
       }

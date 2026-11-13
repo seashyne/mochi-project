@@ -195,6 +195,7 @@ export type RoomEventType =
   | 'pong'
   | 'script_rpc'
   | 'state_replicate'
+  | 'transform_delta'
   | 'world_op';
 
 export interface ScriptRpcPayload {
@@ -207,6 +208,13 @@ export interface StateReplicatePayload {
   key: string;
   value: unknown;
   version?: number;
+}
+
+/** Wire shape of `transform_delta`; see docs/REPLICATION.md. */
+export interface TransformDeltaPayload {
+  tick: number;
+  entries: Array<{ id: string; x: number; y: number; z: number; ry: number }>;
+  removed: string[];
 }
 
 export interface RoomEvent<T = unknown> {
