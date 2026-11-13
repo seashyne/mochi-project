@@ -143,6 +143,34 @@ function createNetworkApi(deps: RuntimeApiDeps): Record<string, unknown> {
 }
 
 /** Builds the full global table injected into one script context. */
+/** `animation.*` drives the scene state graph. No-ops when the world ships none. */
+export function createAnimationApi(deps: RuntimeApiDeps): Record<string, unknown> {
+  const bridge = () => deps.animation;
+
+  return {
+    setParameter: (name: unknown, value: unknown) => {
+      const target = bridge();
+      if (!target) return;
+      if (typeof value === 'number') target.setParameter(String(name), value);
+      else target.setParameter(String(name), Boolean(value));
+    },
+    setBool: (name: unknown, value: unknown) => {
+      bridge()?.setParameter(String(name), Boolean(value));
+    },
+    setNumber: (name: unknown, value: unknown) => {
+      const numeric = Number(value);
+      if (!Number.isFinite(numeric)) return;
+      bridge()?.setParameter(String(name), numeric);
+    },
+    trigger: (name: unknown) => {
+      bridge()?.trigger(String(name));
+    },
+    // wasmoon cannot return JS null (it probes .then) and a JS undefined yields
+    // zero Lua values, which breaks `tostring(x)`. Empty string is the safe miss.
+    getState: () => bridge()?.getState() ?? ''
+  };
+}
+
 export function buildRuntimeGlobals(node: LiveNode, deps: RuntimeApiDeps): Record<string, unknown> {
   const luaNode = createLuaNode(node, deps);
   const playerApi = deps.playerApi ?? createPlayerApi(deps);
@@ -162,6 +190,7 @@ export function buildRuntimeGlobals(node: LiveNode, deps: RuntimeApiDeps): Recor
     ui: createUiApi(deps),
     Instance: createInstanceApi(deps),
     network: createNetworkApi(deps),
+    animation: createAnimationApi(deps),
     player: playerApi,
     players: {
       getLocalPlayer: () => playerApi,

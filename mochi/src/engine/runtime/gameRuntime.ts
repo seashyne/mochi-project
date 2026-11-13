@@ -7,7 +7,8 @@ import { SceneBinding } from '../scene/sceneBindings';
 import { StudioObject } from '../studio/types';
 import { AudioBus } from './audioBus';
 import { GameState } from './gameState';
-import { RuntimeApiDeps, createPlayerApi } from './luaNodeApi';
+import { RuntimeApiDeps, createPlayerApi, type AnimationBridge } from './luaNodeApi';
+import { createRuntimeNavigation, type RuntimeNavigation } from './runtimeNavigation';
 import { LiveNode } from './liveNode';
 import { RuntimeWorld } from './objectRegistry';
 import { ScriptContext } from './scriptContext';
@@ -56,6 +57,7 @@ export class GameRuntime {
   private readonly contexts = new Map<string, ScriptContext>();
   private readonly pendingScripts = new Set<Promise<void>>();
   private readonly deps: RuntimeApiDeps;
+  private readonly navigation: RuntimeNavigation;
   private readonly touch: TouchContext;
   private readonly detachTrigger: (() => void) | null;
   private detachWorldOps: (() => void) | null = null;
@@ -72,6 +74,8 @@ export class GameRuntime {
 
   constructor(options: GameRuntimeOptions) {
     this.options = options;
+    // Before deps: the player API hands `player.moveTo` straight to this.
+    this.navigation = createRuntimeNavigation(options.player);
     this.consoleSession = options.consoleSession ?? new SessionConsole();
     this.ownsConsole = !options.consoleSession;
     this.spawnPoint = options.spawnPoint ?? { x: 0, y: 2, z: 0 };
@@ -101,7 +105,8 @@ export class GameRuntime {
       },
       getSpawnPoint: () => this.spawnPoint,
       getTime: () => this.elapsed,
-      network: options.network
+      network: options.network,
+      navigation: this.navigation
     };
     this.deps.playerApi = createPlayerApi(this.deps);
     this.touch = {
@@ -117,6 +122,15 @@ export class GameRuntime {
     this.consoleSession.setCommandHandler((code) => this.executeCode(code));
   }
 
+  /**
+   * Routes `animation.*` Lua calls to the scene state graph. Called after the
+   * world attaches, because the graph only exists once the manifest is parsed.
+   * Passing null detaches (world unload).
+   */
+  setAnimationBridge(bridge: AnimationBridge | null): void {
+    this.deps.animation = bridge ?? undefined;
+  }
+
   /** Adopts newly resident objects and drops ones that left the world. */
   sync(objects: StudioObject[], bindings: Map<string, SceneBinding>): void {
     if (this.disposed) return;
@@ -128,6 +142,7 @@ export class GameRuntime {
       const node = this.world.adopt(def, binding?.mesh ?? null, binding?.body ?? null);
       if (def.luaScript?.trim()) void this.startScript(node);
     }
+    this.navigation.setObjects(objects);
     for (const node of this.world.getAll()) {
       if (node.dynamic || seen.has(node.id)) continue;
       this.disposeContext(node.id);
@@ -194,6 +209,7 @@ export class GameRuntime {
   update(dt: number): void {
     if (this.disposed) return;
     this.elapsed += dt;
+    this.navigation.update(dt);
     for (const node of this.world.getAll()) {
       node.dispatchUpdate(dt);
       if (node.def.type === 'coin' && node.visible) node.def.rotation.y += dt * 2.2;
@@ -210,6 +226,7 @@ export class GameRuntime {
     this.disposed = true;
     this.consoleSession.clearCommandHandler();
     this.detachTrigger?.();
+    this.navigation.stop();
     this.detachWorldOps?.();
     this.contexts.forEach((context) => context.dispose());
     this.contexts.clear();

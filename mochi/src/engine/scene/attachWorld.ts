@@ -10,6 +10,10 @@ import { loadChunkedWorld, parseChunkedManifest, type ChunkedWorldLoadResult } f
 import { SceneBinding } from './sceneBindings';
 import { AdvancedFeatureRuntime } from '../studio/advancedRuntime';
 import { AnimationPlayer, createMeshResolver } from '../animation/animationPlayer';
+import { AnimationStateMachineRuntime } from '../animation/stateMachineRuntime';
+import { readAnimationStateMachine } from '../animation/stateMachineManifest';
+import type { AnimStateMachineDef } from '../animation/stateMachine';
+import type { AnimationBridge } from '../runtime/luaNodeApi';
 import { validateClip, type MochiAnimationClip } from '../animation/clip';
 import type { MochiManifestV2 } from '../package/manifestV2';
 
@@ -24,6 +28,14 @@ export interface WorldAttachment {
   update: (position: StudioVec3) => boolean;
   /** Drives constraint solvers and particle emitters on the fixed physics tick. */
   tick?: (dt: number) => void;
+  /** Sets a bool/number parameter on the animation state graph, if the world has one. */
+  setAnimationParameter?: (name: string, value: boolean | number) => void;
+  /** Fires a one-shot trigger parameter on the animation state graph. */
+  triggerAnimation?: (name: string) => void;
+  /** Current animation state id, or null when the world has no state graph. */
+  getAnimationState?: () => string | null;
+  /** Same controls in the shape Lua's `animation.*` expects. */
+  animationBridge: AnimationBridge;
   dispose: () => void;
 }
 
@@ -44,6 +56,21 @@ function parseAnimationClips(rawManifest: string | undefined, chunked: MochiMani
   });
 }
 
+function parseStateMachine(
+  rawManifest: string | undefined,
+  chunked: MochiManifestV2 | null
+): AnimStateMachineDef | null {
+  let candidate: unknown;
+  if (chunked) candidate = chunked.animationStateMachine;
+  else {
+    try { candidate = (JSON.parse(rawManifest ?? '') as { animationStateMachine?: unknown }).animationStateMachine; }
+    catch { return null; }
+  }
+  const { definition, errors } = readAnimationStateMachine(candidate);
+  if (errors.length) console.warn('Ignoring invalid animation state machine', errors);
+  return definition;
+}
+
 export function attachWorld(
   scene: THREE.Scene,
   rawManifest: string | undefined,
@@ -51,10 +78,35 @@ export function attachWorld(
 ): WorldAttachment {
   const chunked = parseChunkedManifest(rawManifest);
   const clips = parseAnimationClips(rawManifest, chunked);
+  const stateMachine = parseStateMachine(rawManifest, chunked);
   const player = new AnimationPlayer();
+  let machine: AnimationStateMachineRuntime | null = null;
+
+  // A state graph replaces blanket playback: clips are entered through
+  // transitions instead of every clip starting at once.
   const startClips = (meshes: THREE.Object3D[]) => {
     const resolve = createMeshResolver(meshes);
+    if (stateMachine) {
+      machine?.dispose();
+      machine = new AnimationStateMachineRuntime(scene, stateMachine, clips, resolve);
+      return;
+    }
     for (const clip of clips) player.play(scene, clip, resolve);
+  };
+
+  const animationControls = {
+    setAnimationParameter: (name: string, value: boolean | number) => {
+      if (typeof value === 'number') machine?.setNumber(name, value);
+      else machine?.setBool(name, value);
+    },
+    triggerAnimation: (name: string) => machine?.setTrigger(name),
+    getAnimationState: () => machine?.state ?? null
+  };
+
+  const animationBridge: AnimationBridge = {
+    setParameter: animationControls.setAnimationParameter,
+    trigger: animationControls.triggerAnimation,
+    getState: animationControls.getAnimationState
   };
 
   if (!chunked) {
@@ -63,12 +115,14 @@ export function attachWorld(
     features.mount(result.objects);
     startClips(result.meshes);
     return {
+      ...animationControls,
+      animationBridge,
       getObjects: () => result.objects,
       getBindings: () => result.bindings,
       ready: result.ready.then(() => result.spawnPoint),
       update: () => true,
-      tick: (dt) => { features.update(dt); player.update(dt); },
-      dispose: () => { player.dispose(); features.dispose(); result.dispose(); }
+      tick: (dt) => { features.update(dt); if (machine) machine.update(dt); else player.update(dt); },
+      dispose: () => { machine?.dispose(); player.dispose(); features.dispose(); result.dispose(); }
     };
   }
 
@@ -90,6 +144,8 @@ export function attachWorld(
     });
 
   return {
+    ...animationControls,
+    animationBridge,
     scriptCode: chunked.scriptCode,
     immediateSpawn: chunked.spawn,
     getObjects: () => loaded?.objects ?? [],
@@ -111,9 +167,10 @@ export function attachWorld(
       }
       return loaded.isReadyAt(position);
     },
-    tick: (dt) => { features.update(dt); player.update(dt); },
+    tick: (dt) => { features.update(dt); if (machine) machine.update(dt); else player.update(dt); },
     dispose: () => {
       abort.abort();
+      machine?.dispose();
       player.dispose();
       features.dispose();
       loaded?.dispose();

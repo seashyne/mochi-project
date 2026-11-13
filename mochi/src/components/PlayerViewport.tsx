@@ -117,8 +117,8 @@ export const PlayerViewport: React.FC<PlayerViewportProps> = ({ activeGame }) =>
       scene.add(avatar.root);
       attachment = attachWorld(scene, rawManifest, engine.getPhysicsWorld());
       manifestScript = attachment.scriptCode;
-      worldCleanup = attachment.dispose;
-      worldUpdate = attachment.update;
+      worldCleanup = attachment.dispose; worldUpdate = attachment.update;
+      runtime.setAnimationBridge(attachment.animationBridge);
 
       const applySpawn = (point: { x: number; y: number; z: number } | null) => {
         if (!cancelled) applySpawnPoint(controller, followCamera, point);

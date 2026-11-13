@@ -16,6 +16,20 @@ import {
   toVec3
 } from './types';
 
+/** Drives the scene animation state graph from Lua. Absent on worlds without one. */
+export interface AnimationBridge {
+  setParameter: (name: string, value: boolean | number) => void;
+  trigger: (name: string) => void;
+  getState: () => string | null;
+}
+
+/** Scripted player movement through the pathfinder. Absent when not wired. */
+export interface NavigationBridge {
+  moveTo: (x: number, z: number, speed?: number) => boolean;
+  stop: () => void;
+  isMoving: () => boolean;
+}
+
 export interface RuntimeApiDeps {
   world: RuntimeWorld;
   player: RuntimePlayerHandle;
@@ -29,6 +43,12 @@ export interface RuntimeApiDeps {
   playerApi?: Record<string, unknown>;
   /** Present for networked sessions (published games); absent in offline playtest. */
   network?: RuntimeNetworkAdapter;
+  /**
+   * Animation state graph bridge. Looked up on every call rather than captured,
+   * so the host can attach it after the world finishes loading.
+   */
+  animation?: AnimationBridge;
+  navigation?: NavigationBridge;
 }
 
 /** Maps a Lua userdata proxy back to the node it represents. */
@@ -190,6 +210,17 @@ export function createPlayerApi(deps: RuntimeApiDeps): Record<string, unknown> {
   };
   api.damage = (amount: unknown) => deps.player.damage(Number(amount) || 0);
   api.heal = (amount: unknown) => deps.player.heal(Number(amount) || 0);
+  // Scripted walking through the navigation grid; no-ops without a bridge.
+  api.moveTo = (x: unknown, z: unknown, speed?: unknown) => {
+    const targetX = Number(x);
+    const targetZ = Number(z);
+    if (!Number.isFinite(targetX) || !Number.isFinite(targetZ)) return false;
+    const started = deps.navigation?.moveTo(targetX, targetZ, Number(speed)) ?? false;
+    deps.log('info', `[Nav] moveTo(${targetX}, ${targetZ}) ${started ? 'started' : 'unreachable'}`, 'player');
+    return started;
+  };
+  api.stopMoving = () => deps.navigation?.stop();
+  api.isMoving = () => deps.navigation?.isMoving() ?? false;
   return api;
 }
 

@@ -7,6 +7,7 @@ import { StudioObject } from '../studio/types';
 import { AudioBus } from './audioBus';
 import { GameState } from './gameState';
 import { RuntimeApiDeps, createPlayerApi } from './luaNodeApi';
+import { createRuntimeNavigation } from './runtimeNavigation';
 import { RuntimeWorld } from './objectRegistry';
 import { PLAYER_BODY_ID, PlaytestPlayer } from './playtestPlayer';
 import { createPlaytestScene, PlaytestSceneBundle } from './playtestScene';
@@ -122,6 +123,8 @@ export class PlaytestRuntime {
     this.detachControls = bundle.attachControls();
     this.detachTriggers = this.physics.onTrigger(this.handleTrigger);
 
+    const navigation = createRuntimeNavigation(player, { agentRadius: 0.2 });
+    navigation.setObjects(objects);
     const deps: RuntimeApiDeps = {
       world,
       player,
@@ -130,7 +133,8 @@ export class PlaytestRuntime {
       log: this.logSink,
       setSpawnPoint: (position: RuntimeVec3) => player.setSpawnPoint(position),
       getSpawnPoint: () => player.getSpawnPoint(),
-      getTime: () => this.simTime
+      getTime: () => this.simTime,
+      navigation
     };
     // One shared proxy: `script.parent.onTouch` and `players.LocalPlayer` must agree.
     deps.playerApi = createPlayerApi(deps);
