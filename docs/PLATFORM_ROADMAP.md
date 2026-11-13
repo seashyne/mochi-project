@@ -122,6 +122,12 @@ outcomes, not replay of inputs - so the remaining half of full authority is
 prediction and server-side collision. Gate G3 now passes for blatant cheats; a
 cheater inside the allowed envelope can still gain a small advantage.
 
+**6.2 shipped** (2026-11-13): the room owns a `OwnershipTable`. The first peer to
+publish an object id claims it; later writes from other peers are dropped at the
+edge, removals are owner-only, and a disconnect frees that player's objects. The
+client-side channel still applies the same rule locally for responsiveness, but a
+modified client can no longer get its delta relayed.
+
 Without 6.1 and 6.2, anything competitive (racing, combat, score attack) is
 trivially cheatable, so no amount of rendering work matters.
 

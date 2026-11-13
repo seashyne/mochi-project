@@ -9,6 +9,7 @@ import { ensureRoomScript } from './roomScriptBundle';
 import { RoomPlayerData } from './roomPlayerData';
 import { broadcastFromPlayer, broadcastToSessions, sendToSession, socketForPlayer } from './roomBroadcast';
 import { handleRoomMessage, type RoomMessageContext, type RoomSession } from './roomMessages';
+import { OwnershipTable } from './roomOwnership';
 
 // Cloudflare Durable Object for multiplayer game rooms with WebSocket presence
 export class GameRoomDO {
@@ -18,6 +19,7 @@ export class GameRoomDO {
   private players: Map<string, PlayerPresence> = new Map();
   private tick = 0;
   private rateLimiter = new RoomRateLimiter();
+  private ownership = new OwnershipTable();
   private luaRuntime: ServerLuaRuntime;
   private playerData: RoomPlayerData | null = null;
   private gameId: string | null = null;
@@ -45,6 +47,7 @@ export class GameRoomDO {
       players: this.players,
       rateLimiter: this.rateLimiter,
       luaRuntime: this.luaRuntime,
+      ownership: this.ownership,
       nextTick: () => ++this.tick,
       broadcast: (event) => this.broadcast(event),
       broadcastFrom: (playerId, event) => this.broadcastFrom(playerId, event),
@@ -257,6 +260,7 @@ export class GameRoomDO {
     this.players.delete(session.playerId);
     this.luaRuntime.removePlayer(session.playerId);
     this.rateLimiter.release(session.playerId);
+    this.ownership.dropPlayer(session.playerId);
 
     const pending = this.playerData?.drop(session.playerId);
     if (pending) {

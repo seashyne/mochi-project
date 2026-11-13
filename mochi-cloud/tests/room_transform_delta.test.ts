@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { handleRoomMessage } from '../src/do/roomMessages';
 import { MAX_TRANSFORM_ENTRIES, parseTransformDelta } from '../src/do/transformDelta';
 import { RoomRateLimiter } from '../src/services/roomRateLimiter';
+import { OwnershipTable } from '../src/do/roomOwnership';
 import type { RoomEvent } from '../src/types/api';
 
 function harness() {
@@ -13,6 +14,7 @@ function harness() {
     players: new Map(),
     rateLimiter: new RoomRateLimiter(),
     luaRuntime: {} as never,
+    ownership: new OwnershipTable(),
     nextTick: () => 1,
     broadcast: vi.fn(),
     broadcastFrom: (playerId: string, event: RoomEvent) => forwarded.push({ playerId, event }),

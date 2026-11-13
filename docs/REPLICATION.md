@@ -72,15 +72,20 @@ geometry is never replicated, because it arrives with the world manifest.
 
 ## Limits
 
-- First writer wins per object. There is no server arbiter: whoever publishes an
-  object first claims it, and a later claim from another peer is ignored rather
-  than resolved.
+- First writer wins per object, **enforced by the room** (6.2). The Durable Object
+  keeps an `OwnershipTable`: the first peer to send a delta for an id owns it, and
+  later deltas from anyone else are dropped server-side before the relay. Removal
+  is owner-only, and a disconnect frees that player's objects so they can be
+  claimed again. The client channel keeps the same rule locally, but a modified
+  client can no longer bypass it.
 - Position and yaw only. Pitch and roll stay local.
 - No interpolation or extrapolation on the receiving side yet: a remote agent
   snaps to each 10 Hz sample. `MultiplayerManager` interpolates player avatars,
   not replicated objects.
 - No interest management for objects. Every peer receives every delta, unlike
   `player_state`, which is filtered by radius.
+- Authority is per object id, not per object type: the room does not know that an
+  id is an agent or a runtime spawn, so a claim cannot be constrained by policy.
 
 
 ## Server authority for player movement (6.1)

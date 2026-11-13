@@ -68,7 +68,15 @@ describe('validateMovement', () => {
 
 describe('room player_state', () => {
   function harness() {
-    const presence: PlayerPresence = { id: 'p1', username: 'Somchai', x: 0, y: 0, z: 0, rotation: 0 };
+    const presence: PlayerPresence = {
+      id: 'p1',
+      username: 'Somchai',
+      x: 0,
+      y: 0,
+      z: 0,
+      rotation: 0,
+      joinedAt: 0
+    };
     const sent: RoomEvent[] = [];
     const broadcasts: PlayerPresence[] = [];
     const context = {

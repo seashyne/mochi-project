@@ -7,6 +7,7 @@ import type { ServerLuaRuntime } from '../services/serverLua';
 import type { RoomRateLimiter } from '../services/roomRateLimiter';
 import { parseTransformDelta } from './transformDelta';
 import { validateMovement } from './roomMovement';
+import type { OwnershipTable } from './roomOwnership';
 
 export interface RoomSession {
   playerId: string;
@@ -21,6 +22,8 @@ export interface RoomMessageContext {
   players: Map<string, PlayerPresence>;
   rateLimiter: RoomRateLimiter;
   luaRuntime: ServerLuaRuntime;
+  /** The room's authority record for replicated object transforms. */
+  ownership: OwnershipTable;
   nextTick(): number;
   broadcast(event: RoomEvent): void;
   /** Broadcasts to everyone except one player; used for high-rate relays. */
@@ -105,15 +108,24 @@ export function handleRoomMessage(
     }
 
     case 'transform_delta': {
-      // Object transforms at 10 Hz. Relayed to everyone but the sender, whose own
-      // authority already owns those objects, and only after the shape check.
+      // Object transforms at 10 Hz. The room, not the sender, decides which
+      // objects this peer is allowed to write.
       const payload = parseTransformDelta(event.data);
       if (!payload) break;
+
+      const entries = payload.entries.filter((entry) =>
+        context.ownership.claim(entry.id, session.playerId)
+      );
+      const removed = payload.removed.filter((id) =>
+        context.ownership.release(id, session.playerId)
+      );
+      if (entries.length === 0 && removed.length === 0) break;
+
       context.broadcastFrom(session.playerId, {
         type: 'transform_delta',
         senderId: session.playerId,
         timestamp: Date.now(),
-        data: payload
+        data: { ...payload, entries, removed }
       });
       break;
     }
