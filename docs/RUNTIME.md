@@ -285,6 +285,9 @@ end
   outside the walk.
 - Without a bridge (worlds that never sync objects) every call is a no-op and
   `isMoving()` returns `false`, so a script that navigates still runs anywhere.
+- The bake itself runs in the Rust kernel when it is loaded: walkability plus
+  connected-region labels, with the TypeScript rasteriser as the fallback. The
+  labels let the pathfinder reject an unreachable goal without searching.
 
 
 ## 8. Agent NPCs (`agent.*`)

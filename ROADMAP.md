@@ -63,9 +63,10 @@ Phase 2 is complete. Notes on what actually shipped:
 | --- | --- | --- | --- |
 | 3.1 | A\* over a grid/graph + path smoothing | `core/math/a_star.cpp` | DONE |
 | 3.2 | Steering behaviours: seek, arrive, separation, blocked-lane avoidance | `modules/navigation_3d/3d/nav_map*.cpp` | DONE |
-| 3.3 | Navmesh baking in the Rust/WASM kernel (`npm run build:wasm`) | `nav_mesh_generator_3d.cpp` | BACKLOG |
+| 3.3 | Nav-grid bake in the Rust/WASM kernel (`npm run build:wasm`) | `nav_mesh_generator_3d.cpp` | DONE |
 | 3.4 | Agent component + Lua API (`agent.moveTo`) | `scene/3d/navigation_agent_3d.cpp` | DONE |
 | 3.5 | Local avoidance proper (RVO/ORCA) in the WASM kernel | `nav_map.cpp` | BACKLOG |
+| 3.6 | Polygon navmesh (recast-style convex regions) | `nav_mesh_generator_3d.cpp` | BACKLOG |
 
 **3.1 shipped** in `engine/navigation/`: `NavGrid` (byte-per-cell walkability with
 world/cell mapping), `findPath` (8-way A*, octile heuristic, binary heap, typed
@@ -95,8 +96,19 @@ consumer today - `PlayerNavigator` eases into its final waypoint with it.
 `separation` and `avoidBlocked` are the primitives 3.5 will call; they are
 unit-tested and deliberately unused until local avoidance is worth running.
 
-Next in this phase: 3.3 navmesh bake in the WASM kernel, then 3.5 RVO on top of
-it.
+**3.3 shipped** as `bake_nav_grid` in `mochi-physics-wasm`: one kernel pass that
+rasterises inflated footprints into a walkability bitmap *and* labels 4-way
+connected walkable regions. `engine/navigation/wasmBake.ts` bridges it, `NavGrid`
+carries the labels, and `findPath` now rejects a start/goal pair in different
+regions without searching. The TypeScript rasteriser stays as the fallback when
+the kernel is not loaded, and a parity test compares the two cell for cell - a
+bake that silently disagrees with the renderer is worse than a slow one.
+
+What did **not** ship: a polygon navmesh. Regions are still cells, not convex
+polygons, so 3.6 keeps the recast-style generator on the backlog.
+
+Next in this phase: 3.5 RVO, then 3.6 if cell-shaped regions ever become the
+bottleneck.
 
 ## Phase 4 - Multiplayer and audio
 
