@@ -285,3 +285,9 @@ end
   outside the walk.
 - Without a bridge (worlds that never sync objects) every call is a no-op and
   `isMoving()` returns `false`, so a script that navigates still runs anywhere.
+
+
+## 8. Agent NPCs (`agent.*`)
+
+The `agent` object type, its Lua surface and its movement contract live in
+[`RUNTIME_AGENTS.md`](./RUNTIME_AGENTS.md), next to this file.

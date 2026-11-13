@@ -64,7 +64,7 @@ Phase 2 is complete. Notes on what actually shipped:
 | 3.1 | A\* over a grid/graph + path smoothing | `core/math/a_star.cpp` | DONE |
 | 3.2 | Steering behaviours: seek, arrive, separation, blocked-lane avoidance | `modules/navigation_3d/3d/nav_map*.cpp` | DONE |
 | 3.3 | Navmesh baking in the Rust/WASM kernel (`npm run build:wasm`) | `nav_mesh_generator_3d.cpp` | BACKLOG |
-| 3.4 | Agent component + Lua API (`agent.moveTo`) | `scene/3d/navigation_agent_3d.cpp` | PLANNED |
+| 3.4 | Agent component + Lua API (`agent.moveTo`) | `scene/3d/navigation_agent_3d.cpp` | DONE |
 | 3.5 | Local avoidance proper (RVO/ORCA) in the WASM kernel | `nav_map.cpp` | BACKLOG |
 
 **3.1 shipped** in `engine/navigation/`: `NavGrid` (byte-per-cell walkability with
@@ -74,21 +74,29 @@ arrays, corner cutting refused, iteration budget), `smoothPath` /
 `buildNavGrid` which bakes a grid from `StudioObject[]` — colliding footprints
 inflated by an agent radius, pickups and spawns ignored. 30 tests.
 
-3.4's Lua surface shipped early as `player.moveTo(x, z, speed?)` /
+The player's Lua surface shipped first as `player.moveTo(x, z, speed?)` /
 `player.stopMoving()` / `player.isMoving()` (`engine/runtime/playerNavigator.ts` +
 `runtimeNavigation.ts`, wired in both `gameRuntime` and `playtestRuntime`,
-documented in `docs/RUNTIME.md` section 7). An `agent` NPC type is still open.
+documented in `docs/RUNTIME.md` section 7).
+
+**3.4 shipped** as a real object type, not just a Lua surface: `agent` is
+placeable from the palette and the ribbon, renders as a capsule, carries no
+physics body and never blocks the nav grid. `engine/runtime/runtimeAgents.ts`
+keeps one waypoint follower per agent over the player's grid, and Lua drives it
+with `agent.moveTo(id, x, z, speed?)` / `stop` / `isMoving` / `position`
+(`docs/RUNTIME.md` section 8, example guarded by a test). `script.parent.id` was
+added to the node proxy so a script can name the agent it sits on.
 
 **3.2 shipped** as `engine/navigation/steering.ts`: `seek`, `arrive` (deceleration
 ramp), `separation` (proximity-weighted repulsion whose magnitude follows the
 deepest overlap and never exceeds max speed), `avoidBlocked` (looks ahead on the
 grid and nudges along the free side) and `clampSpeed`. Only `arrive` has a
 consumer today - `PlayerNavigator` eases into its final waypoint with it.
-`separation` and `avoidBlocked` are the primitives 3.5 and the 3.4 agent entity
-will call; they are unit-tested and deliberately unused until an NPC exists.
+`separation` and `avoidBlocked` are the primitives 3.5 will call; they are
+unit-tested and deliberately unused until local avoidance is worth running.
 
-Next in this phase: 3.4's agent entity, then 3.3 navmesh bake and 3.5 RVO on top
-of it.
+Next in this phase: 3.3 navmesh bake in the WASM kernel, then 3.5 RVO on top of
+it.
 
 ## Phase 4 - Multiplayer and audio
 
