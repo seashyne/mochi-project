@@ -3,7 +3,6 @@
 
 import { ColliderShape, PhysicsVec3, AABB } from './types';
 import { Vec3Math } from './math';
-import { wasmTestAABBOverlap } from './wasmPhysics';
 import { isIdentityRotation, orientedBoxAABB, rotationMatrix } from './oriented';
 
 export type { AABB };
@@ -48,7 +47,15 @@ export class ColliderUtils {
   }
 
   public static testAABBOverlap(a: AABB, b: AABB): boolean {
-    return wasmTestAABBOverlap(a, b);
+    // Inline on purpose. This runs once per broadphase pair per physics step, and a
+    // call across the wasm boundary measured 1.7-2.3x slower than the comparison it
+    // performs (`npm run benchmark:kernel`). The kernel earns its keep on bulk
+    // passes over scene data, not on scalar maths.
+    return (
+      a.min.x <= b.max.x && a.max.x >= b.min.x &&
+      a.min.y <= b.max.y && a.max.y >= b.min.y &&
+      a.min.z <= b.max.z && a.max.z >= b.min.z
+    );
   }
 
   public static closestPointOnAABB(point: PhysicsVec3, aabb: AABB): PhysicsVec3 {

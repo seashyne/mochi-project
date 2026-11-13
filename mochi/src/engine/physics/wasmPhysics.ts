@@ -14,6 +14,33 @@ let scratchBufferPtr = 0;
 let normalBufferPtr = 0;
 let initPromise: Promise<boolean> | null = null;
 
+// Views into kernel memory are cached, not rebuilt per call: `wasmTestSphereAABB`
+// runs on every narrowphase hit and allocating a typed array there showed up in
+// the profile. A view must be re-created whenever memory grows, because growth
+// detaches the old buffer.
+let contactView: Float32Array | null = null;
+let contactViewBuffer: ArrayBuffer | null = null;
+let normalView: Float32Array | null = null;
+let normalViewBuffer: ArrayBuffer | null = null;
+
+function contactFloats(): Float32Array {
+  const memory = wasmInstance!.memory;
+  if (!contactView || contactViewBuffer !== memory.buffer) {
+    contactView = new Float32Array(memory.buffer, scratchBufferPtr, 4);
+    contactViewBuffer = memory.buffer;
+  }
+  return contactView;
+}
+
+function normalFloats(): Float32Array {
+  const memory = wasmInstance!.memory;
+  if (!normalView || normalViewBuffer !== memory.buffer) {
+    normalView = new Float32Array(memory.buffer, normalBufferPtr, 3);
+    normalViewBuffer = memory.buffer;
+  }
+  return normalView;
+}
+
 export async function initWasmPhysics(customWasmUrl?: string): Promise<boolean> {
   if (wasmInstance) return true;
   if (initPromise) return initPromise;
@@ -108,7 +135,7 @@ export function wasmTestSphereAABB(
     ) === 1;
 
     if (!hit) return { hit: false, normal: { x: 0, y: 1, z: 0 }, penetration: 0 };
-    const mem = new Float32Array(wasmInstance.memory.buffer, scratchBufferPtr, 4);
+    const mem = contactFloats();
     return {
       hit: true,
       normal: { x: mem[0], y: mem[1], z: mem[2] },
@@ -153,7 +180,7 @@ export function wasmRaycastAABBNormal(
       normalBufferPtr
     );
     if (distance < 0) return RAY_MISS;
-    const mem = new Float32Array(wasmInstance.memory.buffer, normalBufferPtr, 3);
+    const mem = normalFloats();
     return { hit: true, distance, normal: { x: mem[0], y: mem[1], z: mem[2] } };
   }
 
@@ -184,7 +211,7 @@ export function wasmResolveCharacterBox(
       scratchBufferPtr
     );
     if (res === 0) return { collided: false, resolvedPos: { ...pos } };
-    const mem = new Float32Array(wasmInstance.memory.buffer, scratchBufferPtr, 3);
+    const mem = contactFloats();
     return {
       collided: true,
       resolvedPos: { x: mem[0], y: mem[1], z: mem[2] }

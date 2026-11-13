@@ -228,3 +228,27 @@ describe('Lua player.moveTo', () => {
     expect(logs).toContain('false');
   });
 });
+
+describe('grid rebuild discipline', () => {
+  const OPTIONS = {
+    cellSize: 1,
+    agentRadius: 0.4,
+    bounds: { minX: -12, minZ: -12, maxX: 12, maxZ: 12 }
+  };
+
+  it('keeps the baked grid when the same objects arrive in a new array', () => {
+    // `sync()` runs on a 250 ms timer and rebuilds the array every time, so an
+    // identity check on the array would rebake the world four times a second.
+    const scene = [box(-4, 0), box(4, 0)];
+    const navigation = createRuntimeNavigation(new FakePlayer(0, 1, 0), OPTIONS);
+
+    navigation.setObjects(scene);
+    const first = navigation.grid();
+
+    navigation.setObjects([...scene]);
+    expect(navigation.grid()).toBe(first);
+
+    navigation.setObjects(scene.slice(1));
+    expect(navigation.grid()).not.toBe(first);
+  });
+});

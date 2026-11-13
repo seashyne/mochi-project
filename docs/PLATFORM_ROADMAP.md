@@ -173,6 +173,13 @@ accident.
 - Cloud edge handlers. A Durable Object runs JS; pulling a wasm module into the
   room only pays off for the codec, and only after it is measured.
 
+**The boundary has a price.** `docs/KERNEL_AUDIT.md` times every kernel path against
+the TypeScript it replaced. Three went the wrong way: the broadphase AABB test (1.8x
+slower per call, now inlined) and the nav bake (3-10x slower at every grid size,
+which buys region labels rather than speed). The rule that survives measurement is
+bulk passes, not scalar maths - the JS to wasm hop costs about 6 ns, so anything
+cheaper than that per call loses by moving.
+
 **How a Rust item ships:**
 
 1. Kernel function in `mochi-physics-wasm/src/lib.rs`, flat C ABI, buffers passed

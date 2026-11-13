@@ -31,6 +31,16 @@ export interface RuntimeNavigation extends RuntimeNavigationApi {
   grid: () => NavGrid;
 }
 
+/** True when two resident-object lists hold the same objects in the same order. */
+function sameObjects(a: StudioObject[], b: StudioObject[]): boolean {
+  if (a === b) return true;
+  if (a.length !== b.length) return false;
+  for (let index = 0; index < a.length; index += 1) {
+    if (a[index] !== b[index]) return false;
+  }
+  return true;
+}
+
 export function createRuntimeNavigation(
   player: RuntimePlayerHandle,
   options: NavGridFromSceneOptions = {}
@@ -46,6 +56,10 @@ export function createRuntimeNavigation(
 
   return {
     setObjects(next) {
+      // `sync()` runs on a timer and hands over a freshly built array each time, so
+      // identity of the array proves nothing. Compare the objects themselves: a bake
+      // is milliseconds and was being thrown away several times a second.
+      if (sameObjects(objects, next)) return;
       objects = next;
       grid = null;
     },

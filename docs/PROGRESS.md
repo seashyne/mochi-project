@@ -150,3 +150,22 @@ software (SwiftShader), so the only honest timing is CPU command submission
 (~0.08 ms either way). Draw calls and triangle counts are exact and hardware
 independent; G2's "30 fps on a mid-range laptop" still needs a run on real hardware.
 This harness is what makes that run comparable.
+**Kernel audit** (2026-11-13): `npm run benchmark:kernel` times every kernel path
+against the TypeScript it replaced, because "Rust where it pays" had never been
+checked against a stopwatch. `docs/KERNEL_AUDIT.md` holds the table.
+
+Three of ten paths went the wrong way. The broadphase AABB test cost 14.2 ns through
+the kernel against 8.0 ns inline, once per pair per physics step - now inlined. The
+navigation bake is 2.6x to 10.5x slower than TypeScript at every grid size, because
+it is a dense pass over every cell while the TypeScript rasteriser only touches cells
+a box covers, and it also labels regions. That one is documented rather than reverted:
+the labels are what `findPath` uses to refuse a route between disconnected areas.
+
+Compounding it, `sync()` called `setObjects()` on a 250 ms timer with a fresh array
+and the grid was thrown away every time, so the world was rebaked several times a
+second whether or not anything had moved. `setObjects` now compares the resident
+objects and keeps the grid.
+
+`simplify_mesh` (3.9x), `resolve_overlaps` (2.1x) and `scan_json_array` (1.8x) are
+real wins. `rasterize_occluders` and `test_occlusion` are level with TypeScript and
+are kept for testability and bounded cost, not speed.
