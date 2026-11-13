@@ -180,3 +180,26 @@ Every asset response also carries, from `routes/assetFiles.ts`:
 
 The client never sends credentials to the asset host: `resolveAccessAssetUrl` calls
 the API with `credentials: 'include'`, and the returned URL is fetched without them.
+
+### Session cookies
+
+The API accepts two credentials. Native and server callers send
+`Authorization: Bearer`; the web app relies on an httpOnly session cookie, so a
+script running on the page cannot read the token even if it manages to execute.
+
+| Property | Value | Why |
+| --- | --- | --- |
+| Name | `mochi_session` | One cookie, one meaning |
+| `HttpOnly` | yes | XSS cannot exfiltrate the token |
+| `SameSite` | `Lax` | Kept off cross-site POSTs, still sent on top-level navigation |
+| `Secure` | yes (off only for a local http server) | No plaintext transport |
+| `Max-Age` | 7 days, matching the token lifetime | Cookie and token expire together |
+
+Cookie auth brings CSRF with it, so any unsafe method (anything but GET, HEAD,
+OPTIONS) authenticated **by cookie** must also carry `X-Requested-With: mochi`. A
+cross-site form cannot set that header, and the CORS policy already allows it for
+the configured origins. A Bearer request is exempt: a browser does not attach that
+header on its own.
+
+`POST /api/v1/auth/logout` clears the cookie and needs no token - clearing a cookie
+grants nothing.

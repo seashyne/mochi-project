@@ -78,6 +78,10 @@ export class ApiClient {
     if (this.authToken && !headers.has('Authorization')) {
       headers.set('Authorization', `Bearer ${this.authToken}`);
     }
+    // The session cookie is httpOnly, so the browser must be allowed to attach it.
+    // The CSRF header is what lets a cookie-authenticated mutation through; it is
+    // harmless on Bearer calls, where the guard never applies.
+    if (!headers.has('X-Requested-With')) headers.set('X-Requested-With', 'mochi');
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.timeoutMs);
@@ -86,6 +90,7 @@ export class ApiClient {
       const response = await fetch(url, {
         ...options,
         headers,
+        credentials: options.credentials ?? 'include',
         signal: controller.signal
       });
 

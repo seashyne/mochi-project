@@ -14,6 +14,7 @@ import {
   updateUserPassword
 } from '../services/db';
 import { hashPassword, verifyPassword, signToken, authMiddleware } from '../middleware/auth';
+import { buildSessionCookie, clearSessionCookie } from '../services/sessionCookie';
 import { createOtpRecord } from '../services/otpService';
 import { sendTransactionalEmail, buildOtpEmailTemplate } from '../services/emailService';
 import { fetchUserFlags, sanitizeUser } from './authHelpers';
@@ -92,6 +93,7 @@ authRouter.post('/register', async (c) => {
         secret,
         7 * 24 * 3600
       );
+      c.header('Set-Cookie', buildSessionCookie(token));
       return c.json({
         success: true,
         message: 'Account created successfully',
@@ -155,6 +157,8 @@ authRouter.post('/login', async (c) => {
       7 * 24 * 3600
     );
 
+    // The browser client uses the httpOnly cookie; native callers keep the token.
+    c.header('Set-Cookie', buildSessionCookie(token));
     return c.json({ user: sanitizeUser(user, true, userRow), token }, 200);
   } catch (err) {
     return c.json({ error: `Login failed: ${(err as Error).message}` }, 500);
@@ -238,4 +242,11 @@ authRouter.get('/users/:identifier', async (c) => {
   const userRow = await fetchUserFlags(c.env.DB, user.id);
   const gamesRes = await listGames(c.env.DB, { creatorId: user.id, limit: 12 });
   return c.json({ user: sanitizeUser(user, userRow?.is_verified === 1, userRow), games: gamesRes.games }, 200);
+});
+
+// POST /api/v1/auth/logout - Clears the session cookie. Safe to call while signed
+// out, and it never needs a token: clearing a cookie grants nothing.
+authRouter.post('/logout', async (c) => {
+  c.header('Set-Cookie', clearSessionCookie());
+  return c.json({ success: true }, 200);
 });

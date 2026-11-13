@@ -1,4 +1,10 @@
 import { Context, Next } from 'hono';
+import {
+  CSRF_HEADER,
+  hasCsrfHeader,
+  readSessionToken,
+  requiresCsrfGuard
+} from '../services/sessionCookie';
 import { MochiEnv, AppVariables } from '../types/env';
 
 // Base64url utilities
@@ -129,17 +135,44 @@ export async function verifyToken<T>(
   }
 }
 
-// Authentication middleware requiring valid Bearer token
+/**
+ * The session token for a request: a Bearer header wins, then the session cookie.
+ * `fromCookie` drives the CSRF guard, because only a cookie is attached by the
+ * browser without the page asking.
+ */
+export function resolveRequestToken(c: {
+  req: { header: (name: string) => string | undefined };
+}): { token: string; fromCookie: boolean } | null {
+  const authHeader = c.req.header('Authorization');
+  if (authHeader?.startsWith('Bearer ')) {
+    const token = authHeader.substring(7).trim();
+    if (token) return { token, fromCookie: false };
+  }
+  const cookieToken = readSessionToken(c.req.header('Cookie'));
+  return cookieToken ? { token: cookieToken, fromCookie: true } : null;
+}
+
+// Authentication middleware: Bearer token or session cookie.
 export async function authMiddleware(
   c: Context<{ Bindings: MochiEnv; Variables: AppVariables }>,
   next: Next
 ) {
-  const authHeader = c.req.header('Authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  const resolved = resolveRequestToken(c);
+  if (!resolved) {
     return c.json({ error: 'Unauthorized: Missing or invalid token' }, 401);
   }
 
-  const token = authHeader.substring(7).trim();
+  // A cookie is attached by the browser on any cross-site request, so an unsafe
+  // method must prove the call came from our own page.
+  if (
+    resolved.fromCookie &&
+    requiresCsrfGuard(c.req.method) &&
+    !hasCsrfHeader(c.req.header(CSRF_HEADER))
+  ) {
+    return c.json({ error: 'Forbidden: cookie session requires the CSRF header' }, 403);
+  }
+
+  const token = resolved.token;
   const secret = c.env.JWT_SECRET || 'mochi-dev-secret-key-change-in-production';
   const payload = await verifyToken<{
     id: string;
@@ -168,15 +201,15 @@ export async function optionalAuthMiddleware(
   c: Context<{ Bindings: MochiEnv; Variables: AppVariables }>,
   next: Next
 ) {
-  const authHeader = c.req.header('Authorization');
-  if (authHeader?.startsWith('Bearer ')) {
+  const resolved = resolveRequestToken(c);
+  if (resolved) {
     const secret = c.env.JWT_SECRET || 'mochi-dev-secret-key-change-in-production';
     const payload = await verifyToken<{
       id: string;
       username: string;
       email: string;
       role: string;
-    }>(authHeader.substring(7).trim(), secret);
+    }>(resolved.token, secret);
     if (payload) {
       c.set('user', {
         id: payload.id,
