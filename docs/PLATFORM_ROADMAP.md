@@ -57,17 +57,19 @@ nothing at import, which is the worst combination: no guardrail, no headroom.
 
 ## 3. The four gates
 
-"Competitive" is not a feeling. These four are the bar, and three of them are not
-met today.
+"Competitive" is not a feeling. These four are the bar. Each row states what the code
+does today, not what the phase intended - a gate is only "passes" once its test has
+actually been run.
 
 | Gate | Test | Status |
 | --- | --- | --- |
-| G1 Port time | A Roblox developer rebuilds a simple obby in under an hour, in Lua, without reading a manual | Fails: `task.wait` cannot yield, so the loop patterns they know do not work |
-| G2 Density | 30 players in one room at 30+ fps on a mid-range laptop | **Half measured.** The room's CPU cost is 0.052 ms median / 0.163 ms p95 per tick for 30 peers (see 7.5); client frame rate still needs a browser run. |
-| G3 Trust | A client that edits its own position is refused by the server | Fails: transforms are first-writer-wins, no arbiter |
-| G4 Audio | A creator uploads a sound and hears it positioned in 3D | Fails: synthesis only, no uploaded files |
+| G1 Port time | A Roblox developer rebuilds a simple obby in under an hour, in Lua, without reading a manual | **Unblocked, unmeasured.** 5.1 made `task.wait` yield, so the loop patterns they know now work. Nobody has sat a porting creator down with a stopwatch, so the hour is unproven. |
+| G2 Density | 30 players in one room at 30+ fps on a mid-range laptop | **Half measured.** The room's CPU cost is 0.052 ms median / 0.163 ms p95 per tick for 30 peers (7.5). The client half is instrumented (`npm run benchmark:client`) but a headless browser rasterises in software, so the frame rate still needs real hardware. |
+| G3 Trust | A client that edits its own position is refused by the server | **Passes for blatant cheats.** 6.1 validates every reported position and corrects it; 6.2 makes the room the owner of replicated objects. There is no input replay or server-side collision, so a cheater inside the allowed envelope still gains a small edge. |
+| G4 Audio | A creator uploads a sound and hears it positioned in 3D | **Passes.** 5.3 routes `world.playSound` through the same rollup, pan and Doppler path for uploaded files as for synthesis, with ids resolved through the asset gate. |
 
-G2 is unknown, not failing. Measuring it before optimising is the first task.
+What is left is measurement, not implementation: G1 needs a human port test and G2
+needs a run on real hardware. Both are recorded in section 11.
 
 ## 4. Phase 5 - Creator floor
 
@@ -78,13 +80,14 @@ Goal: a Roblox developer can do their normal work here without relearning.
 | 5.1 | Coroutine scheduler so `task.wait` yields | TS | Every loop pattern from Roblox uses it; today it only schedules a callback | `while true do task.wait(1) ... end` runs and a test proves the script suspends and resumes |
 | 5.2 | Import guardrails (triangles, texture size, audio length) | Rust (parse) + TS (messages) | A 500k-triangle GLB loads today and quietly eats the frame budget | An oversized asset is rejected with a message naming the limit and the actual value |
 | 5.3 | Uploaded audio | TS (WebAudio) | No game ships without its own sound | Upload a file, `world.playSound` plays it with the same rolloff, pan and Doppler as synthesis |
-| 5.4 | API parity checklist | docs | Creators discover gaps one at a time, then leave | A table in the docs maps every Roblox call a beginner uses to its equivalent or to a documented "not supported" |
+| 5.4 | API parity checklist | docs | Creators discover gaps one at a time, then leave | A table in the docs maps every common call a beginner uses to its equivalent or to a documented "not supported" |
 
 Shipped 5.1 on 2026-11-13 - details in `docs/PROGRESS.md`.
 
 Shipped 5.2 on 2026-11-13 - details in `docs/PROGRESS.md`.
 
 Shipped 5.3 on 2026-11-13 - details in `docs/PROGRESS.md`.
+Shipped 5.4 on 2026-11-13 - `docs/API_PARITY.md`.
 
 5.1 was the highest value per unit of work in this document: it unlocks the
 largest population of creators and it was testable without any UI.
@@ -208,21 +211,29 @@ cheaper than that per call loses by moving.
 | Authoritative simulation cost per room | A Durable Object per room simulating physics may not pay for itself | Model cost per concurrent room before Phase 6 |
 | Moderation cost | Platform-scale UGC needs human review | Stay invite-only until Phase 8 is funded |
 
-## 11. Next three actions
+## 11. Next actions
 
-1. **Spike coroutines** (5.1): prove wasmoon can suspend and resume a script from
-   the host. One test, no product code. If it fails, the fallback is a
-   generator-based rewrite of the script runner, which is a different estimate.
-2. **Finish the benchmark** (7.5): the room half is shipped, and the client harness
-   now reports draw calls and culling cost in real Chrome. The frame-rate half still
-   needs a run on real hardware, because a headless browser rasterises in software.
-3. **Write the parity checklist** (5.4): it turns "we should support Roblox
-   developers" into a finite, ordered list of work.
-4. **Audit for kernel candidates**: profile the frame loop and the replication
-   tick, list every O(n) pass over scene data that still runs in TypeScript, and
-   move the ones the profile actually shows. The rule in section 8 says where
-   compute belongs; profiling says which one to move first, and guessing has a
-   habit of optimising the thing that was never slow.
+Everything that could be written is written; what is left is either blocked on an
+account, needs hardware, or is a product decision. Ordered by what unblocks the most.
+
+1. **Bind the asset hosts** (section 12). A launch blocker: every public asset URL
+   resolves to a hostname that answers nothing. Needs `wrangler login` and a deploy,
+   not code.
+2. **Run G2's frame-rate half on real hardware.** `npm run benchmark:client` measures
+   draw calls exactly, but a headless browser rasterises in software, so the 30 fps
+   question needs a mid-range laptop. One command, one number.
+3. **Decide what the nav region labels are worth.** The bake costs 2-8x the
+   TypeScript rasteriser and buys labels only `findPath` reads. Keeping them is a
+   behaviour choice, not a mechanical one - see `docs/KERNEL_AUDIT.md`.
+4. **Close the parity gaps in order.** `docs/API_PARITY.md` ranks them by how quickly
+   a porting creator hits them: Humanoid/Character first, then the GUI tree, then
+   `CFrame`. Each is a feature, not a fix.
+5. **Run a real port test (G1).** Watch someone rebuild an obby with the docs and a
+   stopwatch. It is the only gate that cannot be automated.
+
+Not on this list, deliberately: more rendering work. 7.2-7.4 shipped, and their
+frame-rate value is unmeasured - adding to them before G2 has a number would be
+guessing.
 
 ## 12. Launch blocker: binding the asset hosts
 
