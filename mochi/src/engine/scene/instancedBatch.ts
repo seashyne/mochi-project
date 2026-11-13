@@ -3,6 +3,7 @@
 
 import * as THREE from 'three';
 import { StudioObject } from '../studio/types';
+import { createRuntimeMaterial, surfaceKey } from './runtimeMaterial';
 
 export type InstanceKind =
   | 'box'
@@ -14,7 +15,8 @@ export type InstanceKind =
 
 interface KindConfig {
   geometry: () => THREE.BufferGeometry;
-  material: (variant?: string) => THREE.Material;
+  /** Builds the batch material from a representative object and its surface. */
+  material: (obj: StudioObject, variant?: string) => THREE.Material;
   local?: THREE.Matrix4;
   castShadow: boolean;
   receiveShadow: boolean;
@@ -29,31 +31,32 @@ const JUMP_PAD_RING_LOCAL = new THREE.Matrix4()
 const KINDS: Record<InstanceKind, KindConfig> = {
   box: {
     geometry: () => new THREE.BoxGeometry(1, 1, 1),
-    material: () =>
-      new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.35, metalness: 0.3 }),
+    material: (obj) =>
+      createRuntimeMaterial(obj, { color: 0xffffff, roughness: 0.35, metalness: 0.3 }, true, new THREE.Color(obj.color)),
     castShadow: true,
     receiveShadow: true,
     useInstanceColor: true
   },
   coin: {
     geometry: () => new THREE.CylinderGeometry(0.5, 0.5, 0.2, 24),
-    material: () =>
-      new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2, metalness: 0.9 }),
+    material: (obj) =>
+      createRuntimeMaterial(obj, { color: 0xffffff, roughness: 0.2, metalness: 0.9 }, true, new THREE.Color(obj.color)),
     castShadow: false,
     receiveShadow: false,
     useInstanceColor: true
   },
   spawn: {
     geometry: () => new THREE.CylinderGeometry(0.7, 0.7, 0.15, 24),
-    material: () =>
-      new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3, metalness: 0.7 }),
+    material: (obj) =>
+      createRuntimeMaterial(obj, { color: 0xffffff, roughness: 0.3, metalness: 0.7 }, true, new THREE.Color(obj.color)),
     castShadow: false,
     receiveShadow: false,
     useInstanceColor: true
   },
   jump_pad_base: {
     geometry: () => new THREE.CylinderGeometry(0.6, 0.7, 0.2, 16),
-    material: () => new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.5 }),
+    material: (obj) =>
+      createRuntimeMaterial(obj, { color: 0x1e293b, roughness: 0.5 }, true, new THREE.Color(obj.color)),
     castShadow: false,
     receiveShadow: false,
     useInstanceColor: false
@@ -69,13 +72,18 @@ const KINDS: Record<InstanceKind, KindConfig> = {
   },
   hazard: {
     geometry: () => new THREE.BoxGeometry(1, 1, 1),
-    material: (variant) =>
-      new THREE.MeshStandardMaterial({
-        color: 0xffffff,
-        emissive: new THREE.Color(variant || '#ef4444'),
-        emissiveIntensity: 0.5,
-        roughness: 0.2
-      }),
+    material: (obj, variant) =>
+      createRuntimeMaterial(
+        obj,
+        {
+          color: 0xffffff,
+          emissive: new THREE.Color(variant || '#ef4444'),
+          emissiveIntensity: 0.5,
+          roughness: 0.2
+        },
+        true,
+        new THREE.Color(obj.color)
+      ),
     castShadow: false,
     receiveShadow: false,
     useInstanceColor: true
@@ -141,7 +149,7 @@ export function buildInstancedBatch(
   const config = KINDS[kind];
   const mesh = new THREE.InstancedMesh(
     config.geometry(),
-    config.material(variant),
+    config.material(objects[0], variant),
     objects.length
   );
   const dummy = new THREE.Object3D();
@@ -169,7 +177,7 @@ export function createInstancedBatches(objects: StudioObject[]): THREE.Instanced
 
   for (const obj of objects) {
     for (const target of batchTargetsFor(obj)) {
-      const key = `${target.kind}:${target.variant ?? ''}`;
+      const key = `${target.kind}:${target.variant ?? ''}:${surfaceKey(obj)}`;
       const group = groups.get(key);
       if (group) group.items.push(obj);
       else groups.set(key, { ...target, items: [obj] });

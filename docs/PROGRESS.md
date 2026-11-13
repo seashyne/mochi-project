@@ -269,3 +269,26 @@ had a mode, so it stayed `NoToneMapping` and the Studio exposure slider did noth
 Shadows remain off. `sun.castShadow` and the mesh flags are set, but the game renderer
 never enables `shadowMap`; turning it on is a cost decision that needs the client
 benchmark first.
+**Parts honour their material and texture in the game** (2026-11-13): the object model
+has carried `material`, `materialTexture` and `textureUrl` since the material library
+shipped, and the Studio editor applied all three - `createStudioMaterial` switches
+roughness and metalness per name and attaches the PBR maps. The runtime never read any
+of them. Both game paths, the instanced batch for static geometry and the per-object
+builder for scripted nodes, hard-coded roughness and metalness per object type, so a
+wooden crate and a plastic one rendered identically, and a world with brick walls
+looked like flat colour once it was published.
+
+`engine/scene/runtimeMaterial.ts` is the runtime's half of that contract: named
+materials, bundled PBR sets and uploaded textures, with the per-type values kept as
+the fallback so an object that asks for nothing looks exactly as it did before.
+
+Instanced batches are now keyed by surface as well as kind, which is what lets one
+batch hold every plastic block and a second hold the metal ones. Neon is keyed by
+colour too, because its emissive is baked into the material and an instanced mesh
+cannot vary that per instance. Batches keep a white base colour so instance colors
+still tint them; a textured part keeps white as well, because the map supplies the
+albedo.
+
+Two limits worth stating: a part still takes one material, not a different surface per
+face, and the texture branch is covered by a stubbed resolver because texture loading
+needs a DOM the test environment does not have.
