@@ -5,6 +5,7 @@ import { handleRoomMessage, type RoomSession } from '../src/do/roomMessages';
 import { DEFAULT_WORLD_OP_LIMITS, SpawnBudget, validateWorldOp } from '../src/do/worldOpValidation';
 import { ScoreGuard, validateScoreValue } from '../src/do/scoreGuard';
 import { OwnershipTable } from '../src/do/roomOwnership';
+import { InterestIndex } from '../src/do/roomInterest';
 import { RoomRateLimiter } from '../src/services/roomRateLimiter';
 import type { RoomEvent } from '../src/types/api';
 
@@ -132,6 +133,8 @@ describe('room relay', () => {
       ownership: new OwnershipTable(),
       spawnBudget,
       scoreGuard: new ScoreGuard({ maxValue: 1000, maxGainPerSecond: 100, keys: ['score'] }),
+      interest: new InterestIndex(),
+      sendToPlayer: vi.fn(),
       nextTick: () => 1,
       broadcast: (event: RoomEvent) => broadcast.push(event),
       broadcastFrom: vi.fn(),

@@ -115,13 +115,14 @@ Goal: worlds bigger than one screenful, at frame rate.
 
 | # | Item | Engine | Why |
 | --- | --- | --- | --- |
-| 7.1 | Interest management for transforms | Rust (spatial query) | Every peer receives every delta today; `player_state` is already radius-filtered |
+| 7.1 | Interest management for transforms | TS (DO spatial hash) | Every peer received every delta; `player_state` was already radius-filtered |
 | 7.2 | LOD (distance swap or decimation) | Rust (decimation) + TS (swap) | 1.5M triangles per frame is the whole budget; one hero model can eat it |
 | 7.3 | Occlusion culling | Rust (raster test) | Geometry behind walls is drawn |
 | 7.4 | Instance-level streaming | Rust (index) + TS (loader) | Chunks are all-or-nothing at 64 MB |
 | 7.5 | Benchmark harness (30 players, fixed scene) | TS (harness) | G2 needs a number before and after every change |
 
 Shipped 7.5 on 2026-11-13 - details in `docs/PROGRESS.md`.
+Shipped 7.1 on 2026-11-13 - details in `docs/PROGRESS.md`.
 
 ## 7. Phase 8 - Platform
 
@@ -145,8 +146,11 @@ accident.
 
 **Goes to Rust, always:**
 
-- Broad-phase and spatial queries: interest management, neighbour lookups, the nav
-  bake, avoidance, BVH. Anything that is O(n) or worse per frame over scene data.
+- Broad-phase and spatial queries over **scene data**: neighbour lookups, the nav
+  bake, avoidance, BVH, geometry decimation. Anything O(n) or worse per frame on
+  the client. The room's interest index (7.1) is the documented exception: a
+  Durable Object runs JS, and for tens of players a spatial hash is cheaper than
+  crossing a wasm boundary.
 - Geometry work: LOD decimation, occlusion rasterisation, mesh validation on import
   (triangle counting, bounds), collider generation.
 - Movement authority: client prediction and server reconciliation for 6.1, plus the

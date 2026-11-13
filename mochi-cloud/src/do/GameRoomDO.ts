@@ -9,9 +9,7 @@ import { ensureRoomScript } from './roomScriptBundle';
 import { RoomPlayerData } from './roomPlayerData';
 import { broadcastFromPlayer, broadcastToSessions, sendToSession, socketForPlayer } from './roomBroadcast';
 import { handleRoomMessage, type RoomMessageContext, type RoomSession } from './roomMessages';
-import { OwnershipTable } from './roomOwnership';
-import { SpawnBudget } from './worldOpValidation';
-import { ScoreGuard } from './scoreGuard';
+import { createRoomGuards, releasePlayerGuards } from './roomGuards';
 
 // Cloudflare Durable Object for multiplayer game rooms with WebSocket presence
 export class GameRoomDO {
@@ -21,9 +19,7 @@ export class GameRoomDO {
   private players: Map<string, PlayerPresence> = new Map();
   private tick = 0;
   private rateLimiter = new RoomRateLimiter();
-  private ownership = new OwnershipTable();
-  private spawnBudget = new SpawnBudget();
-  private scoreGuard = new ScoreGuard();
+  private readonly guards = createRoomGuards();
   private luaRuntime: ServerLuaRuntime;
   private playerData: RoomPlayerData | null = null;
   private gameId: string | null = null;
@@ -51,9 +47,11 @@ export class GameRoomDO {
       players: this.players,
       rateLimiter: this.rateLimiter,
       luaRuntime: this.luaRuntime,
-      ownership: this.ownership,
-      spawnBudget: this.spawnBudget,
-      scoreGuard: this.scoreGuard,
+      ownership: this.guards.ownership,
+      spawnBudget: this.guards.spawnBudget,
+      scoreGuard: this.guards.scoreGuard,
+      interest: this.guards.interest,
+      sendToPlayer: (playerId, event) => this.sendToPlayer(playerId, event),
       nextTick: () => ++this.tick,
       broadcast: (event) => this.broadcast(event),
       broadcastFrom: (playerId, event) => this.broadcastFrom(playerId, event),
@@ -182,6 +180,7 @@ export class GameRoomDO {
       joinedAt: Date.now()
     };
     this.players.set(playerId, presence);
+    this.guards.interest.update(playerId, presence.x ?? 0, presence.z ?? 0);
     this.luaRuntime.addPlayer({ id: playerId, username, x: presence.x, y: presence.y, z: presence.z });
 
     // Notify the newly joined client of the full room state
@@ -266,9 +265,7 @@ export class GameRoomDO {
     this.players.delete(session.playerId);
     this.luaRuntime.removePlayer(session.playerId);
     this.rateLimiter.release(session.playerId);
-    this.ownership.dropPlayer(session.playerId);
-    this.spawnBudget.release(session.playerId);
-    this.scoreGuard.release(session.playerId);
+    releasePlayerGuards(this.guards, session.playerId);
 
     const pending = this.playerData?.drop(session.playerId);
     if (pending) {

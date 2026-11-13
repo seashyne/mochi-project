@@ -82,8 +82,6 @@ geometry is never replicated, because it arrives with the world manifest.
 - No interpolation or extrapolation on the receiving side yet: a remote agent
   snaps to each 10 Hz sample. `MultiplayerManager` interpolates player avatars,
   not replicated objects.
-- No interest management for objects. Every peer receives every delta, unlike
-  `player_state`, which is filtered by radius.
 - Authority is per object id, not per object type: the room does not know that an
   id is an agent or a runtime spawn, so a claim cannot be constrained by policy.
 
@@ -133,3 +131,13 @@ know a game's scoring rules - these are bounds on absurdity, not an anti-cheat
 verdict on legitimate play.
 
 Both the spawn budget and the score baseline are released on disconnect.
+
+## Interest management (7.1)
+
+The room keeps a spatial hash of player positions (`do/roomInterest.ts`). Each
+`transform_delta` entry is delivered only to observers within the interest radius
+of that entry's position, through one payload per observer. Letting clients filter
+after a broadcast would save no bandwidth at all, because the bytes would already
+have travelled. Removals carry no position, so they still go to everyone but the
+sender. Player positions update the index on join and on every accepted
+`player_state`, and a disconnect removes the player from it.

@@ -9,6 +9,7 @@ import { handleRoomMessage } from '../src/do/roomMessages';
 import { RoomRateLimiter } from '../src/services/roomRateLimiter';
 import { SpawnBudget } from '../src/do/worldOpValidation';
 import { ScoreGuard } from '../src/do/scoreGuard';
+import { InterestIndex } from '../src/do/roomInterest';
 import type { MochiEnv } from '../src/types/env';
 import type { PlayerPresence, RoomEvent } from '../src/types/api';
 
@@ -224,6 +225,8 @@ describe('room message dispatch', () => {
       rateLimiter: new RoomRateLimiter(),
       spawnBudget: new SpawnBudget(),
       scoreGuard: new ScoreGuard(),
+      interest: new InterestIndex(),
+      sendToPlayer: vi.fn(),
       luaRuntime: runtime,
       nextTick: () => ++tick,
       broadcast: (event: RoomEvent) => broadcast.push(event),

@@ -57,3 +57,15 @@ of 5 ms is a regression tripwire, not an SLA.
 This measures the Durable Object, not the browser. Gate G2's frame-rate half is
 still open and needs a headless-browser run with a fixed scene; the room is not
 the bottleneck at 30 players.
+
+**7.1 shipped** (2026-11-13): `transform_delta` is now delivered per observer
+instead of broadcast to the whole room. `do/roomInterest.ts` keeps a spatial hash
+of player positions; each entry goes only to players inside the interest radius.
+Removals have no position and still go to everyone but the sender. The index is
+updated on join and on every accepted `player_state`, and cleared on disconnect.
+
+Decision behind the Engine column: this runs in TypeScript inside the Durable
+Object, not the wasm kernel. AGENTS.md section 4 explicitly leaves cloud edge
+handlers in JS, and for tens of players a spatial hash is cheaper than a wasm
+boundary. `roomGuards.ts` groups the four per-room guards so `GameRoomDO` stays
+under the size ceiling. 11 tests cover the index and per-observer delivery.

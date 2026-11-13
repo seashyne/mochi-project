@@ -6,6 +6,7 @@ import { OwnershipTable } from '../src/do/roomOwnership';
 import { RoomRateLimiter } from '../src/services/roomRateLimiter';
 import { SpawnBudget } from '../src/do/worldOpValidation';
 import { ScoreGuard } from '../src/do/scoreGuard';
+import { InterestIndex } from '../src/do/roomInterest';
 import type { RoomEvent } from '../src/types/api';
 
 describe('OwnershipTable', () => {
@@ -49,12 +50,16 @@ describe('OwnershipTable', () => {
 describe('transform_delta authority', () => {
   function harness() {
     const ownership = new OwnershipTable();
+    const interest = new InterestIndex();
+    interest.update('observer', 0, 0);
     const forwarded: RoomEvent[] = [];
     const context = {
       players: new Map(),
       rateLimiter: new RoomRateLimiter(),
       spawnBudget: new SpawnBudget(),
       scoreGuard: new ScoreGuard(),
+      interest,
+      sendToPlayer: (_playerId: string, event: RoomEvent) => forwarded.push(event),
       luaRuntime: {} as never,
       ownership,
       nextTick: () => 1,

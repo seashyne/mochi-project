@@ -6,6 +6,7 @@ import { DEFAULT_MOVEMENT_LIMITS, validateMovement } from '../src/do/roomMovemen
 import { RoomRateLimiter } from '../src/services/roomRateLimiter';
 import { SpawnBudget } from '../src/do/worldOpValidation';
 import { ScoreGuard } from '../src/do/scoreGuard';
+import { InterestIndex } from '../src/do/roomInterest';
 import type { PlayerPresence, RoomEvent } from '../src/types/api';
 
 const at = (x: number, y: number, z: number) => ({ x, y, z });
@@ -86,6 +87,8 @@ describe('room player_state', () => {
       rateLimiter: new RoomRateLimiter(),
       spawnBudget: new SpawnBudget(),
       scoreGuard: new ScoreGuard(),
+      interest: new InterestIndex(),
+      sendToPlayer: vi.fn(),
       luaRuntime: {} as never,
       nextTick: () => 1,
       broadcast: vi.fn(),

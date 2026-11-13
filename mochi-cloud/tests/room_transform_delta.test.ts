@@ -8,15 +8,21 @@ import { RoomRateLimiter } from '../src/services/roomRateLimiter';
 import { OwnershipTable } from '../src/do/roomOwnership';
 import { SpawnBudget } from '../src/do/worldOpValidation';
 import { ScoreGuard } from '../src/do/scoreGuard';
+import { InterestIndex } from '../src/do/roomInterest';
 import type { RoomEvent } from '../src/types/api';
 
 function harness() {
   const forwarded: Array<{ playerId: string; event: RoomEvent }> = [];
+  const interest = new InterestIndex();
+  // A nearby observer who should receive the delta.
+  interest.update('observer', 0, 0);
   const context = {
     players: new Map(),
     rateLimiter: new RoomRateLimiter(),
-      spawnBudget: new SpawnBudget(),
-      scoreGuard: new ScoreGuard(),
+    spawnBudget: new SpawnBudget(),
+    scoreGuard: new ScoreGuard(),
+    interest,
+    sendToPlayer: (playerId: string, event: RoomEvent) => forwarded.push({ playerId, event }),
     luaRuntime: {} as never,
     ownership: new OwnershipTable(),
     nextTick: () => 1,
@@ -43,7 +49,7 @@ const valid = () => ({
 });
 
 describe('transform_delta relay', () => {
-  it('forwards a valid delta to everyone except the sender', () => {
+  it('delivers a valid delta to an observer in range, never the sender', () => {
     const { context, forwarded } = harness();
     handleRoomMessage(context as never, session('p1'), {
       type: 'transform_delta',
@@ -52,7 +58,7 @@ describe('transform_delta relay', () => {
     });
 
     expect(forwarded).toHaveLength(1);
-    expect(forwarded[0].playerId).toBe('p1');
+    expect(forwarded[0].playerId).toBe('observer');
     expect(forwarded[0].event.type).toBe('transform_delta');
     expect(forwarded[0].event.senderId).toBe('p1');
     const data = forwarded[0].event.data as { entries: Array<{ id: string; x: number }> };

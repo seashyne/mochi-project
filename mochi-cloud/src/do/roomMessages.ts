@@ -11,6 +11,7 @@ import type { OwnershipTable } from './roomOwnership';
 import type { SpawnBudget } from './worldOpValidation';
 import { validateWorldOp } from './worldOpValidation';
 import type { ScoreGuard } from './scoreGuard';
+import type { InterestIndex } from './roomInterest';
 
 export interface RoomSession {
   playerId: string;
@@ -29,6 +30,9 @@ export interface RoomMessageContext {
   ownership: OwnershipTable;
   spawnBudget: SpawnBudget;
   scoreGuard: ScoreGuard;
+  interest: InterestIndex;
+  /** Sends one event to one player, used for per-observer delivery. */
+  sendToPlayer: (playerId: string, event: RoomEvent) => void;
   nextTick(): number;
   broadcast(event: RoomEvent): void;
   /** Broadcasts to everyone except one player; used for high-rate relays. */
@@ -61,6 +65,7 @@ export function handleRoomMessage(
         current.x = verdict.x;
         current.y = verdict.y;
         current.z = verdict.z;
+        context.interest.update(session.playerId, verdict.x, verdict.z);
         if (typeof data.rotation === 'number') current.rotation = data.rotation;
 
         context.broadcastPlayerState(session.playerId, current);
@@ -143,12 +148,38 @@ export function handleRoomMessage(
       );
       if (entries.length === 0 && removed.length === 0) break;
 
-      context.broadcastFrom(session.playerId, {
-        type: 'transform_delta',
-        senderId: session.playerId,
-        timestamp: Date.now(),
-        data: { ...payload, entries, removed }
-      });
+      const timestamp = Date.now();
+      // One payload per observer, containing only the entries near them. Sending
+      // a single broadcast and letting clients filter would still pay for every
+      // byte on every connection.
+      const deliveries = new Map<string, typeof entries>();
+      for (const entry of entries) {
+        for (const observer of context.interest.observersOf(entry.x, entry.z)) {
+          if (observer === session.playerId) continue;
+          const list = deliveries.get(observer) ?? [];
+          list.push(entry);
+          deliveries.set(observer, list);
+        }
+      }
+
+      for (const [observer, list] of deliveries) {
+        context.sendToPlayer(observer, {
+          type: 'transform_delta',
+          senderId: session.playerId,
+          timestamp,
+          data: { ...payload, entries: list, removed: [] }
+        });
+      }
+
+      // Removals carry no position, so they go to everyone but the sender.
+      if (removed.length > 0) {
+        context.broadcastFrom(session.playerId, {
+          type: 'transform_delta',
+          senderId: session.playerId,
+          timestamp,
+          data: { ...payload, entries: [], removed }
+        });
+      }
       break;
     }
 
