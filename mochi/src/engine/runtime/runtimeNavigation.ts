@@ -27,6 +27,8 @@ export interface RuntimeNavigation extends RuntimeNavigationApi {
   setObjects: (objects: StudioObject[]) => void;
   /** Advances the walk. Call once per frame after physics. */
   update: (dt: number) => void;
+  /** The shared walkability grid, baked on first use. Agents path over it too. */
+  grid: () => NavGrid;
 }
 
 export function createRuntimeNavigation(
@@ -51,6 +53,8 @@ export function createRuntimeNavigation(
     update(dt) {
       navigator.update(dt);
     },
+
+    grid: () => ensureGrid(),
 
     isMoving: () => navigator.isActive,
 

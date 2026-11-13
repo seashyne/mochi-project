@@ -171,6 +171,32 @@ export function createAnimationApi(deps: RuntimeApiDeps): Record<string, unknown
   };
 }
 
+/** `agent.*` walks NPC objects. No-ops when the runtime has no agent support. */
+export function createAgentApi(deps: RuntimeApiDeps): Record<string, unknown> {
+  const bridge = () => deps.agents;
+  const key = (value: unknown) => String(value ?? '');
+
+  return {
+    moveTo: (id: unknown, x: unknown, z: unknown, speed?: unknown) => {
+      const targetX = Number(x);
+      const targetZ = Number(z);
+      if (!Number.isFinite(targetX) || !Number.isFinite(targetZ)) return false;
+      const started = bridge()?.moveTo(key(id), targetX, targetZ, Number(speed)) ?? false;
+      deps.log(
+        'info',
+        `[Nav] agent "${key(id)}" moveTo(${targetX}, ${targetZ}) ${started ? 'started' : 'unreachable'}`,
+        'agent'
+      );
+      return started;
+    },
+    stop: (id: unknown) => bridge()?.stop(key(id)),
+    isMoving: (id: unknown) => bridge()?.isMoving(key(id)) ?? false,
+    // wasmoon cannot return null and undefined yields zero Lua values, so the
+    // origin is the documented miss value; `agent.isMoving` is the real check.
+    position: (id: unknown) => bridge()?.position(key(id)) ?? { x: 0, y: 0, z: 0 }
+  };
+}
+
 export function buildRuntimeGlobals(node: LiveNode, deps: RuntimeApiDeps): Record<string, unknown> {
   const luaNode = createLuaNode(node, deps);
   const playerApi = deps.playerApi ?? createPlayerApi(deps);
@@ -191,6 +217,7 @@ export function buildRuntimeGlobals(node: LiveNode, deps: RuntimeApiDeps): Recor
     Instance: createInstanceApi(deps),
     network: createNetworkApi(deps),
     animation: createAnimationApi(deps),
+    agent: createAgentApi(deps),
     player: playerApi,
     players: {
       getLocalPlayer: () => playerApi,

@@ -83,7 +83,7 @@ export const ModelGroups: React.FC<{ a: StudioRibbonActions }> = ({ a }) => (
     </RibbonGroup>
     <RibbonDivider />
     <RibbonGroup label="Gameplay">
-      {PART_MENU.slice(5, 9).map((item) => (
+      {PART_MENU.slice(5, 10).map((item) => (
         <RibbonButton key={item.type} icon={item.icon} label={item.label} onClick={() => a.onAddObject(item.type)} />
       ))}
     </RibbonGroup>

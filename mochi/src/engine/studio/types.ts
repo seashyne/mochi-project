@@ -13,6 +13,7 @@ export type StudioObjectType =
   | 'jump_pad'
   | 'hazard'
   | 'spawn'
+  | 'agent'
   | 'model'
   | 'terrain'
   | 'constraint'
@@ -120,6 +121,13 @@ export const OBJECT_TYPE_DEFAULTS: Record<
     defaultColor: '#00a2ff',
     defaultScale: { x: 2.5, y: 0.2, z: 2.5 },
     defaultScript: '-- Player spawn origin\nworld.setSpawnPoint(script.parent.position)'
+  },
+  agent: {
+    label: 'Agent NPC',
+    defaultColor: '#22d3ee',
+    defaultScale: { x: 1, y: 2, z: 1 },
+    defaultScript:
+      '-- NPC: walks to the point below on start, then idles\nlocal me = script.parent\nagent.moveTo(me.id, me.position.x + 6, me.position.z, 3)'
   },
   model: {
     label: 'Model Group',

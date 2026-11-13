@@ -130,10 +130,10 @@ describe('Challenger M4: StudioPropertiesPanel Dock Verification', () => {
 });
 
 describe('Challenger M4: StudioObjectPalette Empirical Verification', () => {
-  it('renders all 12 palette items with studio-panel and studio-card tokens', () => {
+  it('renders all 13 palette items with studio-panel and studio-card tokens', () => {
     const html = renderToString(<StudioObjectPalette onAddObject={vi.fn()} />);
     expect(html).toContain('3D Object Palette');
-    expect(html).toContain('12 Components');
+    expect(html).toContain('13 Components');
     expect(html).toContain('bg-studio-panel');
     expect(html).toContain('bg-studio-card');
     expect(html).toContain('border-studio-border');

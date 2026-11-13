@@ -1,7 +1,7 @@
 // Shelf of placeable 3D primitive objects and gameplay components for Studio World Builder
 
 import React from 'react';
-import { Box, Layers, Coins, Zap, Flame, MapPin, Plus, Circle, Cylinder, Triangle, Mountain, Link2, Sparkles } from 'lucide-react';
+import { Box, Layers, Coins, Zap, Flame, MapPin, PersonStanding, Plus, Circle, Cylinder, Triangle, Mountain, Link2, Sparkles } from 'lucide-react';
 import { StudioObjectType, OBJECT_TYPE_DEFAULTS } from '../../engine/studio/types';
 
 export interface StudioObjectPaletteProps {
@@ -18,6 +18,7 @@ const PALETTE_ITEMS: { type: StudioObjectType; icon: React.ReactNode; desc: stri
   { type: 'jump_pad', icon: <Zap className="w-4 h-4 studio-type-jump" />, desc: 'Vertical velocity booster' },
   { type: 'hazard', icon: <Flame className="w-4 h-4 studio-type-hazard" />, desc: 'Lava respawn trigger' },
   { type: 'spawn', icon: <MapPin className="w-4 h-4 studio-type-spawn" />, desc: 'Initial player origin' },
+  { type: 'agent', icon: <PersonStanding className="w-4 h-4 studio-type-agent" />, desc: 'NPC walker driven by agent.moveTo' },
   { type: 'terrain', icon: <Mountain className="w-4 h-4 studio-type-terrain" />, desc: 'Sculptable voxel terrain' },
   { type: 'constraint', icon: <Link2 className="w-4 h-4 studio-type-constraint" />, desc: 'Joint between two parts' },
   { type: 'particle', icon: <Sparkles className="w-4 h-4 studio-type-particle" />, desc: 'Point particle emitter' }

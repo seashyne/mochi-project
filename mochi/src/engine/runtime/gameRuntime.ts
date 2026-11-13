@@ -9,29 +9,14 @@ import { AudioBus } from './audioBus';
 import { GameState } from './gameState';
 import { RuntimeApiDeps, createPlayerApi, type AnimationBridge } from './luaNodeApi';
 import { createRuntimeNavigation, type RuntimeNavigation } from './runtimeNavigation';
+import { createRuntimeAgents, type RuntimeAgents } from './runtimeAgents';
+import { serializeNode } from './worldOpSerialize';
 import { LiveNode } from './liveNode';
 import { RuntimeWorld } from './objectRegistry';
 import { ScriptContext } from './scriptContext';
 import { SessionConsole, parseLuaErrorLine } from './sessionConsole';
 import { handlePlayerTrigger, TouchContext } from './touchRules';
 import { RuntimeLogSink, RuntimeNetworkAdapter, RuntimePlayerHandle, RuntimeVec3, WorldOp } from './types';
-
-/** Drops the script body so a peer never re-runs it (and never re-broadcasts). */
-function serializeNode(def: StudioObject): StudioObject {
-  return {
-    id: def.id,
-    name: def.name,
-    type: def.type,
-    position: { ...def.position },
-    rotation: { ...def.rotation },
-    scale: { ...def.scale },
-    color: def.color,
-    material: def.material,
-    anchored: def.anchored,
-    canCollide: def.canCollide,
-    parentId: def.parentId ?? null
-  };
-}
 
 export interface GameRuntimeOptions {
   scene: THREE.Scene;
@@ -58,6 +43,7 @@ export class GameRuntime {
   private readonly pendingScripts = new Set<Promise<void>>();
   private readonly deps: RuntimeApiDeps;
   private readonly navigation: RuntimeNavigation;
+  private readonly agents: RuntimeAgents;
   private readonly touch: TouchContext;
   private readonly detachTrigger: (() => void) | null;
   private detachWorldOps: (() => void) | null = null;
@@ -94,6 +80,11 @@ export class GameRuntime {
         onNodeDestroyed: (node) => this.broadcastDestroy(node)
       }
     );
+    // NPC keys are object ids or display names, both resolved against the registry.
+    this.agents = createRuntimeAgents(
+      (key) => this.world.get(key) ?? this.world.findByName(key) ?? null,
+      () => this.navigation.grid()
+    );
     this.deps = {
       world: this.world,
       player: options.player,
@@ -106,7 +97,8 @@ export class GameRuntime {
       getSpawnPoint: () => this.spawnPoint,
       getTime: () => this.elapsed,
       network: options.network,
-      navigation: this.navigation
+      navigation: this.navigation,
+      agents: this.agents
     };
     this.deps.playerApi = createPlayerApi(this.deps);
     this.touch = {
@@ -143,6 +135,7 @@ export class GameRuntime {
       if (def.luaScript?.trim()) void this.startScript(node);
     }
     this.navigation.setObjects(objects);
+    this.agents.setObjects(objects);
     for (const node of this.world.getAll()) {
       if (node.dynamic || seen.has(node.id)) continue;
       this.disposeContext(node.id);
@@ -210,6 +203,7 @@ export class GameRuntime {
     if (this.disposed) return;
     this.elapsed += dt;
     this.navigation.update(dt);
+    this.agents.update(dt);
     for (const node of this.world.getAll()) {
       node.dispatchUpdate(dt);
       if (node.def.type === 'coin' && node.visible) node.def.rotation.y += dt * 2.2;
@@ -227,6 +221,7 @@ export class GameRuntime {
     this.consoleSession.clearCommandHandler();
     this.detachTrigger?.();
     this.navigation.stop();
+    this.agents.stopAll();
     this.detachWorldOps?.();
     this.contexts.forEach((context) => context.dispose());
     this.contexts.clear();

@@ -8,6 +8,7 @@ import { AudioBus } from './audioBus';
 import { GameState } from './gameState';
 import { RuntimeApiDeps, createPlayerApi } from './luaNodeApi';
 import { createRuntimeNavigation } from './runtimeNavigation';
+import { createRuntimeAgents, type RuntimeAgents } from './runtimeAgents';
 import { RuntimeWorld } from './objectRegistry';
 import { PLAYER_BODY_ID, PlaytestPlayer } from './playtestPlayer';
 import { createPlaytestScene, PlaytestSceneBundle } from './playtestScene';
@@ -45,6 +46,8 @@ export class PlaytestRuntime {
   private spawnPoint: RuntimeVec3 = { ...DEFAULT_PLAYER_SPAWN };
   private deps: RuntimeApiDeps | null = null;
   private features: AdvancedFeatureRuntime | null = null;
+  private navigation: ReturnType<typeof createRuntimeNavigation> | null = null;
+  private agents: RuntimeAgents | null = null;
 
   /** One funnel for the terminal and any host sink. */
   private readonly logSink: RuntimeLogSink = (level, message, source, meta) => {
@@ -125,6 +128,12 @@ export class PlaytestRuntime {
 
     const navigation = createRuntimeNavigation(player, { agentRadius: 0.2 });
     navigation.setObjects(objects);
+    this.navigation = navigation;
+    this.agents = createRuntimeAgents(
+      (key) => world.get(key) ?? world.findByName(key) ?? null,
+      () => navigation.grid()
+    );
+    this.agents.setObjects(objects);
     const deps: RuntimeApiDeps = {
       world,
       player,
@@ -134,7 +143,8 @@ export class PlaytestRuntime {
       setSpawnPoint: (position: RuntimeVec3) => player.setSpawnPoint(position),
       getSpawnPoint: () => player.getSpawnPoint(),
       getTime: () => this.simTime,
-      navigation
+      navigation,
+      agents: this.agents
     };
     // One shared proxy: `script.parent.onTouch` and `players.LocalPlayer` must agree.
     deps.playerApi = createPlayerApi(deps);
@@ -185,6 +195,10 @@ export class PlaytestRuntime {
     this.detachControls = null;
     this.contexts.forEach((context) => context.dispose());
     this.contexts.length = 0;
+    this.navigation?.stop();
+    this.agents?.stopAll();
+    this.navigation = null;
+    this.agents = null;
     this.player?.dispose();
     this.player = null;
     this.features?.dispose();
@@ -214,6 +228,10 @@ export class PlaytestRuntime {
     world.applyAuthoritativeTransforms();
     this.physics.step(dt);
     world.syncFromPhysics();
+    // Scripted walks (player and NPCs) advance here, before node updates, so a
+    // script reading `player.position` this tick sees the moved position.
+    this.navigation?.update(dt);
+    this.agents?.update(dt);
     this.features?.update(dt);
 
     for (const node of world.getAll()) {

@@ -5,11 +5,16 @@
 // single tick when the frame is long, and never overshoots the last one.
 
 import { arrive } from '../navigation/steering';
-import type { RuntimePlayerHandle } from './types';
 
 export interface WorldWaypoint {
   x: number;
   z: number;
+}
+
+/** The only surface a waypoint follower needs, so agents and the player share it. */
+export interface NavigableBody {
+  getPosition(): { x: number; y: number; z: number };
+  setPosition(x: number, y: number, z: number): void;
 }
 
 export const DEFAULT_MOVE_SPEED = 4;
@@ -21,7 +26,7 @@ export class PlayerNavigator {
   private index = 0;
   private speed = DEFAULT_MOVE_SPEED;
 
-  constructor(private readonly player: RuntimePlayerHandle) {}
+  constructor(private readonly player: NavigableBody) {}
 
   get isActive(): boolean {
     return this.waypoints.length > 0;

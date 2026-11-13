@@ -69,10 +69,10 @@ describe('Studio ribbon', () => {
 describe('Ribbon catalog', () => {
   it('lists one entry per insertable part type', () => {
     const types = PART_MENU.map((item) => item.type);
-    expect(types).toHaveLength(12);
-    expect(new Set(types).size).toBe(12);
+    expect(types).toHaveLength(13);
+    expect(new Set(types).size).toBe(13);
     expect(types).toEqual(
-      expect.arrayContaining(['block', 'sphere', 'cylinder', 'ramp', 'platform', 'terrain', 'constraint', 'particle'])
+      expect.arrayContaining(['block', 'sphere', 'cylinder', 'ramp', 'platform', 'terrain', 'constraint', 'particle', 'agent'])
     );
   });
 

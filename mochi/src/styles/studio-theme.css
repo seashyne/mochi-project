@@ -38,6 +38,7 @@
   --studio-type-jump-rgb: 52 211 153;
   --studio-type-hazard-rgb: 251 113 133;
   --studio-type-spawn-rgb: 0 162 255;
+  --studio-type-agent-rgb: 34 211 238;
   --studio-type-model-rgb: 251 191 36;
 
   /* Geometry and typography */
@@ -75,6 +76,7 @@ html.light,
   --studio-type-jump-rgb: 5 150 105;
   --studio-type-hazard-rgb: 190 18 60;
   --studio-type-spawn-rgb: 63 116 201;
+  --studio-type-agent-rgb: 14 116 144;
   --studio-type-model-rgb: 146 64 14;
   --studio-ring: 0 0 0 2px rgb(var(--studio-accent-rgb) / 0.35);
 }
@@ -147,6 +149,7 @@ html.light,
 .studio-type-jump     { color: rgb(var(--studio-type-jump-rgb)); }
 .studio-type-hazard   { color: rgb(var(--studio-type-hazard-rgb)); }
 .studio-type-spawn    { color: rgb(var(--studio-type-spawn-rgb)); }
+.studio-type-agent    { color: rgb(var(--studio-type-agent-rgb)); }
 .studio-type-model    { color: rgb(var(--studio-type-model-rgb)); }
 .studio-type-terrain  { color: rgb(var(--studio-type-jump-rgb)); }
 .studio-type-constraint { color: rgb(var(--studio-type-cylinder-rgb)); }

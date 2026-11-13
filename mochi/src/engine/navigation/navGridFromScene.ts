@@ -18,9 +18,9 @@ export interface NavGridFromSceneOptions {
   bounds?: { minX: number; minZ: number; maxX: number; maxZ: number };
 }
 
-// Objects a character can walk through or over. Decorations and pickups are not
-// obstacles; terrain and platforms are.
-const NON_BLOCKING_TYPES = new Set(['spawn', 'coin', 'hazard', 'jump_pad_base', 'jump_pad_ring']);
+// Objects a character can walk through or over. Decorations, pickups and other
+// agents are not obstacles; terrain and platforms are.
+const NON_BLOCKING_TYPES = new Set(['spawn', 'agent', 'coin', 'hazard', 'jump_pad_base', 'jump_pad_ring']);
 
 function isBlocking(object: StudioObject, ignore: Set<string>): boolean {
   if (ignore.has(object.type)) return false;

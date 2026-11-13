@@ -180,6 +180,10 @@ export function buildObjectMesh(obj: StudioObject): THREE.Object3D {
       const geom = new THREE.CylinderGeometry(0.7, 0.7, 0.15, 24);
       return new THREE.Mesh(geom, baseMaterial);
     }
+    case 'agent': {
+      const geom = new THREE.CapsuleGeometry(0.35, 0.9, 4, 12);
+      return new THREE.Mesh(geom, baseMaterial);
+    }
     default:
       return new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), baseMaterial);
   }

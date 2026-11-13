@@ -61,6 +61,11 @@ export class LiveNode {
     return this.def.position;
   }
 
+  /** Read access matching `setPosition`, so a node can drive a navigator. */
+  getPosition(): RuntimeVec3 {
+    return this.def.position;
+  }
+
   set position(value: RuntimeVec3) {
     this.setPosition(value?.x ?? 0, value?.y ?? 0, value?.z ?? 0);
   }

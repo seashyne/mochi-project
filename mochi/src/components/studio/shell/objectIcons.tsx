@@ -13,6 +13,7 @@ import {
   Link2,
   MapPin,
   Mountain,
+  PersonStanding,
   Sparkles,
   Triangle,
   Zap
@@ -39,6 +40,8 @@ export function objectTypeIcon(type: StudioObjectType, className = 'w-3.5 h-3.5'
       return <Flame className={`${className} studio-type-hazard`} />;
     case 'spawn':
       return <MapPin className={`${className} studio-type-spawn`} />;
+    case 'agent':
+      return <PersonStanding className={`${className} studio-type-agent`} />;
     case 'model':
       return <Folder className={`${className} studio-type-model`} />;
     case 'terrain':

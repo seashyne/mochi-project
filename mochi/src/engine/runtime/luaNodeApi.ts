@@ -30,6 +30,14 @@ export interface NavigationBridge {
   isMoving: () => boolean;
 }
 
+/** Scripted NPC movement. Keys are object ids or display names. */
+export interface AgentBridge {
+  moveTo: (key: string, x: number, z: number, speed?: number) => boolean;
+  stop: (key: string) => void;
+  isMoving: (key: string) => boolean;
+  position: (key: string) => RuntimeVec3;
+}
+
 export interface RuntimeApiDeps {
   world: RuntimeWorld;
   player: RuntimePlayerHandle;
@@ -49,6 +57,8 @@ export interface RuntimeApiDeps {
    */
   animation?: AnimationBridge;
   navigation?: NavigationBridge;
+  /** NPC steering. Looked up per call so the host can attach it late. */
+  agents?: AgentBridge;
 }
 
 /** Maps a Lua userdata proxy back to the node it represents. */
@@ -101,6 +111,9 @@ export function createLuaNode(node: LiveNode, deps: RuntimeApiDeps): Record<stri
 
   const proxy: Record<string, unknown> = {};
   proxyOwner.set(proxy, node);
+  // Stable object id. `agent.moveTo(script.parent.id, ...)` needs it because
+  // display names are not guaranteed unique.
+  proxy.id = node.id;
 
   defineAlias(proxy, ['name', 'Name'], () => node.name, (value) => {
     node.name = String(value ?? '');

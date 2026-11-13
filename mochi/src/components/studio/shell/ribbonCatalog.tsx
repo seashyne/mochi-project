@@ -19,6 +19,7 @@ import {
   Minus,
   Mountain,
   Move,
+  PersonStanding,
   Plus,
   RotateCw,
   Sparkles,
@@ -39,6 +40,7 @@ export const PART_MENU: { type: StudioObjectType; label: string; icon: React.Rea
   { type: 'jump_pad', label: 'Jump Pad', icon: <Zap className="w-3.5 h-3.5 studio-type-jump" /> },
   { type: 'hazard', label: 'Hazard', icon: <Flame className="w-3.5 h-3.5 studio-type-hazard" /> },
   { type: 'spawn', label: 'Spawn', icon: <MapPin className="w-3.5 h-3.5 studio-type-spawn" /> },
+  { type: 'agent', label: 'Agent', icon: <PersonStanding className="w-3.5 h-3.5 studio-type-agent" /> },
   { type: 'terrain', label: 'Terrain', icon: <Mountain className="w-3.5 h-3.5 studio-type-terrain" /> },
   { type: 'constraint', label: 'Joint', icon: <Link2 className="w-3.5 h-3.5 studio-type-constraint" /> },
   { type: 'particle', label: 'Emitter', icon: <Sparkles className="w-3.5 h-3.5 studio-type-particle" /> }
