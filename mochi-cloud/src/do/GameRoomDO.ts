@@ -10,6 +10,8 @@ import { RoomPlayerData } from './roomPlayerData';
 import { broadcastFromPlayer, broadcastToSessions, sendToSession, socketForPlayer } from './roomBroadcast';
 import { handleRoomMessage, type RoomMessageContext, type RoomSession } from './roomMessages';
 import { OwnershipTable } from './roomOwnership';
+import { SpawnBudget } from './worldOpValidation';
+import { ScoreGuard } from './scoreGuard';
 
 // Cloudflare Durable Object for multiplayer game rooms with WebSocket presence
 export class GameRoomDO {
@@ -20,6 +22,8 @@ export class GameRoomDO {
   private tick = 0;
   private rateLimiter = new RoomRateLimiter();
   private ownership = new OwnershipTable();
+  private spawnBudget = new SpawnBudget();
+  private scoreGuard = new ScoreGuard();
   private luaRuntime: ServerLuaRuntime;
   private playerData: RoomPlayerData | null = null;
   private gameId: string | null = null;
@@ -48,6 +52,8 @@ export class GameRoomDO {
       rateLimiter: this.rateLimiter,
       luaRuntime: this.luaRuntime,
       ownership: this.ownership,
+      spawnBudget: this.spawnBudget,
+      scoreGuard: this.scoreGuard,
       nextTick: () => ++this.tick,
       broadcast: (event) => this.broadcast(event),
       broadcastFrom: (playerId, event) => this.broadcastFrom(playerId, event),
@@ -261,6 +267,8 @@ export class GameRoomDO {
     this.luaRuntime.removePlayer(session.playerId);
     this.rateLimiter.release(session.playerId);
     this.ownership.dropPlayer(session.playerId);
+    this.spawnBudget.release(session.playerId);
+    this.scoreGuard.release(session.playerId);
 
     const pending = this.playerData?.drop(session.playerId);
     if (pending) {

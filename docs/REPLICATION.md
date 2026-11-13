@@ -117,3 +117,19 @@ only validates reported outcomes. There is no client prediction, no replay of
 inputs and no server-side collision simulation, so a cheater can still get small
 advantages inside the allowed envelope. Object transforms (4.2) remain
 first-writer-wins; 6.2 moves their ownership to the room.
+
+## Room edge validation (6.3 / 6.4)
+
+`world_op` is checked before it is relayed: valid kind, id and type, finite
+position/scale/rotation, positive scale, positions inside the world box, and an 8 KB
+payload ceiling. Spawns also pass a per-player token bucket (10/s, burst 20), so a
+spawn loop cannot flood every other player.
+
+`state_replicate` with a score-shaped key (`score`, `coins`, `points`,
+`leaderboard`) is clamped: non-finite and negative values become 0, values above
+the ceiling are capped, and growth faster than 10,000 per second is cut back to the
+allowed slope. Keys that are not scores are relayed unchanged. The room does not
+know a game's scoring rules - these are bounds on absurdity, not an anti-cheat
+verdict on legitimate play.
+
+Both the spawn budget and the score baseline are released on disconnect.

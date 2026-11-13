@@ -8,6 +8,9 @@ import type { RoomRateLimiter } from '../services/roomRateLimiter';
 import { parseTransformDelta } from './transformDelta';
 import { validateMovement } from './roomMovement';
 import type { OwnershipTable } from './roomOwnership';
+import type { SpawnBudget } from './worldOpValidation';
+import { validateWorldOp } from './worldOpValidation';
+import type { ScoreGuard } from './scoreGuard';
 
 export interface RoomSession {
   playerId: string;
@@ -24,6 +27,8 @@ export interface RoomMessageContext {
   luaRuntime: ServerLuaRuntime;
   /** The room's authority record for replicated object transforms. */
   ownership: OwnershipTable;
+  spawnBudget: SpawnBudget;
+  scoreGuard: ScoreGuard;
   nextTick(): number;
   broadcast(event: RoomEvent): void;
   /** Broadcasts to everyone except one player; used for high-rate relays. */
@@ -94,16 +99,33 @@ export function handleRoomMessage(
     }
 
     case 'world_op': {
-      // Runtime world edits are relayed verbatim; the sender ignores its own echo.
-      const payload = event.data as Record<string, unknown> | undefined;
-      if (payload && (payload.kind === 'spawn' || payload.kind === 'destroy')) {
-        context.broadcast({
-          type: 'world_op',
-          senderId: session.playerId,
-          timestamp: Date.now(),
-          data: payload
-        });
-      }
+      // Shape, position bounds and size are checked before the relay; a spawn loop
+      // is also capped per player, not just by the generic rate limiter.
+      const payload = event.data;
+      const verdict = validateWorldOp(payload);
+      if (!verdict.ok) break;
+      if (verdict.kind === 'spawn' && !context.spawnBudget.allow(session.playerId)) break;
+      context.broadcast({
+        type: 'world_op',
+        senderId: session.playerId,
+        timestamp: Date.now(),
+        data: payload
+      });
+      break;
+    }
+
+    case 'state_replicate': {
+      // Score-shaped state is clamped here, so a client cannot declare itself the
+      // winner by writing an arbitrary number.
+      const payload = event.data as { key?: unknown; value?: unknown; version?: unknown } | undefined;
+      if (!payload || typeof payload.key !== 'string') break;
+      const verdict = context.scoreGuard.check(session.playerId, payload.key, payload.value);
+      context.broadcast({
+        type: 'state_replicate',
+        senderId: session.playerId,
+        timestamp: Date.now(),
+        data: verdict ? { ...payload, value: verdict.value } : payload
+      });
       break;
     }
 

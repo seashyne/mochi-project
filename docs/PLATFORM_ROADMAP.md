@@ -128,6 +128,14 @@ edge, removals are owner-only, and a disconnect frees that player's objects. The
 client-side channel still applies the same rule locally for responsiveness, but a
 modified client can no longer get its delta relayed.
 
+**6.3 and 6.4 shipped** (2026-11-13): the room validates every world edit before
+relaying - kind, id, type, finite position/scale/rotation, world bounds, 8 KB
+payload ceiling - and caps spawns with a per-player token bucket on top of the
+generic rate limiter. Score-shaped replicated state is clamped: non-finite and
+negative values become 0, a ceiling is enforced, and a score cannot grow faster
+than 10,000 per second. Non-score state passes through untouched. Both budgets are
+released when a player disconnects.
+
 Without 6.1 and 6.2, anything competitive (racing, combat, score attack) is
 trivially cheatable, so no amount of rendering work matters.
 

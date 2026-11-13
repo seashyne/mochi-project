@@ -4,6 +4,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { handleRoomMessage, type RoomSession } from '../src/do/roomMessages';
 import { OwnershipTable } from '../src/do/roomOwnership';
 import { RoomRateLimiter } from '../src/services/roomRateLimiter';
+import { SpawnBudget } from '../src/do/worldOpValidation';
+import { ScoreGuard } from '../src/do/scoreGuard';
 import type { RoomEvent } from '../src/types/api';
 
 describe('OwnershipTable', () => {
@@ -51,6 +53,8 @@ describe('transform_delta authority', () => {
     const context = {
       players: new Map(),
       rateLimiter: new RoomRateLimiter(),
+      spawnBudget: new SpawnBudget(),
+      scoreGuard: new ScoreGuard(),
       luaRuntime: {} as never,
       ownership,
       nextTick: () => 1,

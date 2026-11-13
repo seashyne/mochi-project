@@ -6,6 +6,8 @@ import { handleRoomMessage } from '../src/do/roomMessages';
 import { MAX_TRANSFORM_ENTRIES, parseTransformDelta } from '../src/do/transformDelta';
 import { RoomRateLimiter } from '../src/services/roomRateLimiter';
 import { OwnershipTable } from '../src/do/roomOwnership';
+import { SpawnBudget } from '../src/do/worldOpValidation';
+import { ScoreGuard } from '../src/do/scoreGuard';
 import type { RoomEvent } from '../src/types/api';
 
 function harness() {
@@ -13,6 +15,8 @@ function harness() {
   const context = {
     players: new Map(),
     rateLimiter: new RoomRateLimiter(),
+      spawnBudget: new SpawnBudget(),
+      scoreGuard: new ScoreGuard(),
     luaRuntime: {} as never,
     ownership: new OwnershipTable(),
     nextTick: () => 1,

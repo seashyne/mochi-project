@@ -7,6 +7,8 @@ import { extractScriptBundle, ensureRoomScript } from '../src/do/roomScriptBundl
 import { RoomPlayerData } from '../src/do/roomPlayerData';
 import { handleRoomMessage } from '../src/do/roomMessages';
 import { RoomRateLimiter } from '../src/services/roomRateLimiter';
+import { SpawnBudget } from '../src/do/worldOpValidation';
+import { ScoreGuard } from '../src/do/scoreGuard';
 import type { MochiEnv } from '../src/types/env';
 import type { PlayerPresence, RoomEvent } from '../src/types/api';
 
@@ -220,6 +222,8 @@ describe('room message dispatch', () => {
     const context = {
       players,
       rateLimiter: new RoomRateLimiter(),
+      spawnBudget: new SpawnBudget(),
+      scoreGuard: new ScoreGuard(),
       luaRuntime: runtime,
       nextTick: () => ++tick,
       broadcast: (event: RoomEvent) => broadcast.push(event),
