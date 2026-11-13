@@ -89,5 +89,37 @@ if (problems.length > 0) {
 }
 
 console.log(
-  `Asset hosts verified: ${publicHost} (public), ${accessHost} (gated), API on ${apiHost}.`
+  `Asset hosts configured: ${publicHost} (public), ${accessHost} (gated), API on ${apiHost}.`
 );
+
+// `--live` probes the real hosts. A 404 from an unused key is a pass: the worker
+// answered, which is exactly what a missing custom domain does not do.
+if (process.argv.includes('--live')) {
+  const probe = async (host) => {
+    try {
+      const response = await fetch(`https://${host}/api/v1/assets/file/__health__`, {
+        signal: AbortSignal.timeout(8000)
+      });
+      return response.status;
+    } catch {
+      return 0;
+    }
+  };
+  const statuses = await Promise.all([probe(publicHost), probe(accessHost)]);
+  const liveProblems = [];
+  [publicHost, accessHost].forEach((host, index) => {
+    const status = statuses[index];
+    console.log(`  ${host}: ${status === 0 ? 'no answer (000)' : `HTTP ${status}`}`);
+    // 404 means the route exists but the key does not; 200 would mean a real file.
+    if (status !== 404 && status !== 200 && status !== 403) {
+      liveProblems.push(`${host} did not answer (got ${status})`);
+    }
+  });
+  if (liveProblems.length > 0) {
+    console.error('Live asset hosts are not bound yet:');
+    for (const problem of liveProblems) console.error(`  - ${problem}`);
+    console.error('See docs/PLATFORM_ROADMAP.md section 12 for the deploy step.');
+    process.exit(1);
+  }
+  console.log('Live asset hosts verified.');
+}

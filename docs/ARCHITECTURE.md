@@ -163,6 +163,10 @@ User uploads are served from their own host, not from the app or API origin:
 | `PUBLIC_ASSETS_URL` | Content-addressed public files | Immutable cache, no credentials |
 | `ACCESS_ASSETS_URL` | Gated files, resolved per request | Same, plus a permission check before a URL exists |
 
+The last two are **declared and routed in config but not yet bound in the account**;
+neither hostname answered an HTTPS request on 2026-11-13. See
+`docs/PLATFORM_ROADMAP.md` section 12 for the deploy step and the interim option.
+
 Splitting them is not cosmetic. A user-uploaded file that renders as a document on
 the app origin can read the session and call the API as the viewer. On its own
 origin it can do neither, and the app's CSP can name the asset host explicitly

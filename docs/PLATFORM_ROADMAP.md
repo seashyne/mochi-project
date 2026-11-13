@@ -219,3 +219,63 @@ accident.
    move the ones the profile actually shows. The rule in section 8 says where
    compute belongs; profiling says which one to move first, and guessing has a
    habit of optimising the thing that was never slow.
+
+## 12. Launch blocker: binding the asset hosts
+
+**Status: BLOCKED on account access, not on code.** The repository side is done -
+`mochi-cloud/wrangler.jsonc` declares `PUBLIC_ASSETS_URL`, `ACCESS_ASSETS_URL` and
+`custom_domain` routes for both, and `npm run verify:assets` refuses to pass when
+that configuration drifts. But a declared host is not a live one.
+
+Measured on 2026-11-13:
+
+```
+api-game.lenout.com        -> 200
+assets-game.lenout.com     -> 000   (no answer)
+access-game.lenout.com     -> 000   (no answer)
+```
+
+Every public asset URL currently resolves to a hostname that answers nothing. The
+worker route exists on paper; DNS and the custom-domain binding do not exist in the
+account. That cannot be created from this repository.
+
+### What the person with account access must run
+
+```bash
+# 1. Authenticate and inspect the zone
+npx wrangler login
+npx wrangler domains list                       # or check the Cloudflare dashboard
+
+# 2. Deploy so the two custom domains bind to the API worker
+cd mochi-cloud && npx wrangler deploy
+
+# 3. Verify the exact path the server hands out
+curl -i https://assets-game.lenout.com/api/v1/assets/file/assets/sha256/<key>
+curl -i https://access-game.lenout.com/api/v1/assets/file/assets/sha256/<key>
+npm run verify:assets -- --live
+```
+
+`--live` probes both hosts and fails while they answer nothing; a `404` from an
+unused key counts as a pass because it proves the worker is attached.
+
+A `404` from the asset route is a **success** for an unused key: the worker is
+answering, which is the thing being tested. Expect `X-Content-Type-Options`,
+`Content-Security-Policy` and `Cache-Control` on that response. DNS-only records
+(CNAME/AAAA) are not enough; the custom domain must be attached to the Worker.
+
+### Interim option while the domains are unbound
+
+The API worker already serves `/api/v1/assets/file/<key>`. Pointing both vars at
+`https://api-game.lenout.com` makes assets load **today**, but it puts user content
+on the same origin as cookies. The hardening headers from `assetFiles.ts` still
+apply (nosniff, `default-src 'none'; sandbox`, attachment for non-media), so it is
+mitigated - not equivalent to isolation. `verify-asset-hosts.mjs` deliberately
+rejects that configuration; relaxing it should be a conscious, temporary decision,
+not a silent default.
+
+### Done when
+
+- Both hosts answer an HTTPS request (200 or 404, never 000).
+- `npm run verify:assets -- --live` passes with the isolation invariant intact.
+- A published game loads a texture and a model from `assets-game.lenout.com`, and
+  `world.playSound` resolves a gated id through `access-game.lenout.com`.
