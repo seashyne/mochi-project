@@ -65,8 +65,9 @@ Phase 2 is complete. Notes on what actually shipped:
 | 3.2 | Steering behaviours: seek, arrive, separation, blocked-lane avoidance | `modules/navigation_3d/3d/nav_map*.cpp` | DONE |
 | 3.3 | Nav-grid bake in the Rust/WASM kernel (`npm run build:wasm`) | `nav_mesh_generator_3d.cpp` | DONE |
 | 3.4 | Agent component + Lua API (`agent.moveTo`) | `scene/3d/navigation_agent_3d.cpp` | DONE |
-| 3.5 | Local avoidance proper (RVO/ORCA) in the WASM kernel | `nav_map.cpp` | BACKLOG |
+| 3.5 | Local avoidance: reciprocal separation in the WASM kernel | `nav_map.cpp` | DONE |
 | 3.6 | Polygon navmesh (recast-style convex regions) | `nav_mesh_generator_3d.cpp` | BACKLOG |
+| 3.7 | Velocity-obstacle planning (ORCA) | `nav_map.cpp` | BACKLOG |
 
 **3.1 shipped** in `engine/navigation/`: `NavGrid` (byte-per-cell walkability with
 world/cell mapping), `findPath` (8-way A*, octile heuristic, binary heap, typed
@@ -107,8 +108,20 @@ bake that silently disagrees with the renderer is worse than a slow one.
 What did **not** ship: a polygon navmesh. Regions are still cells, not convex
 polygons, so 3.6 keeps the recast-style generator on the backlog.
 
-Next in this phase: 3.5 RVO, then 3.6 if cell-shaped regions ever become the
-bottleneck.
+**3.5 shipped** as `resolve_overlaps` in the kernel plus a TS reference: every
+tick, overlapping agent discs are pushed apart, split by weight, so agents step
+around the player and each other instead of sharing space. Movable-vs-movable
+pushes are rotated by ~8 degrees (`HEAD_ON_BIAS`), because a centre-line push
+between two agents walking at each other is exactly opposite their travel and they
+lock at contact distance - found by a test, not by theory.
+
+What did **not** ship: velocity-space planning. Agents slow down only by failing
+to advance, and a crowd can shuffle; 3.7 keeps ORCA on the backlog. The
+`separation` helper from 3.2 is still the steering-vector form of the same idea and
+still has no shipping consumer - the shipped path is the positional resolver.
+
+Next in this phase: nothing blocking. 3.6 and 3.7 are both optimisation work now
+that agents walk, avoid and path in shipped code.
 
 ## Phase 4 - Multiplayer and audio
 

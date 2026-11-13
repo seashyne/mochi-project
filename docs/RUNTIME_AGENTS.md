@@ -52,3 +52,23 @@ repeating movement from `script.onUpdate` and gate it on `agent.isMoving`.
 - Without a bridge (a runtime that never wires agents) every call is a no-op,
   `isMoving` returns `false` and `position` returns the origin, so a script that
   drives NPCs still loads anywhere.
+
+## Local avoidance
+
+Agents are discs in the XZ plane, and every tick the runtime pushes overlapping
+pairs apart. Each body carries a weight that decides how much of a push it takes:
+1 for an agent, 0 for the player or a prop. An NPC therefore steps around the
+player and never shoves it.
+
+- The pairwise pass runs in the WASM kernel (`resolve_overlaps`). A TypeScript
+  reference does the same work when the kernel is not loaded, and a parity test
+  keeps the two equal.
+- Pushes between two movable agents are rotated by `HEAD_ON_BIAS` (about 8
+  degrees). Without it, two agents walking straight at each other are pushed
+  exactly opposite their travel, lock at contact distance, and neither ever
+  arrives. The bias turns the deadlock into a slide past.
+- One step is capped at 0.25 m per pair per pass, so a deep overlap separates over
+  a few frames instead of teleporting.
+- This is positional avoidance, not velocity planning. Agents only slow down by
+  failing to advance, and a crowd can still shuffle. Choosing velocities properly
+  (ORCA, guaranteed detours) is roadmap item 3.7.
