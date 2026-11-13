@@ -243,7 +243,8 @@ export class PlaytestRuntime {
     player.update(dt, bundle.followCamera.getYaw());
     const position = player.getPosition();
     bundle.followCamera.setTarget(position);
-    this.audio.setListener(position);
+    // Yaw comes from the follow camera, so panning matches what the player sees.
+    this.audio.setListener(position, bundle.followCamera.getYaw());
     bundle.followCamera.update(bundle.camera, dt);
     bundle.renderer.render(bundle.scene, bundle.camera);
   };
