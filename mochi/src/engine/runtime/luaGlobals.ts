@@ -1,4 +1,5 @@
-// Assembles the Lua globals a script sees: ui, Instance, Vector3/Color3, task, script.
+// Assembles the Lua globals a script sees: ui, Instance, Vector3/Color3, script.
+// `task` and `wait` are defined by the Lua prelude (luaPrelude.ts), not here.
 // ui.* writes go to the real HUD store; Instance.new really spawns nodes in the world.
 
 import { defaultReactLuaStore } from '../lua/reactLuaBridge';
@@ -101,21 +102,6 @@ export function createInstanceApi(deps: RuntimeApiDeps): Record<string, unknown>
   };
 }
 
-function createTaskApi(): Record<string, unknown> {
-  const schedule = (seconds: unknown, callback: unknown) => {
-    if (typeof callback !== 'function') return;
-    const delay = Math.max(0, (Number(seconds) || 0) * 1000);
-    setTimeout(() => (callback as () => void)(), delay);
-  };
-  return {
-    wait: schedule,
-    delay: schedule,
-    spawn: (callback: unknown) => {
-      if (typeof callback === 'function') setTimeout(() => (callback as () => void)(), 0);
-    }
-  };
-}
-
 /** `network` proxy: real RPC when a session is connected, inert otherwise. */
 function createNetworkApi(deps: RuntimeApiDeps): Record<string, unknown> {
   const adapter = deps.network;
@@ -201,15 +187,14 @@ export function buildRuntimeGlobals(node: LiveNode, deps: RuntimeApiDeps): Recor
   const luaNode = createLuaNode(node, deps);
   const playerApi = deps.playerApi ?? createPlayerApi(deps);
   deps.playerApi = playerApi;
-  const task = createTaskApi();
-
   return {
     script: {
       Name: 'Script',
       parent: luaNode,
       Parent: luaNode,
       onUpdate: luaNode.onUpdate,
-      wait: task.wait,
+      // `script.wait` is bound to `task.wait` by the Lua prelude, because the
+      // yielding version has to live in Lua.
       Destroy: () => deps.world.destroy(node.id)
     },
     world: createWorldApi(deps),
@@ -245,8 +230,6 @@ export function buildRuntimeGlobals(node: LiveNode, deps: RuntimeApiDeps): Recor
         b: (Number(b) || 0) / 255
       })
     },
-    task,
-    wait: task.wait,
     toVector: (value: unknown) => toVec3(value)
   };
 }

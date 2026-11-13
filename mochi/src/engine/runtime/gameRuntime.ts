@@ -232,6 +232,8 @@ export class GameRuntime {
   update(dt: number): void {
     if (this.disposed) return;
     this.elapsed += dt;
+    // Resume scripts parked in `task.wait` before handlers and agents run.
+    for (const context of this.contexts.values()) context.advance();
     this.navigation.update(dt);
     this.agents.update(dt);
     this.replication?.update(dt);

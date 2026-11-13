@@ -79,8 +79,15 @@ Goal: a Roblox developer can do their normal work here without relearning.
 | 5.3 | Uploaded audio | TS (WebAudio) | No game ships without its own sound | Upload a file, `world.playSound` plays it with the same rolloff, pan and Doppler as synthesis |
 | 5.4 | API parity checklist | docs | Creators discover gaps one at a time, then leave | A table in the docs maps every Roblox call a beginner uses to its equivalent or to a documented "not supported" |
 
-5.1 is the highest value per unit of work in this document: it unlocks the
-largest population of creators and it is testable without any UI.
+**5.1 shipped** (2026-11-13): scripts run inside a Lua coroutine, `task.wait`
+suspends and the runtime resumes it on a later frame. The two-argument
+`task.wait(delay, callback)` form still schedules a callback, so existing scripts
+did not break. Semantics and the handler caveat are in `docs/SCRIPTING.md`; the
+spike that preceded it confirmed wasmoon can resume a coroutine from the host,
+which was the risk this item carried.
+
+5.1 was the highest value per unit of work in this document: it unlocks the
+largest population of creators and it was testable without any UI.
 
 ## 5. Phase 6 - Trust
 

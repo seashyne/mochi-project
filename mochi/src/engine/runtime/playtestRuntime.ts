@@ -225,6 +225,7 @@ export class PlaytestRuntime {
     const dt = Math.min(Math.max((now - this.lastTime) / 1000, 0), 0.05);
     this.lastTime = now;
     this.simTime += dt;
+    this.contexts.forEach((context) => context.advance());
 
     world.applyAuthoritativeTransforms();
     this.physics.step(dt);
