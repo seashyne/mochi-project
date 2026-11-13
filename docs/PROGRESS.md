@@ -108,3 +108,27 @@ box, so occlusion rarely hides it; the win is per-model, and a dense indoor scen
 where it would show. `getOcclusionStats()` reports occluders, targets, occluded
 count and both timings so a real session can answer whether it pays before anything
 else is built on top of it.
+**7.4 shipped** (2026-11-13): a chunk payload is `{"chunkId":"...","objects":[...]}`,
+so waiting for the whole file meant a multi-megabyte chunk showed nothing until the
+last byte landed. Objects now stream into the world as their bytes complete.
+
+`scan_json_array` in the kernel walks the payload tracking strings and escapes - the
+characters that break naive scanners - and returns the byte range of every complete
+element. It resumes from the last range, so repeated scans over a growing buffer stay
+linear instead of rescanning from the start. `streamChunkObjects` reads the response
+body, parses each complete element and yields batches.
+
+Batching is bounded by count *and* bytes (64 objects or 384 KB). A count-only batch
+was the first version and it was wrong: a payload of heavy objects waited for the
+object count to fill, which on a 2 MB chunk is most of the download - the exact wait
+streaming exists to remove.
+
+Activation is deliberately narrow. Chunks under 2 MB and chunks already in the asset
+cache keep the all-at-once path, because streaming them only adds overhead; a
+streamed payload is written back to the cache on completion, since streaming bypasses
+it. A truncated payload is safe: the scanner simply reports the elements it has.
+
+Honest limit: each batch is its own `loadWorldFromManifest` call, so a streamed chunk
+costs one instanced batch set per flush instead of one per chunk. Only large chunks
+take this path, and the objects that make a chunk large are usually scripted, which
+means one mesh each anyway.

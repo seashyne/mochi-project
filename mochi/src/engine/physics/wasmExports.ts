@@ -96,4 +96,8 @@ export interface WasmPhysicsExports {
     maxPixels: number,
     outFlagsPtr: number
   ) => number;
+  scan_json_array: (
+    dataPtr: number, len: number, from: number,
+    outRangesPtr: number, maxRanges: number
+  ) => number;
 }

@@ -1230,3 +1230,115 @@ pub extern "C" fn test_occlusion(
 
     occluded
 }
+
+// ---------------------------------------------------------------------------
+// Progressive chunk payload scanning
+//
+// A chunk payload is `{"chunkId":"...","objects":[ ... ]}`. Streaming the objects
+// out of it as the bytes arrive needs byte ranges of the complete elements, and
+// finding them means walking the JSON while tracking strings and escapes. That is
+// an O(n) byte scan, so it lives here.
+// ---------------------------------------------------------------------------
+
+#[inline]
+fn json_is_space(byte: u8) -> bool {
+    byte == b' ' || byte == b'\t' || byte == b'\n' || byte == b'\r'
+}
+
+/// Finds the byte range of every complete element of a JSON array.
+///
+/// `from` points at the first element or at a delimiter between elements; the scan
+/// stops at the array's closing `]` or at the first element that is not yet fully
+/// received, so a partially downloaded payload is safe to scan. Each element writes
+/// two u32s into `out_ranges`: byte offset and byte length. Returns the number of
+/// elements written, which is at most `max_ranges`; the caller resumes at the end of
+/// the last range and scans again, so repeated calls over a growing buffer stay
+/// linear rather than rescanning from the start.
+///
+/// A non-array start, a null pointer or a truncated element yields 0.
+#[no_mangle]
+pub extern "C" fn scan_json_array(
+    data: *const u8,
+    len: usize,
+    from: usize,
+    out_ranges: *mut u32,
+    max_ranges: usize,
+) -> u32 {
+    if data.is_null() || out_ranges.is_null() || max_ranges == 0 || from >= len {
+        return 0;
+    }
+
+    let bytes = unsafe { std::slice::from_raw_parts(data, len) };
+    let ranges = unsafe { std::slice::from_raw_parts_mut(out_ranges, max_ranges * 2) };
+    let mut cursor = from;
+    let mut written = 0usize;
+
+    loop {
+        while cursor < len && (json_is_space(bytes[cursor]) || bytes[cursor] == b',') {
+            cursor += 1;
+        }
+        if cursor >= len || bytes[cursor] == b']' {
+            break;
+        }
+        if written >= max_ranges {
+            break;
+        }
+
+        let element_start = cursor;
+        let mut depth = 0i32;
+        let mut in_string = false;
+        let mut escaped = false;
+        let mut element_end: Option<usize> = None;
+
+        while cursor < len {
+            let byte = bytes[cursor];
+            if in_string {
+                if escaped {
+                    escaped = false;
+                } else if byte == b'\\' {
+                    escaped = true;
+                } else if byte == b'"' {
+                    in_string = false;
+                }
+            } else if byte == b'"' {
+                in_string = true;
+            } else if byte == b'{' || byte == b'[' {
+                depth += 1;
+            } else if byte == b'}' {
+                if depth == 0 {
+                    // A stray closer: the payload is malformed. Report what we have.
+                    return written as u32;
+                }
+                depth -= 1;
+            } else if byte == b']' {
+                if depth == 0 {
+                    element_end = Some(cursor);
+                    break;
+                }
+                depth -= 1;
+            } else if byte == b',' && depth == 0 {
+                element_end = Some(cursor);
+                break;
+            }
+            cursor += 1;
+        }
+
+        let Some(end) = element_end else {
+            // The element runs past the bytes we have: wait for more.
+            break;
+        };
+
+        let mut trimmed = end;
+        while trimmed > element_start && json_is_space(bytes[trimmed - 1]) {
+            trimmed -= 1;
+        }
+        if trimmed > element_start {
+            ranges[written * 2] = element_start as u32;
+            ranges[written * 2 + 1] = (trimmed - element_start) as u32;
+            written += 1;
+        }
+        cursor = end;
+    }
+
+    written as u32
+}

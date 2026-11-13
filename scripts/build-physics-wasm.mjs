@@ -54,7 +54,8 @@ const expected = [
   'audio_duration_ms',
   'simplify_mesh',
   'rasterize_occluders',
-  'test_occlusion'
+  'test_occlusion',
+  'scan_json_array'
 ];
 
 const module = await WebAssembly.instantiate(fs.readFileSync(destination), {});
