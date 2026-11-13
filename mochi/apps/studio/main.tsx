@@ -8,6 +8,7 @@ import { I18nProvider } from '../../src/i18n/context';
 import { registerServiceWorker } from '../../src/pwa/registerServiceWorker';
 import { useThemeStore } from '../../src/store/useThemeStore';
 import '../../src/index.css';
+import '../../src/styles/fonts.css';
 import '../../src/theme-soft.css';
 import '../../src/styles/studio-theme.css';
 import '../../src/styles/auth.css';

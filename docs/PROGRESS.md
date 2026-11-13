@@ -188,3 +188,30 @@ Still open, deliberately: whether regions are worth their cost at all. `findPath
 uses the labels to refuse a route between disconnected areas, so removing them is a
 behaviour decision. With bakes now rare, the remaining cost is 0.5 ms at 256x256 and
 2.4 ms at 512x512 - a hitch at a chunk boundary, not a per-frame cost.
+**UI fonts self-hosted** (2026-11-13): the shell pulled IBM Plex Sans Thai and Mitr
+from the Google Fonts CDN. That put an external host in the critical path of "open a
+link and play" - it fails behind a firewall and it is a consent question the EU has
+already ruled on. Both families now ship from `public/fonts/` as ten woff2 subsets,
+160 KB in total, fetched reproducibly by `npm run fonts`.
+
+Only the thai and latin subsets are kept. Neither family covers CJK, so ja and zh
+correctly fall back to a system font instead of downloading glyphs they cannot use.
+Preloads cover the body face, `_headers` gives the stable path the same policy as the
+other media, and the service worker caches `/fonts/`.
+
+Four families were named in CSS but never loaded - Kanit, Prompt, IBM Plex Mono, and
+Inter in the body stack - so every one of them has been silently falling back for as
+long as the file has existed. They are gone, which means the stacks now describe what
+actually renders.
+
+OFL-1.1 was not on the permitted dependency list, so `AGENTS.md` was amended: OFL is
+allowed for fonts only, and the copyright line plus licence text must ship beside the
+font and appear in `THIRD_PARTY_NOTICES.txt`. Both families are registered in
+`gen-notices.mjs`, which now reads the licence from `public/fonts/` so there is one
+copy rather than two.
+
+A contract test holds it together: neither shell may reference a font CDN, every
+`url()` and preload must resolve to a file that exists, the licence texts must be
+present, and the phantom families must stay gone. The first version of the generated
+stylesheet used `//` comments, which only the production build caught - PostCSS
+rejects them - so that is now a `/* */` header.

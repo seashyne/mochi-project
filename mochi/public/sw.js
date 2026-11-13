@@ -14,7 +14,7 @@ const IMMUTABLE_PREFIXES = ['/assets/', '/draco/', '/basis/'];
 
 // Creator media keeps stable paths, so it is served from cache and refreshed in
 // the background instead of being trusted forever.
-const MEDIA_PREFIXES = ['/models/', '/skyboxes/', '/materials/', '/wasm/'];
+const MEDIA_PREFIXES = ['/models/', '/skyboxes/', '/materials/', '/wasm/', '/fonts/'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(

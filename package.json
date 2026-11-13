@@ -30,7 +30,8 @@
     "mobile:build:android": "npm run build:mobile:android --workspace=mochi",
     "benchmark:room": "cd mochi-cloud && npx vitest run tests/room_benchmark.test.ts --reporter=verbose",
     "benchmark:client": "node scripts/benchmark-client.mjs",
-    "benchmark:kernel": "cd mochi && npx vitest run tests/kernel_benchmark.test.ts --reporter=verbose"
+    "benchmark:kernel": "cd mochi && npx vitest run tests/kernel_benchmark.test.ts --reporter=verbose",
+    "fonts": "node scripts/fetch-fonts.mjs"
   },
   "license": "UNLICENSED",
   "devDependencies": {

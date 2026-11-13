@@ -247,7 +247,7 @@
   border-radius: 12px;
   background: var(--a-field);
   color: var(--a-ink);
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-family: ui-monospace, 'IBM Plex Sans Thai', monospace;
   font-size: 18px;
   font-weight: 700;
   text-align: center;

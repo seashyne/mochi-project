@@ -61,7 +61,13 @@ the parity test fails.
 
 - Closed-source, commercial product. Never add a copyleft dependency. LGPL and
   GPL are both disqualifying, even transitively.
-- Permissive only: MIT, ISC, BSD, Apache-2.0, 0BSD, zlib.
+- Permissive only: MIT, ISC, BSD, Apache-2.0, 0BSD, zlib, OFL-1.1.
+- OFL-1.1 is allowed for fonts only. It permits embedding in a closed-source product
+  but requires the copyright line and licence text to ship with the font, so a
+  vendored font needs both `mochi/public/fonts/OFL-<family>.txt` and an entry in the
+  `VENDORED` array of `scripts/gen-notices.mjs`. Fonts are fetched by
+  `node scripts/fetch-fonts.mjs`; never link a font from a third-party CDN at
+  runtime - the shell must not depend on an external host.
 - After any `package.json` dependency change, run `npm run notices` and commit
   the regenerated `mochi/public/THIRD_PARTY_NOTICES.txt`.
 - Upstream engine code goes only into `mochi/src/engine/vendor/<project>/`,

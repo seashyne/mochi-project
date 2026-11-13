@@ -51,10 +51,36 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.`;
 
+// Font licences live next to the files they cover, because OFL requires the text to
+// travel with the font. Reading them here keeps one copy instead of two.
+function readFontLicence(file) {
+  const full = path.join(root, 'mochi', 'public', 'fonts', file);
+  try {
+    return fs.readFileSync(full, 'utf8');
+  } catch {
+    console.warn(`Font licence missing: ${file} (run node scripts/fetch-fonts.mjs)`);
+    return null;
+  }
+}
+
 const VENDORED = [
   // KHR_materials_variants parsing helpers, adapted into TypeScript.
   // Source: src/framework/parsers/glb/extensions/khr-materials-variants.js
-  { name: 'playcanvas (glb variants)', version: '2.25.0', license: 'MIT', text: PLAY_CANVAS_MIT }
+  { name: 'playcanvas (glb variants)', version: '2.25.0', license: 'MIT', text: PLAY_CANVAS_MIT },
+  // Self-hosted UI fonts. The family revision is the Google Fonts directory version
+  // the woff2 files were fetched from; see scripts/fetch-fonts.mjs.
+  {
+    name: 'IBM Plex Sans Thai',
+    version: '11',
+    license: 'OFL-1.1',
+    text: readFontLicence('OFL-IBM-Plex-Sans-Thai.txt')
+  },
+  {
+    name: 'Mitr',
+    version: '13',
+    license: 'OFL-1.1',
+    text: readFontLicence('OFL-Mitr.txt')
+  }
 ];
 
 function readJson(file) {

@@ -23,6 +23,9 @@
 /wasm/*
   Cache-Control: public, max-age=86400, stale-while-revalidate=604800
 
+/fonts/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+
 /index.html
   Cache-Control: public, max-age=0, must-revalidate
 
