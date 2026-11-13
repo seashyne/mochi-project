@@ -195,3 +195,25 @@ production modules (no duplicated fixtures or local helper reimplementations).
 - typecheck: both workspaces clean
 - production build: `mochi` builds successfully (wasm kernel copied to dist/wasm)
 - lint:lines: 449 files strictly <= 300 lines
+
+---
+
+## Appendix: current totals (2026-11-13)
+
+The figures above are the snapshot this report was written against. After the
+Phase 2-4 work (animation, navigation, agents, local avoidance, spatial audio,
+replication) the live totals are:
+
+- mochi/: 122 test files, 1454 tests passed
+- mochi-cloud/: 53 test files, 565 tests passed
+- Grand Total: 175 test files, 2019 tests passed
+- typecheck: both workspaces clean
+- lint:lines: 688 files strictly <= 300 lines
+- notices: 17 components, current
+- decoupling: 670 files, zero forbidden imports
+- wasm kernel: 29,410 bytes, 8 exports verified by `npm run build:wasm`
+
+Measured with `npx vitest run --no-file-parallelism`. A plain `vitest run` on this
+Windows machine occasionally fails to start a forks worker and silently drops a
+whole test file (vitest prints `Errors 1` and still exits 0), so a count can read
+lower by that file's size. Use the flag when the number has to be trusted.
