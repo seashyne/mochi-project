@@ -35,14 +35,90 @@ print(door.CFrame.Position.x)
 | `CFrame.new(x, y, z)` | A position with no rotation |
 | `CFrame.Angles(rx, ry, rz)` | A rotation in radians, Euler XYZ - the order the engine uses |
 | `a * b` | `b` expressed in `a`'s space: rotations multiply, `b`'s position is rotated and added |
+| `cf * vector` | Transforms a point: the vector is rotated, then the position is added |
+| `cf + vector`, `cf - vector` | Translation in world space, rotation untouched |
+| `CFrame.lookAt(at, target, up?)` | A frame at `at` facing `target`; `up` defaults to world up |
 | `cf.Position`, `.LookVector`, `.RightVector`, `.UpVector` | Vectors in world space |
 | `cf:Inverse()`, `cf:Lerp(other, alpha)`, `cf:ToEulerAnglesXYZ()` | The usual helpers |
 
 Assigning anything that is not a CFrame to `part.CFrame` is ignored rather than
 raising, so a bad value leaves the part where it was.
 
-Not implemented, deliberately: `cf * Vector3`, `CFrame.lookAt`, and the constructor
-forms that take another CFrame. `Rotation` is in radians; `rotateY` takes degrees.
+Not implemented, deliberately: the constructor forms that take another CFrame.
+`CFrame.Angles` and `Rotation` are in radians; `rotateY` takes degrees - the one unit
+trap left in this area.
+
+## Touching a part
+
+`part.Touched` fires when the player enters a trigger, `part.TouchEnded` when they
+leave. Both hand the player to the handler, and both ignore the per-frame `stay`
+event so a handler cannot fire sixty times a second.
+
+```lua
+local door = script.parent
+door.Touched:Connect(function(hit)
+  door.setVisible(false)
+end)
+door.TouchEnded:Connect(function(hit)
+  door.setVisible(true)
+end)
+```
+
+## The character
+
+`player.Character.Humanoid` carries the names an avatar script expects. It is a
+table, not an instance tree: there is no `FindFirstChild`, no `Died` signal and no
+`HumanoidDescription`.
+
+| Call | Behaviour |
+| --- | --- |
+| `humanoid.WalkSpeed` | Metres per second. Drives `:MoveTo`; defaults to 4 |
+| `humanoid:MoveTo(target)` | Walks to a Vector3 or `(x, y, z)` through the navmesh. Returns false when no route exists |
+| `humanoid.Health`, `.MaxHealth`, `:TakeDamage(n)` | The same health the player has |
+| `player.Character.Position` | Reads and writes the character position |
+| `humanoid.Died:Connect(fn)` | Fires once when health reaches zero |
+| `player.CharacterAdded:Connect(fn)` | Fires when the character comes back after death |
+
+Signals return a connection with `:Disconnect()`. They are latched from the health
+transition once per frame, so damage from a hazard, another script or the console all
+reach the handler.
+
+`JumpPower` is deliberately absent: the jump impulse belongs to the input-driven
+controller, and a property that accepts a number and ignores it is worse than a
+missing one.
+
+## Materials
+
+`part.Material` sets a part's surface by name. The name resolves to a shading mode plus
+one of the bundled PBR texture sets, so a script written against another platform's
+material names gets the right look without knowing how we store it.
+
+```lua
+script.parent.Material = "Grass"
+print(script.parent.Material) -- Grass
+```
+
+| Name | Surface |
+| --- | --- |
+| `Grass`, `LeafyGrass` | grass texture |
+| `Brick` | red brick |
+| `Wood`, `WoodPlanks` | planks |
+| `Concrete` | plain concrete |
+| `Fabric` | woven cloth |
+| `Marble` | white marble |
+| `Granite`, `Slate`, `Cobblestone`, `Sandstone` | stone paving |
+| `Metal`, `CorrodedMetal`, `Foil` | metal plate |
+| `DiamondPlate` | tread plate |
+| `Neon` | emissive, no texture |
+| `Glass`, `Ice` | transparent |
+| `Plastic`, `SmoothPlastic` | flat colour |
+
+Matching ignores case, spaces and underscores, so `DiamondPlate` and `diamond_plate`
+are the same. An unknown name is ignored rather than raised, because a ported script
+should not die on a material it cannot find.
+
+`part.materialTexture` takes a preset id directly (`"marble_white"`, `"lava_flow"`, ...)
+when you want a specific set rather than a name.
 
 ## Time
 

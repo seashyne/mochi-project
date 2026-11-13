@@ -292,3 +292,21 @@ albedo.
 Two limits worth stating: a part still takes one material, not a different surface per
 face, and the texture branch is covered by a stubbed resolver because texture loading
 needs a DOM the test environment does not have.
+**Material names from imported scripts** (2026-11-13): a ported world picks a part's
+surface by name - "Grass", "Brick", "Wood" - and on the platform it came from the name
+*is* the surface. Our model splits shading from texture, and Lua could not set either,
+so a script that assigned a material name did nothing at all.
+
+`part.Material` now resolves a name onto the pair the renderer understands: a shading
+mode plus one of the thirteen bundled PBR sets. Matching ignores case, spaces and
+underscores, an unknown name is ignored rather than raised, and reading the property
+back returns the name that was set. `part.materialTexture` takes a preset id directly
+for scripts that want a specific set.
+
+The swap happens on the live mesh, which is safe because only scripted objects run code
+and only scripted objects are built individually - batched geometry has no script to
+change it.
+
+The alias table lives in `scene/materialAliases.ts` and deliberately names no platform:
+the rebrand check forbids that string anywhere in `mochi/src`, so the module describes
+"names imported scripts use" and the mapping itself is documented in `SCRIPTING.md`.

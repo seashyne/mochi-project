@@ -6,8 +6,12 @@ import { GameState } from './gameState';
 import { LiveNode, TouchHandler, UpdateHandler } from './liveNode';
 import { resolveLuaClass } from './nodeFactory';
 import { defineAlias } from './luaProxyUtils';
+import { addTouchEndedHandler } from './touchEnded';
+import { connectChanged, emitChanged } from './nodeChanged';
 import { rotationMatrix } from '../physics/oriented';
 import { makeCFrameValue, readCFrameValue } from './cframeBridge';
+import { aliasForSurface } from '../scene/materialAliases';
+import { setNodeMaterial, setNodeMaterialTexture } from './nodeSurface';
 import { routeSound } from './audioRouting';
 export { createPlayerApi } from './luaPlayerApi';
 import { RuntimeWorld } from './objectRegistry';
@@ -148,6 +152,10 @@ export function createLuaNode(node: LiveNode, deps: RuntimeApiDeps): Record<stri
     const handler = lastFunction(args);
     if (handler) node.addTouchHandler(handler as TouchHandler);
   };
+  const connectTouchEnded = (...args: unknown[]) => {
+    const handler = lastFunction(args);
+    if (handler) addTouchEndedHandler(node, handler as TouchHandler);
+  };
   const connectUpdate = (...args: unknown[]) => {
     const handler = lastFunction(args);
     if (handler) node.addUpdateHandler(handler as UpdateHandler);
@@ -155,7 +163,17 @@ export function createLuaNode(node: LiveNode, deps: RuntimeApiDeps): Record<stri
 
   proxy.onTouch = (...args: unknown[]) => connectTouch(...args);
   proxy.Touched = { Connect: connectTouch };
+  proxy.TouchEnded = { Connect: connectTouchEnded };
   proxy.onUpdate = { Connect: connectUpdate };
+
+  const connectChangedHandler = (property: string | null, ...args: unknown[]) => {
+    const handler = lastFunction(args);
+    if (handler) connectChanged(node, property, handler as (name: string) => void);
+  };
+  proxy.Changed = { Connect: (...args: unknown[]) => connectChangedHandler(null, ...args) };
+  proxy.GetPropertyChangedSignal = (property: unknown) => ({
+    Connect: (...args: unknown[]) => connectChangedHandler(String(property ?? ''), ...args)
+  });
 
   proxy.setVisible = (value: unknown) => node.setVisible(Boolean(value));
   proxy.setPosition = (...args: unknown[]) => applyPosition(node, args);
@@ -178,6 +196,20 @@ export function createLuaNode(node: LiveNode, deps: RuntimeApiDeps): Record<stri
       node.setPosition(parsed.position.x, parsed.position.y, parsed.position.z);
       node.setRotation(parsed.rotation.x, parsed.rotation.y, parsed.rotation.z);
     }
+  );
+  defineAlias(
+    proxy,
+    ['material', 'Material'],
+    () => aliasForSurface(node.def.material, node.def.materialTexture),
+    (value) => {
+      if (value !== undefined && value !== null) setNodeMaterial(node.def, node.mesh, String(value));
+    }
+  );
+  defineAlias(
+    proxy,
+    ['materialTexture'],
+    () => node.def.materialTexture ?? null,
+    (value) => setNodeMaterialTexture(node.def, node.mesh, value ? String(value) : null)
   );
   proxy.rotateY = (degrees: unknown) => {
     const radians = ((Number(degrees) || 0) * Math.PI) / 180;
