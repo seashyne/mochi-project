@@ -48,9 +48,10 @@ export function arrive(
 }
 
 /**
- * Repulsion from neighbours that overlap the agent's personal space. Weighted by
- * proximity so a distant crowd nudges gently and an imminent collision pushes
- * hard. Returns zero when nobody is within `radius`.
+ * Repulsion from neighbours that overlap the agent's personal space. The
+ * direction is the proximity-weighted sum, so the nearest neighbour dominates,
+ * and the magnitude follows the deepest overlap. Returns zero when nobody is
+ * within reach.
  */
 export function separation(
   agent: SteeringAgent,
@@ -59,22 +60,32 @@ export function separation(
 ): SteeringVec2 {
   let sumX = 0;
   let sumZ = 0;
+  let deepest = 0;
 
   for (const neighbour of neighbours) {
     const dx = agent.position.x - neighbour.position.x;
     const dz = agent.position.z - neighbour.position.z;
     const distance = Math.hypot(dx, dz);
-    const overlap = agent.radius + neighbour.radius - distance;
+    const reach = agent.radius + neighbour.radius;
+    const overlap = reach - distance;
     if (overlap <= 0 || distance === 0) continue;
-    // Closest neighbours contribute the most; cap so a crowd cannot teleport.
-    const strength = Math.min(overlap / (agent.radius + neighbour.radius), 1);
-    sumX += (dx / distance) * strength;
-    sumZ += (dz / distance) * strength;
+    // Closest neighbours dominate the direction.
+    const closeness = overlap / reach;
+    sumX += (dx / distance) * closeness;
+    sumZ += (dz / distance) * closeness;
+    if (overlap > deepest) deepest = overlap;
   }
 
   const length = Math.hypot(sumX, sumZ);
   if (length === 0) return { x: 0, z: 0 };
-  return { x: (sumX / length) * weight * agent.maxSpeed, z: (sumZ / length) * weight * agent.maxSpeed };
+
+  // Magnitude tracks how deep the worst overlap is, so a brushing contact nudges
+  // and a real intersection pushes hard. An overlap equal to the agent's own
+  // radius is already a full-strength push, and piling on neighbours cannot push
+  // past max speed - the direction is what changes.
+  const urgency = Math.min(deepest / Math.max(agent.radius, 1e-6), 1);
+  const speed = weight * agent.maxSpeed * urgency;
+  return { x: (sumX / length) * speed, z: (sumZ / length) * speed };
 }
 
 /**

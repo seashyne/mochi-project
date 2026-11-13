@@ -62,9 +62,10 @@ Phase 2 is complete. Notes on what actually shipped:
 | # | Item | Godot reference | Status |
 | --- | --- | --- | --- |
 | 3.1 | A\* over a grid/graph + path smoothing | `core/math/a_star.cpp` | DONE |
-| 3.2 | Steering and local avoidance (RVO) | `modules/navigation_3d/3d/nav_map*.cpp` | PLANNED |
+| 3.2 | Steering behaviours: seek, arrive, separation, blocked-lane avoidance | `modules/navigation_3d/3d/nav_map*.cpp` | DONE |
 | 3.3 | Navmesh baking in the Rust/WASM kernel (`npm run build:wasm`) | `nav_mesh_generator_3d.cpp` | BACKLOG |
 | 3.4 | Agent component + Lua API (`agent.moveTo`) | `scene/3d/navigation_agent_3d.cpp` | PLANNED |
+| 3.5 | Local avoidance proper (RVO/ORCA) in the WASM kernel | `nav_map.cpp` | BACKLOG |
 
 **3.1 shipped** in `engine/navigation/`: `NavGrid` (byte-per-cell walkability with
 world/cell mapping), `findPath` (8-way A*, octile heuristic, binary heap, typed
@@ -78,7 +79,16 @@ inflated by an agent radius, pickups and spawns ignored. 30 tests.
 `runtimeNavigation.ts`, wired in both `gameRuntime` and `playtestRuntime`,
 documented in `docs/RUNTIME.md` section 7). An `agent` NPC type is still open.
 
-Next in this phase: 3.2 steering and local avoidance, then 3.4's agent entity.
+**3.2 shipped** as `engine/navigation/steering.ts`: `seek`, `arrive` (deceleration
+ramp), `separation` (proximity-weighted repulsion whose magnitude follows the
+deepest overlap and never exceeds max speed), `avoidBlocked` (looks ahead on the
+grid and nudges along the free side) and `clampSpeed`. Only `arrive` has a
+consumer today - `PlayerNavigator` eases into its final waypoint with it.
+`separation` and `avoidBlocked` are the primitives 3.5 and the 3.4 agent entity
+will call; they are unit-tested and deliberately unused until an NPC exists.
+
+Next in this phase: 3.4's agent entity, then 3.3 navmesh bake and 3.5 RVO on top
+of it.
 
 ## Phase 4 - Multiplayer and audio
 
