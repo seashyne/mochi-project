@@ -145,6 +145,12 @@ export function attachGuiProperties(proxy: Record<string, unknown>, store: GuiTr
   bind(proxy, store, node, ['CellPadding'], () => node.cellPadding, (value) => ({
     cellPadding: toUdim2(value, node.cellPadding)
   }));
+  bind(proxy, store, node, ['MinTextSize'], () => node.minTextSize, (value) => ({
+    minTextSize: clamp(Number(value), 1, 200, node.minTextSize)
+  }));
+  bind(proxy, store, node, ['MaxTextSize'], () => node.maxTextSize, (value) => ({
+    maxTextSize: clamp(Number(value), 1, 200, node.maxTextSize)
+  }));
   bind(proxy, store, node, ['CanvasSize'], () => node.canvasSize, (value) => ({
     canvasSize: toUdim2(value, node.canvasSize)
   }));

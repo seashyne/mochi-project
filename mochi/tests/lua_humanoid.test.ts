@@ -32,6 +32,11 @@ class StubPlayer implements RuntimePlayerHandle {
   setHealth(value: number): void { this.health = value; }
   getHealth(): number { return this.health; }
   getMaxHealth(): number { return 100; }
+  jumpVelocity = 9;
+  jumps = 0;
+  getJumpVelocity(): number { return this.jumpVelocity; }
+  setJumpVelocity(value: number): void { this.jumpVelocity = value; }
+  jump(): void { this.jumps += 1; }
 }
 
 describe('player.Character.Humanoid', () => {
@@ -41,6 +46,7 @@ describe('player.Character.Humanoid', () => {
   let logs: Array<{ level: string; message: string }>;
   let contexts: ScriptContext[];
   let moves: Array<{ x: number; z: number; speed?: number }>;
+  let player: StubPlayer;
 
   function block(): StudioObject {
     const defaults = OBJECT_TYPE_DEFAULTS.block;
@@ -74,7 +80,7 @@ describe('player.Character.Humanoid', () => {
     logs = [];
     contexts = [];
     moves = [];
-    const player = new StubPlayer();
+    player = new StubPlayer();
     deps = {
       world,
       player,
@@ -203,5 +209,28 @@ describe('player.Character.Humanoid', () => {
     expect(errors).toEqual([]);
     expect(deps.player.getPosition()).toEqual({ x: 5, y: 3, z: -2 });
     expect(logs.some((entry) => entry.message === '5')).toBe(true);
+  });
+
+  it('maps JumpPower onto the launch velocity', async () => {
+    const { errors } = await run(`
+      player.Character.Humanoid.JumpPower = 100
+      print(string.format("%.1f", player.Character.Humanoid.JumpPower))
+    `);
+    expect(errors).toEqual([]);
+    // 50 is the default a ported script expects and it maps onto 9 m/s, so 100 doubles it.
+    expect(player.jumpVelocity).toBeCloseTo(18, 5);
+    expect(logs.some((entry) => entry.message === '100.0')).toBe(true);
+  });
+
+  it('queues a jump when Jump is set', async () => {
+    const { errors } = await run(`player.Character.Humanoid.Jump = true`);
+    expect(errors).toEqual([]);
+    expect(player.jumps).toBe(1);
+  });
+
+  it('ignores a jump power that is not a positive number', async () => {
+    const { errors } = await run(`player.Character.Humanoid.JumpPower = -5`);
+    expect(errors).toEqual([]);
+    expect(player.jumpVelocity).toBe(9);
   });
 });

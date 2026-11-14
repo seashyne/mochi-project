@@ -128,4 +128,20 @@ describe('GUI decoration classes', () => {
     expect(errors).toEqual([]);
     expect(logs.map((entry) => entry.message)).toEqual(['false', 'true']);
   });
+
+  it('carries a text size range', async () => {
+    const { errors } = await run(`
+      local label = Instance.new("TextLabel", player.PlayerGui)
+      label.Name = "Caption"
+      local limit = Instance.new("UITextSizeConstraint", label)
+      limit.MinTextSize = 8
+      limit.MaxTextSize = 24
+    `);
+    expect(errors).toEqual([]);
+
+    const label = defaultGuiStore.roots().find((node) => node.name === 'Caption');
+    const limit = defaultGuiStore.childOfClass(label!.id, 'UITextSizeConstraint');
+    expect(limit?.minTextSize).toBe(8);
+    expect(limit?.maxTextSize).toBe(24);
+  });
 });

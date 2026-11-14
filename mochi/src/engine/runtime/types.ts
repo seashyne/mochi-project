@@ -35,6 +35,11 @@ export interface RuntimePlayerHandle {
   getHealth(): number;
   setHealth(value: number): void;
   getMaxHealth(): number;
+  /** Jump launch velocity in metres per second. Absent on a handle that cannot jump. */
+  getJumpVelocity?(): number;
+  setJumpVelocity?(value: number): void;
+  /** Queues one jump, consumed on the next update. */
+  jump?(): void;
 }
 
 export interface HudNotification {

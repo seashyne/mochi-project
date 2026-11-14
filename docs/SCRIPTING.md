@@ -138,6 +138,7 @@ properties, exactly as in the source API.
 | `UICorner` | `CornerRadius = UDim.new(0, 12)` rounds the box |
 | `UIPadding` | `PaddingTop` / `PaddingRight` / `PaddingBottom` / `PaddingLeft` inset the children |
 | `UIListLayout` | `Padding`, `FillDirection`, `HorizontalAlignment`, `VerticalAlignment` - children flow in order and their `Position` is ignored |
+| `UITextSizeConstraint` | `MinTextSize` / `MaxTextSize` clamp both the fixed size and the fitted one |
 
 ```lua
 local list = Instance.new("UIListLayout", panel)
@@ -152,7 +153,7 @@ corner.CornerRadius = UDim.new(0, 10)
 wrap; `ClipsDescendants` decides whether a child may spill out (clipping is on by
 default here, which the source API leaves off).
 
-Not implemented: `RichText` and `UITextSizeConstraint`. For a score or
+Not implemented: `RichText`. For a score or
 timer readout, `ui.setHud` is still less code than a tree.
 
 For state, `React.mount` gives you components over the same tree - see `docs/REACT.md`.
@@ -176,9 +177,10 @@ Signals return a connection with `:Disconnect()`. They are latched from the heal
 transition once per frame, so damage from a hazard, another script or the console all
 reach the handler.
 
-`JumpPower` is deliberately absent: the jump impulse belongs to the input-driven
-controller, and a property that accepts a number and ignores it is worse than a
-missing one.
+`JumpPower` sets the launch velocity, and `humanoid.Jump = true` queues one jump. The
+number is in the unit a script expects: 50 - the default - maps onto the 9 m/s the
+controller ships with, so an untouched value jumps exactly as it did before. `Jump`
+reads as false: a jump is a request, not a state this runtime can report back.
 
 ## Materials
 

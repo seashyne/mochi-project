@@ -115,6 +115,20 @@ export class CharacterPhysicsController {
     }
   }
 
+  /** Launch velocity for a jump, in metres per second. */
+  public getJumpVelocity(): number {
+    return this.config.jumpVelocity;
+  }
+
+  /**
+   * Sets the launch velocity. `Humanoid.JumpPower` maps onto this; the mapping lives in
+   * the Lua layer because the unit a script uses is not the unit the physics uses.
+   */
+  public setJumpVelocity(value: number): void {
+    if (!Number.isFinite(value) || value <= 0) return;
+    this.config.jumpVelocity = value;
+  }
+
   public applyJumpPadImpulse(verticalVelocity = 18.0): void {
     this.body.velocity.y = verticalVelocity;
     this.isGrounded = false;

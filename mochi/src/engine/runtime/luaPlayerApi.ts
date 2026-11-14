@@ -108,6 +108,25 @@ export function createPlayerApi(deps: RuntimeApiDeps): Record<string, unknown> {
   });
   defineAlias(humanoid, ['MaxHealth'], () => deps.player.getMaxHealth(), () => undefined);
 
+  // `JumpPower` is the launch velocity in the unit a script uses; the controller works
+  // in metres per second. 50 - the value a ported script expects - maps onto the 9 m/s
+  // the controller shipped with, so an untouched value jumps exactly as it did.
+  const JUMP_POWER_SCALE = 9 / 50;
+  defineAlias(
+    humanoid,
+    ['JumpPower', 'jumpPower'],
+    () => (deps.player.getJumpVelocity?.() ?? 9) / JUMP_POWER_SCALE,
+    (value) => {
+      const power = Number(value);
+      if (Number.isFinite(power) && power > 0) deps.player.setJumpVelocity?.(power * JUMP_POWER_SCALE);
+    }
+  );
+  // Write-only: a jump is a request, not a state this runtime can report back, so the
+  // getter is false rather than a guess.
+  defineAlias(humanoid, ['Jump', 'jump'], () => false, (value) => {
+    if (value) deps.player.jump?.();
+  });
+
   humanoid.MoveTo = (...raw: unknown[]) => {
     const args = afterSelf(raw);
     const first = args[0] as { x?: number; z?: number } | number | undefined;

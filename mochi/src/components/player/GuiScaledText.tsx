@@ -16,8 +16,14 @@ import { HUD_FONT_STACK } from './hudFonts';
 
 const useIsomorphicLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect;
 
-export const GuiText: React.FC<{ node: GuiNode }> = ({ node }) => {
+export const GuiText: React.FC<{ node: GuiNode; min?: number; max?: number }> = ({
+  node,
+  min,
+  max
+}) => {
   const ref = useRef<HTMLSpanElement>(null);
+  // A UITextSizeConstraint on the node caps both the fixed size and the fitted one.
+  const limit = (size: number) => Math.min(max ?? 200, Math.max(min ?? 1, size));
 
   useIsomorphicLayoutEffect(() => {
     if (!node.textScaled) return;
@@ -32,9 +38,11 @@ export const GuiText: React.FC<{ node: GuiNode }> = ({ node }) => {
       // Measure at the tallest a line could be, then scale by how much it overflows.
       // One pass is enough because the ratio is taken from the measured box, not
       // estimated from a character count.
+      // Measured at the full box height, before any cap: the ratio has to come from
+      // the real overflow, not from the clamped size.
       span.style.fontSize = `${height}px`;
       const scale = Math.min(width / (span.scrollWidth || 1), height / (span.scrollHeight || 1), 1);
-      span.style.fontSize = `${Math.max(6, Math.floor(height * scale))}px`;
+      span.style.fontSize = `${limit(Math.max(6, Math.floor(height * scale)))}px`;
     };
 
     fit();
@@ -47,7 +55,7 @@ export const GuiText: React.FC<{ node: GuiNode }> = ({ node }) => {
       ref={ref}
       style={{
         color: node.textColor,
-        fontSize: node.textScaled ? undefined : node.textSize,
+        fontSize: node.textScaled ? undefined : limit(node.textSize),
         fontFamily: HUD_FONT_STACK[familyFor(node.font)],
         lineHeight: 1.2,
         // Scaling measures the string unwrapped; wrapping would make the ratio

@@ -150,4 +150,22 @@ describe('GuiTreeOverlay', () => {
     expect(html).toContain('overflow-y:hidden');
     expect(html).toContain('overflow-x:hidden');
   });
+
+  it('clamps text size with a UITextSizeConstraint', () => {
+    const store = new GuiTreeStore();
+    const screen = store.create('ScreenGui', 'Hud');
+    store.setParent(screen.id, store.playerGuiId);
+    const label = store.create('TextLabel', 'Title');
+    store.setParent(label.id, screen.id);
+    store.update(label.id, { text: 'Big', textSize: 40 });
+
+    const limit = store.create('UITextSizeConstraint', 'Limit');
+    store.setParent(limit.id, label.id);
+    store.update(limit.id, { maxTextSize: 20 });
+
+    const html = renderToString(<GuiTreeOverlay store={store} />);
+    expect(html).toContain('font-size:20px');
+    // The constraint itself draws nothing.
+    expect(html).not.toContain('data-gui="UITextSizeConstraint"');
+  });
 });

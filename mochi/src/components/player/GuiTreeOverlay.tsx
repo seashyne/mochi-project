@@ -93,6 +93,7 @@ function NodeView({
   const padding = store.childOfClass(node.id, 'UIPadding');
   const scaleNode = store.childOfClass(node.id, 'UIScale');
   const aspect = store.childOfClass(node.id, 'UIAspectRatioConstraint');
+  const textLimit = store.childOfClass(node.id, 'UITextSizeConstraint');
   const list = store.childOfClass(node.id, 'UIListLayout');
   const grid = store.childOfClass(node.id, 'UIGridLayout');
   const style = baseStyle(node, isButton, flow);
@@ -167,7 +168,9 @@ function NodeView({
           ) : null}
         </>
       ) : null}
-      {isTextClass(node.className) && node.text ? <GuiText node={node} /> : null}
+      {isTextClass(node.className) && node.text ? (
+        <GuiText node={node} min={textLimit?.minTextSize} max={textLimit?.maxTextSize} />
+      ) : null}
       {store.arrangedChildrenOf(node.id).map((child) => (
         <NodeView key={child.id} node={child} store={store} flow={childFlow} />
       ))}

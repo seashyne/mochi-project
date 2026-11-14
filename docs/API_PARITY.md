@@ -67,7 +67,7 @@ Legend: **Yes** same idea, **Shape** same idea but a different call shape,
 | --- | --- | --- |
 | `game.Players.LocalPlayer` | Shape | `player` is the global; `players.LocalPlayer`, `players.getLocalPlayer()` also work |
 | `player.Name`, `player.Health`, `player.MaxHealth`, `player.Position` | Yes | Lower-case aliases too |
-| `player.Character`, `Humanoid`, `WalkSpeed` | Shape | `player.Character.Humanoid` is a table with the right names, not an instance: `WalkSpeed`, `Health`, `MaxHealth`, `:MoveTo(v)`, `:TakeDamage(n)`, `Character.Position`, and `Humanoid.Died` / `player.CharacterAdded` signals. No `JumpPower`, no `HumanoidDescription`, no instance parenting |
+| `player.Character`, `Humanoid`, `WalkSpeed` | Shape | `player.Character.Humanoid` is a table with the right names, not an instance: `WalkSpeed`, `JumpPower`, `Jump`, `Health`, `MaxHealth`, `:MoveTo(v)`, `:TakeDamage(n)`, `Character.Position`, and `Humanoid.Died` / `player.CharacterAdded` signals. `Jump` is write-only - a jump is a request, not a state this runtime reports. No `HumanoidDescription`, no instance parenting |
 | `player:MoveTo(...)` | Shape | `player.moveTo(x, z, speed)` - x/z only, no point argument |
 | `player:LoadCharacter()`, `CharacterAdded` | No | `player.respawn()` is the equivalent action |
 | `player:DistanceFromCharacter(p)` | No | Compute it from `position` |
@@ -93,7 +93,7 @@ Legend: **Yes** same idea, **Shape** same idea but a different call shape,
 | Common call | Here | Notes |
 | --- | --- | --- |
 | `ScreenGui`, `Frame`, `TextLabel`, `TextButton`, `ImageLabel`, `ImageButton`, `ScrollingFrame` | Shape | A real tree under `player.PlayerGui`: `Instance.new(class, parent, props)`, `Parent`, `Position`/`Size` as `UDim2`, `AnchorPoint`, `BackgroundColor3`, `BackgroundTransparency`, `BorderSizePixel`, `ClipsDescendants`, `Text`, `TextColor3`, `TextSize`, `TextScaled`, `TextWrapped`, `Font`, `TextXAlignment`/`TextYAlignment`, `Image`, `ImageColor3`, `ScaleType`, `Visible`, `ZIndex`, `LayoutOrder`, `:Destroy()`, `:FindFirstChild()`, `:GetChildren()`, and `MouseButton1Click` / `Activated`. No `RichText` |
-| `UICorner`, `UIPadding`, `UIScale`, `UIListLayout`, `UIGridLayout`, `UIAspectRatioConstraint` | Shape | Attached as children, the same way the source API does it: `CornerRadius`; `PaddingTop`/`Bottom`/`Left`/`Right`; `Scale`; `Padding`, `FillDirection`, `HorizontalAlignment`/`VerticalAlignment`, `SortOrder`; `CellSize`, `CellPadding`; `AspectRatio`, `DominantAxis`. A layout takes over child positioning, so their `Position` is ignored |
+| `UICorner`, `UIPadding`, `UIScale`, `UIListLayout`, `UIGridLayout`, `UIAspectRatioConstraint`, `UITextSizeConstraint` | Shape | Attached as children, the same way the source API does it: `CornerRadius`; `PaddingTop`/`Bottom`/`Left`/`Right`; `Scale`; `Padding`, `FillDirection`, `HorizontalAlignment`/`VerticalAlignment`, `SortOrder`; `CellSize`, `CellPadding`; `AspectRatio`, `DominantAxis`; `MinTextSize`, `MaxTextSize`. A layout takes over child positioning, so their `Position` is ignored |
 | `ui.setHud(id, element)` | Mochi | The card list, kept for score and timer readouts. Typography is `font = "mono" \| "ui" \| "display"` and `size = "sm" \| "md" \| "lg"`; unknown values are ignored, not thrown |
 | `player:FindFirstChild("leaderstats")` | Shape | `ui.setLeaderboard(category, score)` |
 | `React.createElement`, `React.mount`, `React.useState` | Shape | A small reconciler over the GUI tree, not a port of React: no keys, no context, no memo. `useState` and `useEffect` are the whole hook set. See `docs/REACT.md` |
@@ -153,13 +153,12 @@ a promise.
 
 1. **`Humanoid` / `Character` tree** - the names exist as a table now, so a script
    that sets `WalkSpeed` and calls `Humanoid:MoveTo` runs unchanged. Still missing is
-   everything that needs a real instance tree: `JumpPower` driving the jump,
-   `HumanoidDescription`, animation state names, and parenting (`FindFirstChild`).
+   everything that needs a real instance tree: `HumanoidDescription`, animation state
+   names, and parenting (`FindFirstChild`). `JumpPower` and `Jump` reach the controller.
 2. **GUI tree** - closed. Six drawable classes build a real tree under
    `player.PlayerGui` with `UDim2` positioning, text, images and click events; six
    decoration and layout classes shape it, `ScrollingFrame` scrolls it, and
-   `TweenService` animates it. What is still missing is `RichText` and
-   `UITextSizeConstraint`.
+   `TweenService` animates it. What is still missing is `RichText`.
 3. **`CFrame`** - closed for the common surface: `new`, `Angles`, `lookAt`, `*` with
    both a CFrame and a Vector3, `+`/`-` with a Vector3, `Position`, `LookVector` and
    the methods all exist. The one remaining trap is a unit convention: `CFrame.Angles`

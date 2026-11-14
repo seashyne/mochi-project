@@ -61,7 +61,9 @@ export const GUI_PROPERTY_NAMES = [
   'CanvasSize',
   'CanvasPosition',
   'ScrollingDirection',
-  'ScrollingEnabled'
+  'ScrollingEnabled',
+  'MinTextSize',
+  'MaxTextSize'
 ] as const;
 
 export function createGuiProxy(store: GuiTreeStore, node: GuiNode): Record<string, unknown> {

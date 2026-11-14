@@ -109,6 +109,20 @@ export class PlaytestPlayer implements RuntimePlayerHandle {
     return { ...this.spawn };
   }
 
+  getJumpVelocity(): number {
+    return this.controller.getJumpVelocity();
+  }
+
+  setJumpVelocity(value: number): void {
+    this.controller.setJumpVelocity(value);
+  }
+
+  jump(): void {
+    // The same queue the space bar fills, so a scripted jump gets the same buffering
+    // and coyote time as a pressed one.
+    this.jumpQueued = true;
+  }
+
   update(dt: number, cameraYaw: number): void {
     const forward =
       (this.keys.has('w') || this.keys.has('arrowup') ? 1 : 0) -

@@ -41,7 +41,8 @@ export const GUI_CLASSES = [
   'UIScale',
   'UIListLayout',
   'UIGridLayout',
-  'UIAspectRatioConstraint'
+  'UIAspectRatioConstraint',
+  'UITextSizeConstraint'
 ] as const;
 export type GuiClass = (typeof GUI_CLASSES)[number] | 'PlayerGui';
 
@@ -52,7 +53,8 @@ export const DECORATION_CLASSES = [
   'UIScale',
   'UIListLayout',
   'UIGridLayout',
-  'UIAspectRatioConstraint'
+  'UIAspectRatioConstraint',
+  'UITextSizeConstraint'
 ] as const;
 
 export function isDecorationClass(className: GuiClass): boolean {
@@ -141,6 +143,10 @@ export interface GuiNode {
   cellSize: UDim2;
   cellPadding: UDim2;
 
+  // UITextSizeConstraint
+  minTextSize: number;
+  maxTextSize: number;
+
   // ScrollingFrame
   canvasSize: UDim2;
   canvasPosition: Vector2;
@@ -195,7 +201,9 @@ const SHARED: Omit<GuiNodeInit, 'className' | 'name'> = {
   canvasSize: { xScale: 0, xOffset: 0, yScale: 2, yOffset: 0 },
   canvasPosition: { x: 0, y: 0 },
   scrollingDirection: 'Y',
-  scrollingEnabled: true
+  scrollingEnabled: true,
+  minTextSize: 1,
+  maxTextSize: 100
 };
 
 /** Defaults per class. A frame is a visible box, text starts empty and centred. */
