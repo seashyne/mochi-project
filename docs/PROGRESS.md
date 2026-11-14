@@ -263,3 +263,20 @@ normalised blend so a tiny turn does not divide by a sine near zero.
 
 The maths lives in `luaPreludeRotation.ts` because the prelude is at its ceiling; the
 function is a global so the CFrame block, in another module, can call it.
+**TweenService completes** (2026-11-14): two things were missing against the API it
+mirrors. `SmoothDamp` - the critically damped spring for something that follows a moving
+target every frame, a camera being the usual one - did not exist at all. And two tweens
+on the same property fought: both wrote every frame and the property landed wherever the
+last writer put it, which is neither of the values the script asked for.
+
+`SmoothDamp` takes a number or a Vector3 and returns the new value and the velocity to
+feed back next frame; the velocity is what makes the motion continuous instead of
+restarting from rest each time. A CFrame is rejected out loud rather than being treated
+as a Vector3 - it carries x, y and z, so a silent fallback would damp the position and
+leave the rotation alone, which looks like the feature working.
+
+Starting a tween now cancels any running tween on the same instance that shares a
+property, which is the rule the platform documents.
+
+Still absent, and stated rather than implied: tweening a GUI object (the HUD is a store,
+not an instance tree), `NumberSequence` / `ColorSequence`, and Model pivots.

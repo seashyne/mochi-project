@@ -11,9 +11,12 @@
 // The easing curves are in `luaPreludeEasing.ts`; they are locals, and this block is
 // concatenated after them in the same chunk, so `ease` stays in scope.
 
+import { DAMP_PRELUDE } from './luaPreludeDamp';
 import { EASING_PRELUDE } from './luaPreludeEasing';
 
 export const TWEEN_PRELUDE = `${EASING_PRELUDE}
+
+${DAMP_PRELUDE}
 
 TweenInfo = {}
 function TweenInfo.new(time, style, direction, repeatCount, reverses, delay)
@@ -118,6 +121,12 @@ function TweenService:GetValue(alpha, style, direction)
   return tweenValue(alpha, style, direction)
 end
 
+-- Follows a moving target without overshooting. The velocity comes back out and must be
+-- passed in again next frame; that is what makes the motion continuous.
+function TweenService:SmoothDamp(current, target, velocity, smoothTime, maxSpeed, dt)
+  return __mochi_smooth_damp(current, target, velocity, smoothTime, maxSpeed, dt)
+end
+
 function TweenService:Create(instance, info, goal)
   local tween = {
     instance = instance,
@@ -179,6 +188,20 @@ function TweenService:Create(instance, info, goal)
         if current ~= nil then self.from[key] = capture(current) end
       end
     end
+    -- A newer tween on the same property replaces the older one, so two tweens cannot
+    -- fight over one property and produce a value neither of them asked for.
+    for index = #running, 1, -1 do
+      local other = running[index]
+      if other ~= self and other.instance == self.instance then
+        for key in pairs(self.goal) do
+          if other.goal[key] ~= nil then
+            other:Cancel()
+            break
+          end
+        end
+      end
+    end
+
     local delay = tonumber(self.info.DelayTime) or 0
     self.PlaybackState = delay > 0 and Enum.PlaybackState.Delayed or Enum.PlaybackState.Playing
     ensureDriver()

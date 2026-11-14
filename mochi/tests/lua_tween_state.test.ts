@@ -185,4 +185,84 @@ describe('tween playback state', () => {
     expect(values[1]).toBe('1.000');
     expect(values[2]).toBe('0.000');
   });
+
+  it('cancels an older tween that touches the same property', async () => {
+    const { node, errors } = await run(`
+      local part = script.parent
+      part.Position = Vector3.new(0, 0, 0)
+      local first = TweenService:Create(part, TweenInfo.new(1, Enum.EasingStyle.Linear), {
+        Position = Vector3.new(10, 0, 0)
+      })
+      first:Play()
+      local second = TweenService:Create(part, TweenInfo.new(1, Enum.EasingStyle.Linear), {
+        Position = Vector3.new(-10, 0, 0)
+      })
+      second:Play()
+      print(first.PlaybackState .. " " .. second.PlaybackState)
+    `);
+    expect(errors).toEqual([]);
+    // Two tweens on one property would otherwise fight and land on neither target.
+    expect(logs.some((entry) => entry.message === 'Cancelled Playing')).toBe(true);
+
+    node.dispatchUpdate(1);
+    expect(node.position.x).toBeCloseTo(-10, 3);
+  });
+
+  it('leaves a tween alone when the properties do not overlap', async () => {
+    const { errors } = await run(`
+      local part = script.parent
+      local first = TweenService:Create(part, TweenInfo.new(1), { Position = Vector3.new(10, 0, 0) })
+      first:Play()
+      local second = TweenService:Create(part, TweenInfo.new(1), { Color = Color3.new(1, 0, 0) })
+      second:Play()
+      print(first.PlaybackState)
+    `);
+    expect(errors).toEqual([]);
+    expect(logs.some((entry) => entry.message === 'Playing')).toBe(true);
+  });
+
+  it('damps a number toward its target without overshooting', async () => {
+    const { errors } = await run(`
+      local value, velocity = 0, 0
+      local peak = 0
+      for frame = 1, 120 do
+        value, velocity = TweenService:SmoothDamp(value, 10, velocity, 0.2, nil, 1 / 60)
+        if value > peak then peak = value end
+      end
+      print(string.format("%.2f %.2f", value, peak))
+    `);
+    expect(errors).toEqual([]);
+    const [settled, peak] = (logs[0].message as string).split(' ').map(Number);
+    expect(settled).toBeCloseTo(10, 1);
+    // A critically damped spring may not pass the target on the way.
+    expect(peak).toBeLessThanOrEqual(10.0001);
+  });
+
+  it('damps a Vector3 component by component', async () => {
+    const { errors } = await run(`
+      local value, velocity = Vector3.new(0, 0, 0), Vector3.new(0, 0, 0)
+      for frame = 1, 120 do
+        value, velocity = TweenService:SmoothDamp(value, Vector3.new(4, 8, -2), velocity, 0.15, nil, 1 / 60)
+      end
+      print(string.format("%.1f %.1f %.1f", value.x, value.y, value.z))
+    `);
+    expect(errors).toEqual([]);
+    const parts = (logs[0].message as string).split(' ').map(Number);
+    expect(parts[0]).toBeCloseTo(4, 0);
+    expect(parts[1]).toBeCloseTo(8, 0);
+    expect(parts[2]).toBeCloseTo(-2, 0);
+  });
+
+  it('refuses a CFrame rather than damping only its position', async () => {
+    const { errors } = await run(`
+      local ok, message = pcall(function()
+        return TweenService:SmoothDamp(CFrame.new(), CFrame.new(1, 0, 0), 0, 0.2)
+      end)
+      print(tostring(ok) .. ":" .. tostring(message))
+    `);
+    expect(errors).toEqual([]);
+    const line = logs.map((entry) => entry.message).find((message) => message.startsWith('false:'));
+    expect(line).toBeDefined();
+    expect(line).toContain('CFrame');
+  });
 });

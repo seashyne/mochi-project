@@ -153,7 +153,8 @@ corner.CornerRadius = UDim.new(0, 10)
 wrap; `ClipsDescendants` decides whether a child may spill out (clipping is on by
 default here, which the source API leaves off).
 
-Not implemented: `RichText`. For a score or
+`RichText` turns on inline markup: `<b>`, `<i>`, `<u>`, `<s>`, `<font color="#f00">` and
+`<br>`. An unknown tag renders as text rather than disappearing. For a score or
 timer readout, `ui.setHud` is still less code than a tree.
 
 For state, `React.mount` gives you components over the same tree - see `docs/REACT.md`.
@@ -240,6 +241,14 @@ and pick it up again. `tween.PlaybackState` reports `Begin`, `Delayed`, `Playing
 
 `TweenService:GetValue(alpha, style, direction)` returns the curve on its own, clamped to
 0..1, which is useful for driving a value by hand or checking a curve before using it.
+
+`TweenService:SmoothDamp(current, target, velocity, smoothTime, maxSpeed, dt)` is the
+other half: a critically damped spring for something that follows a target every frame
+without overshooting. Feed the returned velocity back in next frame. It takes a number or
+a Vector3; a CFrame raises rather than damping only its position.
+
+Starting a tween on a property cancels an older tween on the same property, so two tweens
+cannot fight over one value.
 
 Every tween in a script is driven by one shared frame handler rather than one per tween,
 so starting a tween inside a loop does not add a handler each time.

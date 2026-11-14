@@ -168,4 +168,33 @@ describe('GuiTreeOverlay', () => {
     // The constraint itself draws nothing.
     expect(html).not.toContain('data-gui="UITextSizeConstraint"');
   });
+
+  it('renders RichText markup as styled runs', () => {
+    const store = new GuiTreeStore();
+    const screen = store.create('ScreenGui', 'Hud');
+    store.setParent(screen.id, store.playerGuiId);
+    const label = store.create('TextLabel', 'Title');
+    store.setParent(label.id, screen.id);
+    store.update(label.id, {
+      richText: true,
+      text: 'Hi <b>bold</b> <font color="#ff0000">red</font>'
+    });
+
+    const html = renderToString(<GuiTreeOverlay store={store} />);
+    expect(html).toContain('font-weight:700');
+    expect(html).toContain('color:#ff0000');
+    expect(html).toContain('bold');
+  });
+
+  it('renders an unknown RichText tag literally', () => {
+    const store = new GuiTreeStore();
+    const screen = store.create('ScreenGui', 'Hud');
+    store.setParent(screen.id, store.playerGuiId);
+    const label = store.create('TextLabel', 'Title');
+    store.setParent(label.id, screen.id);
+    store.update(label.id, { richText: true, text: '<blink>nope</blink>' });
+
+    const html = renderToString(<GuiTreeOverlay store={store} />);
+    expect(html).toContain('&lt;blink&gt;');
+  });
 });

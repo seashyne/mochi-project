@@ -47,6 +47,7 @@ export const GUI_PROPERTY_NAMES = [
   'HorizontalAlignment',
   'VerticalAlignment',
   'TextWrapped',
+  'RichText',
   'ClipsDescendants',
   'LayoutOrder',
   'Scale',

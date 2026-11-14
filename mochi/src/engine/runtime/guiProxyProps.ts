@@ -118,6 +118,9 @@ export function attachGuiProperties(proxy: Record<string, unknown>, store: GuiTr
     listVAlign: toYAlignName(value, node.listVAlign)
   }));
 
+  bind(proxy, store, node, ['RichText'], () => node.richText, (value) => ({
+    richText: Boolean(value)
+  }));
   bind(proxy, store, node, ['TextWrapped'], () => node.textWrapped, (value) => ({
     textWrapped: Boolean(value)
   }));

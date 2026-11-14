@@ -113,6 +113,8 @@ export interface GuiNode {
   textSize: number;
   textScaled: boolean;
   textWrapped: boolean;
+  /** Inline markup: <b> <i> <u> <s>, <font color>, <br>. */
+  richText: boolean;
   /** The enum name, so a script can compare it against `Enum.Font.*`. */
   font: FontName;
   xAlign: XAlignName;
@@ -178,6 +180,7 @@ const SHARED: Omit<GuiNodeInit, 'className' | 'name'> = {
   textSize: 14,
   textScaled: false,
   textWrapped: false,
+  richText: false,
   font: 'SourceSans',
   xAlign: 'Center',
   yAlign: 'Center',

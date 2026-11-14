@@ -13,6 +13,7 @@ import React, { useEffect, useLayoutEffect, useRef } from 'react';
 import { familyFor } from '../../engine/gui/guiEnums';
 import type { GuiNode } from '../../engine/gui/guiTypes';
 import { HUD_FONT_STACK } from './hudFonts';
+import { richTextNodes } from './GuiRichText';
 
 const useIsomorphicLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect;
 
@@ -66,7 +67,7 @@ export const GuiText: React.FC<{ node: GuiNode; min?: number; max?: number }> = 
         display: node.textScaled ? 'inline-block' : undefined
       }}
     >
-      {node.text}
+      {node.richText ? richTextNodes(node.text) : node.text}
     </span>
   );
 };
