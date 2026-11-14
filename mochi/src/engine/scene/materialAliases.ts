@@ -34,6 +34,7 @@ const ALIASES: Record<string, MaterialAlias> = {
   neon: { name: 'Neon', material: 'neon', preset: null },
   forcefield: { name: 'ForceField', material: 'neon', preset: null },
   glass: { name: 'Glass', material: 'glass', preset: null },
+  water: { name: 'Water', material: 'glass', preset: null },
   ice: { name: 'Ice', material: 'glass', preset: null },
   glacier: { name: 'Glacier', material: 'glass', preset: null },
 

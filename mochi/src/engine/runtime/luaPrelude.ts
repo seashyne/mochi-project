@@ -201,6 +201,16 @@ end
 -- be false for an object; as a string the comparison holds, and the same string still
 -- assigns. An unknown member is nil, so indexing it raises - which is the point.
 Enum = Enum or {}
+
+-- The GUI enums. Names the app ships a face for, plus the alignments; a font name the
+-- app has no face for still renders, mapped to the nearest shipped family.
+Enum.Font = {
+  SourceSans = "SourceSans", SourceSansBold = "SourceSansBold", SourceSansLight = "SourceSansLight",
+  Gotham = "Gotham", GothamBold = "GothamBold", GothamBlack = "GothamBlack",
+  Code = "Code", Arial = "Arial", ArialBold = "ArialBold", Fantasy = "Fantasy", Antique = "Antique",
+}
+Enum.TextXAlignment = { Left = "Left", Center = "Center", Right = "Right" }
+Enum.TextYAlignment = { Top = "Top", Center = "Center", Bottom = "Bottom" }
 Enum.Material = {
   Air = "Air",
   Asphalt = "Asphalt",
@@ -243,9 +253,11 @@ Enum.Material = {
   Slate = "Slate",
   SmoothPlastic = "SmoothPlastic",
   Snow = "Snow",
+  Water = "Water",
   Wood = "Wood",
   WoodPlanks = "WoodPlanks",
 }
+
 
 ${PRELUDE_MARKER}
 __mochi_thread = coroutine.create(function()

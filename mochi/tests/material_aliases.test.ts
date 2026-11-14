@@ -48,6 +48,22 @@ describe('material aliases', () => {
     }
   });
 
+  it('covers every standard material name', () => {
+    // A ported script that names a surface we do not list gets nil, which raises. The
+    // point of the full set is that no real name can do that, even where we have no
+    // texture for it and fall back to a plain shading mode.
+    const STANDARD = [
+      'Air', 'Asphalt', 'Basalt', 'Brick', 'Cardboard', 'Carpet', 'CeramicTiles',
+      'ClayRoofTiles', 'Cobblestone', 'Concrete', 'CorrodedMetal', 'CrackedLava',
+      'DiamondPlate', 'Fabric', 'Foil', 'ForceField', 'Glacier', 'Glass', 'Granite',
+      'Grass', 'Ground', 'Ice', 'LeafyGrass', 'Limestone', 'Marble', 'Metal', 'Mud',
+      'Neon', 'Pavement', 'Pebble', 'Plaster', 'Plastic', 'Rock', 'RoofShingles',
+      'Rubber', 'Salt', 'Sand', 'Sandstone', 'Slate', 'SmoothPlastic', 'Snow', 'Water',
+      'Wood', 'WoodPlanks'
+    ];
+    expect([...MATERIAL_ALIAS_NAMES].sort()).toEqual([...STANDARD].sort());
+  });
+
   it('keeps the Lua enum and the alias table in step', () => {
     // The prelude hard-codes the names so a typo is a nil index rather than a silent
     // no-op; this is the guard that the two lists cannot drift apart.
