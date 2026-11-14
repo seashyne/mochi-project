@@ -27,6 +27,11 @@ import {
   scanJsonArrayRangesTypeScript
 } from '../src/engine/scene/chunkObjectStream';
 import type { StudioObject } from '../src/engine/studio/types';
+import { NavGrid } from '../src/engine/navigation/navGrid';
+import { decomposeWalkable } from '../src/engine/navigation/navMesh';
+import { decomposeNavMeshWasm } from '../src/engine/navigation/wasmDecompose';
+import { solveOrca, type OrcaBody } from '../src/engine/navigation/orca';
+import { solveOrcaWasm } from '../src/engine/navigation/wasmOrca';
 
 interface Row {
   name: string;
@@ -205,6 +210,31 @@ describe('kernel versus TypeScript', () => {
       const typescriptMs = timeMs(() => { buildNavGrid([], { ...options, useKernel: false }); }, 10);
       record(`bake_nav_grid (${size}x${size}, 0 boxes)`, kernelMs, typescriptMs, 'clear + flood fill only');
     }
+  });
+
+  it('navmesh decomposition', () => {
+    const size = 256;
+    const nav = NavGrid.fromPredicate(size, size, 1, (x, y) => (x * 31 + y * 17) % 23 !== 0, { x: 0, z: 0 });
+    // Both sides pay for a walkable scan; the kernel additionally copies the bitmap
+    // in and the rectangles out, which is the cost this row is asking about.
+    const kernelMs = timeMs(() => decomposeNavMeshWasm(nav), 20);
+    const typescriptMs = timeMs(() => decomposeWalkable(size, size, (x, y) => nav.isWalkable(x, y)), 20);
+    record('decompose_navmesh (256x256)', kernelMs, typescriptMs, 'per bake, once per world change');
+  });
+
+  it('velocity-obstacle avoidance', () => {
+    const bodies: OrcaBody[] = Array.from({ length: 32 }, (_, index) => ({
+      x: Math.sin(index * 1.3) * 3,
+      z: Math.cos(index * 0.7) * 3,
+      vx: Math.cos(index * 0.9) * 1.6,
+      vz: Math.sin(index * 1.1) * 1.6,
+      radius: 0.4,
+      maxSpeed: 4,
+      weight: 1
+    }));
+    const kernelMs = timeMs(() => solveOrcaWasm(bodies, { timeHorizon: 1.2, timeStep: 1 / 60 }), 300);
+    const typescriptMs = timeMs(() => solveOrca(bodies, { timeHorizon: 1.2, timeStep: 1 / 60 }), 300);
+    record('orca_solve (32 bodies)', kernelMs, typescriptMs, 'per tick with 32 NPCs');
   });
 
   it('prints the table', () => {

@@ -8,3 +8,6 @@ export * from './astar';
 export * from './pathSmoothing';
 export * from './navGridFromScene';
 export * from './steering';
+export * from './navMesh';
+export * from './navMeshPath';
+export * from './orca';

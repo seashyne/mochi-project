@@ -67,6 +67,24 @@ export interface WasmPhysicsExports {
     agentRadius: number,
     walkablePtr: number, regionPtr: number
   ) => number;
+  decompose_navmesh: (
+    walkablePtr: number,
+    width: number,
+    height: number,
+    rectPtr: number,
+    maxRects: number
+  ) => number;
+  orca_solve: (
+    positionsPtr: number,
+    velocitiesPtr: number,
+    radiiPtr: number,
+    weightsPtr: number,
+    maxSpeedsPtr: number,
+    count: number,
+    timeHorizon: number,
+    timeStep: number,
+    outPtr: number
+  ) => number;
   resolve_overlaps: (
     positionsPtr: number, radiiPtr: number, weightsPtr: number,
     count: number, maxStep: number, iterations: number

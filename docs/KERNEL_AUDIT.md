@@ -21,12 +21,16 @@ Reproduce with `npm run benchmark:kernel` (2026-11-13).
 | `bake_nav_grid`, 256x256 | 0.50 ms | 0.11 ms | **4.7x slower** | per world change |
 | `bake_nav_grid`, 512x512 | 2.38 ms | 0.28 ms | **8.4x slower** | per world change |
 | `bake_nav_grid`, 512x512, no boxes | 1.72 ms | 0.06 ms | clear + fill only | isolates the region pass |
+| `decompose_navmesh`, 256x256 | 0.53 ms | 1.36 ms | 2.6x faster | per bake, once per world change |
+| `orca_solve`, 32 bodies | 0.01 ms | 0.03 ms | 2.3x faster | per tick with 32 NPCs |
 
 ## What earns its keep
 
 `simplify_mesh`, `resolve_overlaps` and `scan_json_array` are genuine wins of 2-4x,
 and all three share a shape: **one call does O(n) or worse work over a whole buffer**.
-That is the case the boundary cannot spoil.
+That is the case the boundary cannot spoil. `decompose_navmesh` (2.6x) and
+`orca_solve` (2.3x) were added to this table after 3.6 and 3.7 shipped, and they fit
+the same shape: a full-grid scan, and an O(n^2) pair pass.
 
 ## What is level
 

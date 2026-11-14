@@ -517,6 +517,315 @@ pub extern "C" fn bake_nav_grid(
     region_count
 }
 
+/// Decomposes the walkable cells into maximal axis-aligned rectangles.
+///
+/// This is the polygon stage of the navmesh: `bake_nav_grid` answers "can an agent
+/// stand here", and this turns that bitmap into the convex regions the region
+/// pathfinder walks. Greedy scan - extend right along the row, then down while the
+/// whole span stays free - which tiles the walkable cells exactly. That exactness
+/// is what lets the TypeScript reference and this implementation be compared
+/// coordinate for coordinate instead of by area.
+///
+/// Rectangles are the right convex shape here because every obstacle is a box: the
+/// free faces of a rectilinear world are axis-aligned. Recast triangulates
+/// arbitrary surfaces, which this runtime never has.
+///
+/// `walkable` holds one byte per cell, 1 for walkable. `rect_out` receives four u32
+/// per rectangle: `x0, y0, x1, y1` inclusive cell coordinates. `max_rects` must be
+/// at least the number of walkable cells - a rectangle never covers less than one
+/// cell - so that bound cannot truncate; the function returns 0 rather than write a
+/// partial decomposition if it is wrong.
+#[no_mangle]
+pub extern "C" fn decompose_navmesh(
+    walkable: *const u8,
+    width: usize,
+    height: usize,
+    rect_out: *mut u32,
+    max_rects: usize,
+) -> u32 {
+    if walkable.is_null() || rect_out.is_null() || width == 0 || height == 0 || max_rects == 0 {
+        return 0;
+    }
+
+    let cells = width * height;
+    let walkable = unsafe { std::slice::from_raw_parts(walkable, cells) };
+    let out = unsafe { std::slice::from_raw_parts_mut(rect_out, max_rects * 4) };
+    let mut visited = vec![0u8; cells];
+    let mut count: usize = 0;
+
+    for y in 0..height {
+        for x in 0..width {
+            let index = y * width + x;
+            if visited[index] == 1 || walkable[index] == 0 {
+                continue;
+            }
+
+            let mut x1 = x;
+            while x1 + 1 < width
+                && visited[y * width + x1 + 1] == 0
+                && walkable[y * width + x1 + 1] == 1
+            {
+                x1 += 1;
+            }
+
+            let mut y1 = y;
+            'grow: while y1 + 1 < height {
+                let row = (y1 + 1) * width;
+                for probe in x..=x1 {
+                    if visited[row + probe] == 1 || walkable[row + probe] == 0 {
+                        break 'grow;
+                    }
+                }
+                y1 += 1;
+            }
+
+            for row in y..=y1 {
+                let start = row * width + x;
+                let end = start + (x1 - x);
+                for cell in start..=end {
+                    visited[cell] = 1;
+                }
+            }
+
+            if count >= max_rects {
+                return 0;
+            }
+            let base = count * 4;
+            out[base] = x as u32;
+            out[base + 1] = y as u32;
+            out[base + 2] = x1 as u32;
+            out[base + 3] = y1 as u32;
+            count += 1;
+        }
+    }
+
+    count as u32
+}
+
+/// Solves the velocity closest to `opt` that satisfies every half-plane.
+///
+/// `lines` holds four f32 per constraint: `px, pz, dx, dz` - a point on the
+/// boundary and the unit direction along it. The feasible set is the intersection
+/// of the half-planes to the right of each direction; the solver walks the
+/// constraints in order and re-projects when the candidate falls outside one.
+fn orca_solve_on_line(
+    lines: &[[f32; 4]],
+    line_no: usize,
+    radius: f32,
+    opt_x: f32,
+    opt_z: f32,
+    result: &mut [f32; 2],
+) -> bool {
+    const EPSILON: f32 = 1e-5;
+    let [px, pz, dx, dz] = lines[line_no];
+
+    let dot = px * dx + pz * dz;
+    let discriminant = dot * dot + radius * radius - (px * px + pz * pz);
+    if discriminant < 0.0 {
+        return false;
+    }
+
+    let root = discriminant.sqrt();
+    let mut left = -dot - root;
+    let mut right = -dot + root;
+
+    for index in 0..line_no {
+        let [opx, opz, odx, odz] = lines[index];
+        let denominator = dx * odz - dz * odx;
+        let numerator = odx * (pz - opz) - odz * (px - opx);
+
+        if denominator.abs() <= EPSILON {
+            if numerator < 0.0 {
+                return false;
+            }
+            continue;
+        }
+
+        let t = numerator / denominator;
+        if denominator >= 0.0 {
+            right = right.min(t);
+        } else {
+            left = left.max(t);
+        }
+        if left > right {
+            return false;
+        }
+    }
+
+    let projected = dx * (opt_x - px) + dz * (opt_z - pz);
+    let t = if projected < left {
+        left
+    } else if projected > right {
+        right
+    } else {
+        projected
+    };
+    result[0] = px + t * dx;
+    result[1] = pz + t * dz;
+    true
+}
+
+/// Solves reciprocal velocity obstacles for a crowd, in the XZ plane.
+///
+/// Every movable body gets the velocity closest to the one it wanted that stays
+/// outside every neighbour's collision cone within `time_horizon`. Bodies with
+/// weight 0 (the player, a prop) keep their velocity and only act as constraints;
+/// the correction is split by weight, so a mover facing an immovable body absorbs
+/// all of it and two movers take half each.
+///
+/// Flat arrays, two f32 per body for positions and velocities, one for radii,
+/// weights and speed caps. Returns the number of bodies written.
+#[no_mangle]
+pub extern "C" fn orca_solve(
+    positions: *const f32,
+    velocities: *const f32,
+    radii: *const f32,
+    weights: *const f32,
+    max_speeds: *const f32,
+    count: usize,
+    time_horizon: f32,
+    time_step: f32,
+    out_velocities: *mut f32,
+) -> u32 {
+    const EPSILON: f32 = 1e-5;
+
+    if positions.is_null()
+        || velocities.is_null()
+        || radii.is_null()
+        || weights.is_null()
+        || max_speeds.is_null()
+        || out_velocities.is_null()
+        || count == 0
+    {
+        return 0;
+    }
+    if !(time_horizon > 0.0) || !(time_step > 0.0) {
+        return 0;
+    }
+
+    let pos = unsafe { std::slice::from_raw_parts(positions, count * 2) };
+    let vel = unsafe { std::slice::from_raw_parts(velocities, count * 2) };
+    let rad = unsafe { std::slice::from_raw_parts(radii, count) };
+    let wgt = unsafe { std::slice::from_raw_parts(weights, count) };
+    let caps = unsafe { std::slice::from_raw_parts(max_speeds, count) };
+    let out = unsafe { std::slice::from_raw_parts_mut(out_velocities, count * 2) };
+
+    let inv_horizon = 1.0 / time_horizon;
+    let inv_step = 1.0 / time_step;
+    let mut lines: Vec<[f32; 4]> = Vec::with_capacity(count);
+
+    for i in 0..count {
+        let vx = vel[i * 2];
+        let vz = vel[i * 2 + 1];
+        if wgt[i] <= 0.0 {
+            out[i * 2] = vx;
+            out[i * 2 + 1] = vz;
+            continue;
+        }
+
+        lines.clear();
+        for j in 0..count {
+            if i == j {
+                continue;
+            }
+
+            let rel_x = pos[j * 2] - pos[i * 2];
+            let rel_z = pos[j * 2 + 1] - pos[i * 2 + 1];
+            let rel_vx = vx - vel[j * 2];
+            let rel_vz = vz - vel[j * 2 + 1];
+            let dist_sq = rel_x * rel_x + rel_z * rel_z;
+            let combined = rad[i] + rad[j];
+            let combined_sq = combined * combined;
+            let total = wgt[i] + wgt[j];
+            let share = if total > 0.0 { wgt[i] / total } else { 0.0 };
+
+            let px;
+            let pz;
+            let dx;
+            let dz;
+
+            if dist_sq > combined_sq {
+                let w_x = rel_vx - inv_horizon * rel_x;
+                let w_z = rel_vz - inv_horizon * rel_z;
+                let w_len_sq = w_x * w_x + w_z * w_z;
+                let dot = w_x * rel_x + w_z * rel_z;
+
+                if dot < 0.0 && dot * dot > combined_sq * w_len_sq {
+                    let w_len = w_len_sq.sqrt();
+                    let unit_x = w_x / w_len;
+                    let unit_z = w_z / w_len;
+                    dx = unit_z;
+                    dz = -unit_x;
+                    let correction = combined * inv_horizon - w_len;
+                    px = vx + share * correction * unit_x;
+                    pz = vz + share * correction * unit_z;
+                } else {
+                    let leg = (dist_sq - combined_sq).sqrt();
+                    if rel_x * w_z - rel_z * w_x > 0.0 {
+                        dx = (rel_x * leg - rel_z * combined) / dist_sq;
+                        dz = (rel_x * combined + rel_z * leg) / dist_sq;
+                    } else {
+                        dx = -(rel_x * leg + rel_z * combined) / dist_sq;
+                        dz = -(-rel_x * combined + rel_z * leg) / dist_sq;
+                    }
+                    let dot2 = rel_vx * dx + rel_vz * dz;
+                    px = vx + share * (dot2 * dx - rel_vx);
+                    pz = vz + share * (dot2 * dz - rel_vz);
+                }
+            } else {
+                let w_x = rel_vx - inv_step * rel_x;
+                let w_z = rel_vz - inv_step * rel_z;
+                let w_len = (w_x * w_x + w_z * w_z).sqrt();
+                if w_len < EPSILON {
+                    dx = 0.0;
+                    dz = 1.0;
+                    px = vx;
+                    pz = vz;
+                } else {
+                    let unit_x = w_x / w_len;
+                    let unit_z = w_z / w_len;
+                    dx = unit_z;
+                    dz = -unit_x;
+                    let correction = combined * inv_step - w_len;
+                    px = vx + share * correction * unit_x;
+                    pz = vz + share * correction * unit_z;
+                }
+            }
+
+            lines.push([px, pz, dx, dz]);
+        }
+
+        // Start from the preferred velocity, clamped to the speed cap, then project
+        // onto each constraint in turn. A failed projection keeps the last feasible
+        // candidate rather than returning something illegal.
+        let cap = caps[i];
+        let speed_sq = vx * vx + vz * vz;
+        let mut result = if speed_sq > cap * cap {
+            let scale = cap / speed_sq.sqrt();
+            [vx * scale, vz * scale]
+        } else {
+            [vx, vz]
+        };
+
+        for index in 0..lines.len() {
+            let [px, pz, dx, dz] = lines[index];
+            if dx * (pz - result[1]) - dz * (px - result[0]) <= 0.0 {
+                continue;
+            }
+            let previous = result;
+            if !orca_solve_on_line(&lines, index, cap, vx, vz, &mut result) {
+                result = previous;
+                break;
+            }
+        }
+
+        out[i * 2] = result[0];
+        out[i * 2 + 1] = result[1];
+    }
+
+    count as u32
+}
+
 /// Lateral bias applied to the push between two movable bodies. Two agents walking
 /// straight at each other would otherwise be pushed exactly opposite their travel
 /// and lock; a few degrees of rotation turns the deadlock into a slide past.

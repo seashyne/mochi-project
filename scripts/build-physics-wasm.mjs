@@ -49,6 +49,8 @@ const expected = [
   'ray_intersect_aabb_normal',
   'resolve_character_box_collision',
   'bake_nav_grid',
+  'decompose_navmesh',
+  'orca_solve',
   'resolve_overlaps',
   'image_dimensions',
   'audio_duration_ms',

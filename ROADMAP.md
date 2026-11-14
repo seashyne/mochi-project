@@ -70,8 +70,8 @@ Phase 2 is complete. Notes on what actually shipped:
 | 3.3 | Nav-grid bake in the Rust/WASM kernel (`npm run build:wasm`) | `nav_mesh_generator_3d.cpp` | DONE |
 | 3.4 | Agent component + Lua API (`agent.moveTo`) | `scene/3d/navigation_agent_3d.cpp` | DONE |
 | 3.5 | Local avoidance: reciprocal separation in the WASM kernel | `nav_map.cpp` | DONE |
-| 3.6 | Polygon navmesh (recast-style convex regions) | `nav_mesh_generator_3d.cpp` | BACKLOG |
-| 3.7 | Velocity-obstacle planning (ORCA) | `nav_map.cpp` | BACKLOG |
+| 3.6 | Polygon navmesh (recast-style convex regions) | `nav_mesh_generator_3d.cpp` | DONE |
+| 3.7 | Velocity-obstacle planning (ORCA) | `nav_map.cpp` | DONE |
 
 **3.1 shipped** in `engine/navigation/`: `NavGrid` (byte-per-cell walkability with
 world/cell mapping), `findPath` (8-way A*, octile heuristic, binary heap, typed
@@ -109,8 +109,13 @@ regions without searching. The TypeScript rasteriser stays as the fallback when
 the kernel is not loaded, and a parity test compares the two cell for cell - a
 bake that silently disagrees with the renderer is worse than a slow one.
 
-What did **not** ship: a polygon navmesh. Regions are still cells, not convex
-polygons, so 3.6 keeps the recast-style generator on the backlog.
+**3.6 shipped** as `decompose_navmesh` in the kernel: the walkable bitmap is cut
+into maximal axis-aligned rectangles - the convex shape a box world actually
+produces - and the pathfinder runs A* over those regions, then a funnel pass over
+the shared edges to get a taut path. Region edges snap to the bake's cell grid, so
+a portal sits within half a cell of the true face; the funnel is what removes the
+staircase that tolerance used to cause. Not a recast port: recast triangulates
+arbitrary surfaces, and this runtime only ever has floors and boxes.
 
 **3.5 shipped** as `resolve_overlaps` in the kernel plus a TS reference: every
 tick, overlapping agent discs are pushed apart, split by weight, so agents step
@@ -119,13 +124,18 @@ pushes are rotated by ~8 degrees (`HEAD_ON_BIAS`), because a centre-line push
 between two agents walking at each other is exactly opposite their travel and they
 lock at contact distance - found by a test, not by theory.
 
-What did **not** ship: velocity-space planning. Agents slow down only by failing
-to advance, and a crowd can shuffle; 3.7 keeps ORCA on the backlog. The
-`separation` helper from 3.2 is still the steering-vector form of the same idea and
-still has no shipping consumer - the shipped path is the positional resolver.
+**3.7 shipped** as `orca_solve` in the kernel: every movable body gets the velocity
+closest to the one it wanted that stays outside every neighbour's collision cone,
+with the correction split by weight so an immovable player absorbs none of it. The
+agent tick feeds it the step the navigator just took as the preferred velocity, so
+agents yield before they touch rather than being pushed apart afterwards; the
+positional pass stays as the hard overlap guard because ORCA assumes it starts
+outside every disc. Linear-program3 is deliberately absent - without static
+obstacles it only rescues a collapsed feasible region, and the fallback keeps the
+last feasible velocity instead.
 
-Next in this phase: nothing blocking. 3.6 and 3.7 are both optimisation work now
-that agents walk, avoid and path in shipped code.
+Phase 3 is complete. 3.6 and 3.7 were the last two items and both were optimisation
+work; nothing in this phase blocks a launch.
 
 ## Phase 4 - Multiplayer and audio
 

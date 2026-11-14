@@ -6,10 +6,12 @@
 // overlapping agents are pushed apart - that is what stops two NPCs sharing a lane
 // from walking through each other and through the player.
 
-import { findPath } from '../navigation/astar';
-import { resolveOverlaps, type OverlapBody } from '../navigation/localAvoidance';
+import { findWaypoints } from '../navigation/navMeshPath';
+import { DEFAULT_MAX_STEP, resolveOverlaps, type OverlapBody } from '../navigation/localAvoidance';
+import { solveOrca, type OrcaBody } from '../navigation/orca';
+import { solveOrcaWasm } from '../navigation/wasmOrca';
+import { DEFAULT_MOVE_SPEED } from './playerNavigator';
 import type { NavGrid } from '../navigation/navGrid';
-import { smoothWorldPath } from '../navigation/pathSmoothing';
 import { PlayerNavigator, type NavigableBody } from './playerNavigator';
 import type { StudioObject } from '../studio/types';
 import type { RuntimeVec3 } from './types';
@@ -67,6 +69,68 @@ export function createRuntimeAgents(
   };
 
   /** Pushes overlapping agents apart, treating the player as immovable. */
+  /**
+   * Velocity-space avoidance, applied as a correction on top of whatever the
+   * navigators did this tick. ORCA needs a velocity, and the navigator only
+   * produces a position, so the step it just took is the preferred velocity -
+   * agents yield before they touch instead of being pushed apart afterwards.
+   *
+   * The positional pass still runs after this: ORCA assumes it starts outside
+   * every disc, and a teleport or a spawn can break that assumption.
+   */
+  const avoid = (dt: number, before: Map<string, { x: number; z: number }>): void => {
+    if (!(dt > 0) || before.size === 0) return;
+
+    const bodies: OrcaBody[] = [];
+    const movers: AgentBody[] = [];
+    for (const id of new Set([...agentIds, ...navigators.keys()])) {
+      const body = resolve(id);
+      if (!body) continue;
+      const position = body.getPosition();
+      const previous = before.get(id);
+      const vx = previous ? (position.x - previous.x) / dt : 0;
+      const vz = previous ? (position.z - previous.z) / dt : 0;
+      bodies.push({
+        x: position.x,
+        z: position.z,
+        vx,
+        vz,
+        radius,
+        // Never cap below what the navigator already asked for, or normal
+        // walking would be slowed by the avoidance layer.
+        maxSpeed: Math.max(Math.hypot(vx, vz), DEFAULT_MOVE_SPEED),
+        weight: 1
+      });
+      movers.push(body);
+    }
+    for (const stat of options.staticBodies?.() ?? []) {
+      bodies.push({
+        x: stat.position.x,
+        z: stat.position.z,
+        vx: 0,
+        vz: 0,
+        radius: stat.radius,
+        maxSpeed: 0,
+        weight: 0
+      });
+    }
+    if (bodies.length < 2) return;
+
+    const solved = solveOrcaWasm(bodies, { timeHorizon: 1.2, timeStep: dt }) ?? solveOrca(bodies, { timeHorizon: 1.2, timeStep: dt });
+    const maxStep = options.maxStep ?? DEFAULT_MAX_STEP;
+
+    for (let index = 0; index < movers.length; index += 1) {
+      const deltaX = (solved[index].vx - bodies[index].vx) * dt;
+      const deltaZ = (solved[index].vz - bodies[index].vz) * dt;
+      const length = Math.hypot(deltaX, deltaZ);
+      if (length < 1e-6) continue;
+      const scale = length > maxStep ? maxStep / length : 1;
+      const body = movers[index];
+      const position = body.getPosition();
+      body.setPosition(position.x + deltaX * scale, position.y, position.z + deltaZ * scale);
+    }
+  };
+
   const separate = (): void => {
     const bodies: OverlapBody[] = [];
     const movers: AgentBody[] = [];
@@ -110,9 +174,18 @@ export function createRuntimeAgents(
     },
 
     update(dt) {
-      for (const navigator of navigators.values()) {
-        if (navigator.isActive) navigator.update(dt);
+      // Remember where every walking agent started so its step becomes the
+      // preferred velocity the avoidance solver needs.
+      const before = new Map<string, { x: number; z: number }>();
+      for (const [id, navigator] of navigators) {
+        if (!navigator.isActive) continue;
+        const body = resolve(id);
+        if (!body) continue;
+        const position = body.getPosition();
+        before.set(id, { x: position.x, z: position.z });
+        navigator.update(dt);
       }
+      avoid(dt, before);
       separate();
     },
 
@@ -131,10 +204,8 @@ export function createRuntimeAgents(
       const goal = grid.worldToCell(x, z);
       if (!start || !goal) return false;
 
-      const path = findPath(grid, start, goal);
-      if (!path) return false;
-      const waypoints = smoothWorldPath(grid, path);
-      if (waypoints.length === 0) return false;
+      const waypoints = findWaypoints(grid, { x: from.x, z: from.z }, { x, z });
+      if (!waypoints) return false;
 
       return target.navigator.begin(waypoints, speed);
     },

@@ -5,8 +5,7 @@
 // it streams in without costing anything on worlds that never navigate.
 
 import { buildNavGrid, type NavGridFromSceneOptions } from '../navigation/navGridFromScene';
-import { findPath } from '../navigation/astar';
-import { smoothWorldPath } from '../navigation/pathSmoothing';
+import { findWaypoints } from '../navigation/navMeshPath';
 import { NavGrid } from '../navigation/navGrid';
 import { PlayerNavigator } from './playerNavigator';
 import type { RuntimePlayerHandle } from './types';
@@ -81,11 +80,8 @@ export function createRuntimeNavigation(
       const goal = nav.worldToCell(x, z);
       if (!start || !goal) return false;
 
-      const path = findPath(nav, start, goal);
-      if (!path) return false;
-
-      const waypoints = smoothWorldPath(nav, path);
-      if (waypoints.length === 0) return false;
+      const waypoints = findWaypoints(nav, { x: position.x, z: position.z }, { x, z });
+      if (!waypoints) return false;
 
       return navigator.begin(waypoints, speed);
     }
