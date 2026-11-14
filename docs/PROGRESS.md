@@ -248,3 +248,18 @@ The node lookup lives on `RuntimeWorld` because that registry owns the body-to-n
 a caller holding only the physics world could cast the ray but could not name what it
 hit. The proxy builder is passed in rather than imported, so `luaRaycast` and
 `luaNodeApi` do not import each other.
+**CFrame:Lerp rotates on the sphere** (2026-11-14): the method blended the nine matrix
+components, which is only right when the two rotations are nearly identical. Halfway
+through a 180 degree turn every component lands on zero - measured, not assumed - so the
+basis collapses and the part disappears at the midpoint. Halfway through 90 degrees the
+basis is short of unit length, so the part visibly shrinks and grows on the way.
+
+A tween of a CFrame inherited all of it, which is what made this worth fixing rather than
+noting: `TweenService` sends every CFrame goal through `Lerp`.
+
+Rotation now converts to a quaternion, slerps along the shortest arc, and converts back.
+The two endpoints are returned untouched, and the near-identical case falls back to a
+normalised blend so a tiny turn does not divide by a sine near zero.
+
+The maths lives in `luaPreludeRotation.ts` because the prelude is at its ceiling; the
+function is a global so the CFrame block, in another module, can call it.

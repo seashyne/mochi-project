@@ -10,6 +10,8 @@ import { GUI_ENUM_LUA } from '../gui/guiEnumLua';
 import { REACT_PRELUDE } from './luaPreludeReact';
 import { SERVICES_PRELUDE } from './luaPreludeServices';
 
+import { ROTATION_PRELUDE } from './luaPreludeRotation';
+
 export const PRELUDE_MARKER = '-- __mochi_prelude_end';
 
 const PRELUDE = `-- Mochi script prelude: coroutine-driven task library.
@@ -48,6 +50,8 @@ ${SERVICES_PRELUDE}
 
 ${REACT_PRELUDE}
 
+${ROTATION_PRELUDE}
+
 -- CFrame: a position plus a row-major 3x3 rotation.
 --
 -- Defined in Lua rather than JS because the * operator needs a metamethod, and only
@@ -82,13 +86,9 @@ function CFrame:ToEulerAnglesXYZ()
 end
 
 function CFrame:Lerp(other, alpha)
-  local t = math.max(0, math.min(1, tonumber(alpha) or 0))
-  local function mix(a, b) return a + (b - a) * t end
-  return __mochi_cframe(
-    mix(self.x, other.x), mix(self.y, other.y), mix(self.z, other.z),
-    mix(self.m00, other.m00), mix(self.m01, other.m01), mix(self.m02, other.m02),
-    mix(self.m10, other.m10), mix(self.m11, other.m11), mix(self.m12, other.m12),
-    mix(self.m20, other.m20), mix(self.m21, other.m21), mix(self.m22, other.m22))
+  -- Rotation goes through a quaternion slerp: blending the matrix components collapses
+  -- the basis at the halfway point of any large turn.
+  return __mochi_slerp_frame(self, other, math.max(0, math.min(1, tonumber(alpha) or 0)))
 end
 
 -- The host builds a CFrame from a node's position and rotation through this.
