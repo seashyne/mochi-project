@@ -86,6 +86,12 @@ function sanitizeStudioObject(raw: unknown, index: number): StudioObject | null 
     ...(luaScript ? { luaScript } : {}),
     ...(typeof rec.canCollide === 'boolean' ? { canCollide: rec.canCollide } : {}),
     ...(typeof rec.anchored === 'boolean' ? { anchored: rec.anchored } : {}),
+    // Hierarchy: the runtime links children through `parentId`, and the Studio writes
+    // it when objects are dragged together, so dropping it here flattens every
+    // published world's tree.
+    ...(typeof rec.parentId === 'string' && rec.parentId.trim()
+      ? { parentId: rec.parentId.trim() }
+      : {}),
     ...sanitizeSurfaceFields(rec),
     ...sanitizeAssetFields(rec),
     ...sanitizeAdvancedFields(rec)
