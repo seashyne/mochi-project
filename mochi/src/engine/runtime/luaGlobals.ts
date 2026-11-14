@@ -6,6 +6,9 @@ import { defaultReactLuaStore } from '../lua/reactLuaBridge';
 import { pickHudFont, pickHudSize } from '../lua/hudStyle';
 import { LuaDialogueOptions } from '../lua/types';
 import { createLuaNode, createPlayerApi, createWorldApi, nodeFromLuaValue, RuntimeApiDeps } from './luaNodeApi';
+import { isGuiClass } from '../gui/guiTypes';
+import { createGuiInstance } from './luaGuiApi';
+import { createReactApi } from './luaReactApi';
 import { resolveLuaClass } from './nodeFactory';
 import { LiveNode } from './liveNode';
 import { parseColor, readProp, toVec3 } from './types';
@@ -74,6 +77,9 @@ export function createInstanceApi(deps: RuntimeApiDeps): Record<string, unknown>
   return {
     new: (...args: unknown[]) => {
       const className = firstString(args) ?? 'Part';
+      // A GUI class is not a world node: it belongs to the interface tree, and
+      // spawning a part for it would put a box in the scene nobody asked for.
+      if (isGuiClass(className)) return createGuiInstance(className, args);
       let parentNode: LiveNode | undefined;
       let props: unknown;
       for (const arg of args) {
@@ -203,8 +209,11 @@ export function buildRuntimeGlobals(node: LiveNode, deps: RuntimeApiDeps): Recor
       Destroy: () => deps.world.destroy(node.id)
     },
     world: createWorldApi(deps),
+    /** Epoch seconds for os.time(); the session clock is world.getTime(). */
+    __mochi_wall_clock: () => Math.floor(Date.now() / 1000),
     ui: createUiApi(deps),
     Instance: createInstanceApi(deps),
+    ...createReactApi(),
     network: createNetworkApi(deps),
     animation: createAnimationApi(deps),
     agent: createAgentApi(deps),
@@ -222,6 +231,35 @@ export function buildRuntimeGlobals(node: LiveNode, deps: RuntimeApiDeps): Recor
       }),
       zero: { x: 0, y: 0, z: 0 },
       one: { x: 1, y: 1, z: 1 }
+    },
+    UDim2: {
+      new: (xScale: unknown, xOffset: unknown, yScale: unknown, yOffset: unknown) => ({
+        xScale: Number(xScale) || 0,
+        xOffset: Number(xOffset) || 0,
+        yScale: Number(yScale) || 0,
+        yOffset: Number(yOffset) || 0
+      }),
+      fromScale: (xScale: unknown, yScale: unknown) => ({
+        xScale: Number(xScale) || 0,
+        xOffset: 0,
+        yScale: Number(yScale) || 0,
+        yOffset: 0
+      }),
+      fromOffset: (xOffset: unknown, yOffset: unknown) => ({
+        xScale: 0,
+        xOffset: Number(xOffset) || 0,
+        yScale: 0,
+        yOffset: Number(yOffset) || 0
+      })
+    },
+    Vector2: {
+      new: (x: unknown, y: unknown) => ({ x: Number(x) || 0, y: Number(y) || 0 })
+    },
+    UDim: {
+      new: (scale: unknown, offset: unknown) => ({
+        scale: Number(scale) || 0,
+        offset: Number(offset) || 0
+      })
     },
     Color3: {
       new: (r: unknown, g: unknown, b: unknown) => ({

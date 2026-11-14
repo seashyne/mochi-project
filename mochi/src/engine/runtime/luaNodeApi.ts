@@ -10,6 +10,7 @@ import { attachNodeSignals, notifyChanged } from './nodeSignals';
 import { rotationMatrix } from '../physics/oriented';
 import { makeCFrameValue, readCFrameValue } from './cframeBridge';
 import { attachMaterialProps } from './luaMaterialProps';
+import { createRaycast } from './luaRaycast';
 
 import { routeSound } from './audioRouting';
 export { createPlayerApi } from './luaPlayerApi';
@@ -224,6 +225,11 @@ export function createWorldApi(deps: RuntimeApiDeps): Record<string, unknown> {
     const name = String(source ?? '');
     if (name) void deps.audio.loadSample(name);
   };
+
+  api.Raycast = createRaycast(deps, {
+    resolveNode: nodeFromLuaValue,
+    wrapNode: (node) => createLuaNode(node, deps)
+  });
 
   api.createPart = (options: unknown) => {
     const className =

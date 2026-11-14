@@ -6,14 +6,8 @@ import {
   defaultReactLuaStore,
   ReactLuaUIStore
 } from '../../engine/lua/reactLuaBridge';
-import { LuaDialogueOptions, LuaHudElement, LuaHudFont, LuaHudSize } from '../../engine/lua/types';
-
-// Curated families only - a creator picks from what ships, never an upload.
-const HUD_FONT_STACK: Record<LuaHudFont, string> = {
-  mono: 'ui-monospace, SFMono-Regular, Menlo, monospace',
-  ui: "'IBM Plex Sans Thai', system-ui, sans-serif",
-  display: "'Mitr', 'IBM Plex Sans Thai', sans-serif"
-};
+import { LuaDialogueOptions, LuaHudElement, LuaHudSize } from '../../engine/lua/types';
+import { HUD_FONT_STACK } from './hudFonts';
 
 const HUD_SIZE_CLASS: Record<LuaHudSize, string> = {
   sm: 'text-xs',
@@ -122,7 +116,7 @@ export const LuaUIOverlay: React.FC<LuaUIOverlayProps> = ({
                     key={`${choice}_${idx}`}
                     type="button"
                     onClick={() => store.selectChoice(idx)}
-                    className="p-2.5 px-4 rounded-xl bg-white/[0.05] hover:bg-[#00a2ff]/20 hover:border-[#00a2ff]/50 border border-white/[0.08] text-xs sm:text-sm font-medium text-left text-white transition-all flex items-center justify-between group cursor-pointer"
+                    className="p-2.5 px-4 rounded-xl bg-white/[0.05] hover:bg-[#00a2ff]/20 hover:border-[#00a2ff]/50 border border-white/[0.08] text-xs sm:text-sm font-medium text-start text-white transition-all flex items-center justify-between group cursor-pointer"
                   >
                     <span className="truncate">{choice}</span>
                     <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#38bdf8] group-hover:translate-x-0.5 transition-all" />

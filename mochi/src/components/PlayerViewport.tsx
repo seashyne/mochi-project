@@ -23,7 +23,7 @@ import { useAuthStore } from '../store/useAuthStore';
 import { PlayerControlsBar } from './player/PlayerControlsBar';
 import { PlayerChatDrawer } from './player/PlayerChatDrawer';
 import { TouchJoystick } from './player/TouchJoystick';
-import { LuaUIOverlay } from './player/LuaUIOverlay';
+import { LuaOverlays } from './player/LuaOverlays';
 import { summarizeInput, toggleFullscreen } from './player/viewportHelpers';
 import { SessionTerminal } from './runtime/SessionTerminal';
 
@@ -275,7 +275,7 @@ export const PlayerViewport: React.FC<PlayerViewportProps> = ({ activeGame }) =>
           onAction={(action, active) => inputRef.current?.setVirtualAction(action, active)}
         />
 
-        <LuaUIOverlay />
+        <LuaOverlays />
         {hudState && <GameHud state={hudState} hint="" />}
         <SessionTerminal session={consoleSession} title="Game Output" containerClassName="absolute bottom-12 start-3 end-3 z-30" className="h-[210px]" hotkey defaultOpen={false} />
         <RoomInviteChip roomClient={activeRoomClient} />

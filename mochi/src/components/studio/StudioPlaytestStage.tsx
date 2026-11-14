@@ -8,7 +8,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Play, RotateCcw, Square, Volume2, VolumeX, Loader2 } from 'lucide-react';
 import { GameState, PlaytestRuntime, SessionConsole } from '../../engine/runtime';
 import type { StudioObject } from '../../engine/studio/types';
-import { LuaUIOverlay } from '../player/LuaUIOverlay';
+import { LuaOverlays } from '../player/LuaOverlays';
 import { GameHud } from '../runtime/GameHud';
 
 export type PlaytestLogLevel = 'info' | 'warn' | 'error';
@@ -91,9 +91,9 @@ export const StudioPlaytestStage: React.FC<StudioPlaytestStageProps> = ({ object
     <div className="relative flex-1 min-h-0 bg-studio-bg">
       <canvas key={runId} ref={canvasRef} className="w-full h-full block touch-none" />
       {hudState && <GameHud state={hudState} hint="WASD move - Space jump - Shift sprint - Drag to orbit" />}
-      <LuaUIOverlay />
+      <LuaOverlays />
 
-      <div className="absolute top-2 left-2 flex items-center gap-1.5 pointer-events-auto">
+      <div className="absolute top-2 start-2 flex items-center gap-1.5 pointer-events-auto">
         <span className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-studio-panel/90 border border-studio-success/40 text-[10px] font-mono uppercase tracking-wider text-studio-success backdrop-blur-md">
           {isStarting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Play className="w-3 h-3" />}
           {isStarting ? 'Starting' : 'Playing'}
@@ -110,7 +110,7 @@ export const StudioPlaytestStage: React.FC<StudioPlaytestStageProps> = ({ object
         </button>
       </div>
 
-      <div className="absolute top-2 right-2 flex items-center gap-1">
+      <div className="absolute top-2 end-2 flex items-center gap-1">
         <button
           type="button"
           onClick={toggleMute}

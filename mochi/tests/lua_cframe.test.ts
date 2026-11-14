@@ -198,4 +198,45 @@ describe('CFrame in Lua', () => {
     expect(errors).toEqual([]);
     expect(logs.some((entry) => entry.message.includes('0.000,0.000,0.000'))).toBe(true);
   });
+
+  it('transforms a point with CFrame * Vector3', async () => {
+    const { errors } = await run(`
+      -- A quarter turn about Y sends -Z onto -X, then the translation applies.
+      local cf = CFrame.new(10, 0, 0) * CFrame.Angles(0, math.pi / 2, 0)
+      local p = cf * Vector3.new(0, 0, -1)
+      -- abs() on z: the rotated axis lands on -0.0, which formats as "-0.000".
+      print(string.format("%.3f,%.3f", p.x, math.abs(p.z)))
+    `);
+    expect(errors).toEqual([]);
+    expect(logs.some((entry) => entry.message.includes('9.000,0.000'))).toBe(true);
+  });
+
+  it('builds a frame that looks at a target', async () => {
+    const { errors } = await run(`
+      local cf = CFrame.lookAt(Vector3.new(0, 0, 0), Vector3.new(5, 0, 0))
+      print(string.format("%.3f,%.3f,%.3f", cf.LookVector.x, cf.LookVector.y, cf.LookVector.z))
+    `);
+    expect(errors).toEqual([]);
+    expect(logs.some((entry) => entry.message.includes('1.000,0.000,0.000'))).toBe(true);
+  });
+
+  it('keeps a frame valid when the look direction is parallel to up', async () => {
+    const { errors } = await run(`
+      local cf = CFrame.lookAt(Vector3.new(0, 0, 0), Vector3.new(0, 4, 0))
+      print(string.format("%.3f", cf.LookVector.y))
+    `);
+    expect(errors).toEqual([]);
+    expect(logs.some((entry) => entry.message.includes('1.000'))).toBe(true);
+  });
+
+  it('translates a frame with plus and minus a vector', async () => {
+    const { errors } = await run(`
+      local cf = CFrame.new(1, 2, 3)
+      local up = cf + Vector3.new(0, 5, 0)
+      local down = up - Vector3.new(1, 0, 0)
+      print(string.format("%.1f,%.1f,%.1f", down.Position.x, down.Position.y, down.Position.z))
+    `);
+    expect(errors).toEqual([]);
+    expect(logs.some((entry) => entry.message.includes('0.0,7.0,3.0'))).toBe(true);
+  });
 });

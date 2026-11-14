@@ -7,6 +7,7 @@
 
 import { GUI_ENUM_LUA } from '../gui/guiEnumLua';
 
+import { REACT_PRELUDE } from './luaPreludeReact';
 import { SERVICES_PRELUDE } from './luaPreludeServices';
 
 export const PRELUDE_MARKER = '-- __mochi_prelude_end';
@@ -44,6 +45,8 @@ tick = function() return world.getTime() end
 os = os or {}
 os.time = function() return __mochi_wall_clock() end
 ${SERVICES_PRELUDE}
+
+${REACT_PRELUDE}
 
 -- CFrame: a position plus a row-major 3x3 rotation.
 --

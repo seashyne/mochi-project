@@ -8,6 +8,7 @@ import { GameState } from './gameState';
 import { LiveNode } from './liveNode';
 import { RuntimeWorld } from './objectRegistry';
 import { RuntimePlayerHandle } from './types';
+import { emitTouchEnded, touchEndedHandlerCount } from './touchEnded';
 
 export interface TouchContext {
   world: RuntimeWorld;
@@ -22,12 +23,17 @@ export interface TouchContext {
 
 /** Handles one physics trigger event for the local player. */
 export function handlePlayerTrigger(event: TriggerEvent, playerBodyId: string, ctx: TouchContext): void {
-  // `stay` would re-fire every frame and `exit` is not a touch.
-  if (event.type !== 'enter') return;
+  // `stay` would re-fire every frame, so only the two edges are events.
+  if (event.type === 'stay') return;
   if (event.visitorBodyId !== playerBodyId) return;
 
   const node = ctx.world.getByBodyId(event.triggerBodyId);
   if (!node || node.destroyed) return;
+
+  if (event.type === 'exit') {
+    if (touchEndedHandlerCount(node) > 0 && ctx.playerApi) emitTouchEnded(node, ctx.playerApi);
+    return;
+  }
 
   if (node.touchHandlerCount > 0 && ctx.playerApi) {
     node.emitTouch(ctx.playerApi);
