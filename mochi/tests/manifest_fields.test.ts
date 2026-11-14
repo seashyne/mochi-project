@@ -49,3 +49,39 @@ describe('manifest object fields', () => {
     expect(objects[1].parentId).toBe('parent');
   });
 });
+
+describe('field coverage', () => {
+  // The loader rebuilds every object from a whitelist, so a field it forgets is lost
+  // silently. This walks the whole StudioObject surface once: anything that should
+  // survive and does not will fail here rather than in a published world.
+  const FULL: StudioObject = {
+    id: 'full',
+    name: 'Full',
+    type: 'block',
+    position: { x: 1, y: 2, z: 3 },
+    rotation: { x: 0.1, y: 0.2, z: 0.3 },
+    scale: { x: 2, y: 3, z: 4 },
+    color: '#112233',
+    material: 'glass',
+    materialTexture: 'marble_white',
+    textureAccessId: 'acc_9',
+    textureUrl: 'https://cdn/x.png',
+    anchored: false,
+    canCollide: false,
+    parentId: 'root',
+    luaScript: 'print("hi")',
+    assetUrl: 'https://cdn/model.glb',
+    assetKey: 'models/a.glb',
+    assetHash: 'abc123',
+    assetSizeBytes: 4096,
+    assetContentType: 'model/gltf-binary'
+  };
+
+  it('keeps every field the Studio can write', () => {
+    const [round] = parseManifestObjects(JSON.stringify({ objects: [FULL] }));
+
+    for (const key of Object.keys(FULL) as (keyof StudioObject)[]) {
+      expect(round[key], `field "${key}" was dropped`).toEqual(FULL[key]);
+    }
+  });
+});
