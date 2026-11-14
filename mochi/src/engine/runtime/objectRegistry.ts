@@ -2,7 +2,7 @@
 // world in sync, and answers the lookups scripts do (`world.findPart`, `Instance.new`).
 
 import * as THREE from 'three';
-import { PhysicsWorld, RigidBody } from '../physics';
+import { PhysicsVec3, PhysicsWorld, RigidBody } from '../physics';
 import { StudioObject } from '../studio/types';
 import { LiveNode } from './liveNode';
 import { buildLiveNode, buildNodeDef } from './nodeFactory';
@@ -62,6 +62,28 @@ export class RuntimeWorld {
 
   get(id: string): LiveNode | undefined {
     return this.nodes.get(id);
+  }
+
+  /**
+   * Casts a ray and resolves the node it hit. Lives here because this registry owns the
+   * body-to-node map; a caller that only had the physics world could not name the hit.
+   */
+  raycast(
+    origin: PhysicsVec3,
+    direction: PhysicsVec3,
+    maxDistance: number,
+    ignoreBodyId?: string | null
+  ) {
+    const hit = this.physics.raycast(origin, direction, maxDistance, {
+      ignoreBodyId: ignoreBodyId ?? null
+    });
+    return {
+      hit: hit.hit,
+      point: hit.point,
+      normal: hit.normal,
+      distance: hit.distance,
+      node: hit.bodyId ? this.getByBodyId(hit.bodyId) : undefined
+    };
   }
 
   /** Resolves the node that owns a physics body id (trigger dispatch). */

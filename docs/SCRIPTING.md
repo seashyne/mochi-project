@@ -184,6 +184,23 @@ missing one.
 member raises. The full list, what each name resolves to, and how to pick a surface
 without a script are in [`MATERIALS.md`](./MATERIALS.md).
 
+## Raycasting
+
+`world:Raycast(origin, direction, ignore?)` casts a ray and returns what it hit, or nil.
+The direction's length is the reach, so a ten-stud ray pointing down is
+`Vector3.new(0, -10, 0)`.
+
+```lua
+local hit = world:Raycast(part.Position, Vector3.new(0, -10, 0))
+if hit then
+  print(hit.Instance.Name, hit.Distance, hit.Position, hit.Normal)
+end
+```
+
+The optional third argument is a part to pass through - the usual use is ignoring the
+caster so a ray does not hit the thing that fired it. A ray stops at the first solid
+body; triggers are not hit unless the ray starts inside one.
+
 ## Services
 
 `RunService.Heartbeat` fires once per frame with the frame delta, and is the same event

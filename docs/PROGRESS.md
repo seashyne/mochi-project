@@ -288,3 +288,15 @@ matches what the tween will do.
 The merge that split the service prelude left the easing block in the tween file twice:
 once through the interpolation and once inline, 63 identical lines with the second
 shadowing the first. Removing the copy is what made room for the above.
+**world:Raycast** (2026-11-14): the physics world has cast rays since the character
+controller needed ground checks, but nothing exposed it to scripts. Line of sight,
+aiming, placement previews and "is anything between me and that" had no answer.
+
+`world:Raycast(origin, direction, ignore?)` returns the part, the point, the normal and
+the distance, or nil. The direction's length is the reach, which is the spelling a ported
+script already uses, and the optional third argument is the part to pass through.
+
+The node lookup lives on `RuntimeWorld` because that registry owns the body-to-node map;
+a caller holding only the physics world could cast the ray but could not name what it
+hit. The proxy builder is passed in rather than imported, so `luaRaycast` and
+`luaNodeApi` do not import each other.
