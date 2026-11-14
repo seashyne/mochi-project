@@ -33,6 +33,8 @@ end
 
 ${TWEEN_VALUES_PRELUDE}
 
+local warnedProperties = {}
+
 local running = {}
 local driving = false
 
@@ -127,7 +129,14 @@ function TweenService:Create(instance, info, goal)
       -- ignored for it rather than written back as a stray property.
       for key in pairs(self.goal) do
         local current = self.instance[key]
-        if current ~= nil then self.from[key] = capture(current) end
+        if current ~= nil then
+          self.from[key] = capture(current)
+        elseif not warnedProperties[key] then
+          -- A goal key the instance does not have is almost always a typo, and the
+          -- tween would otherwise run, write nothing, and report success.
+          warnedProperties[key] = true
+          warn("Tween goal property '" .. tostring(key) .. "' does not exist on this object")
+        end
       end
     end
     -- A newer tween on the same property replaces the older one, so two tweens cannot
@@ -181,8 +190,11 @@ function TweenService:Create(instance, info, goal)
 
     local duration = tonumber(info.Time) or 1
     local legs = info.Reverses and 2 or 1
-    local cycles = math.max(0, math.floor(tonumber(info.RepeatCount) or 0)) + 1
-    local total = duration * legs * cycles
+    -- A negative RepeatCount means forever. Clamping it to zero - which is what a plain
+    -- max(0, ...) does - turns an endless loop into a single play.
+    local repeatCount = tonumber(info.RepeatCount) or 0
+    local cycles = repeatCount < 0 and math.huge or (math.floor(repeatCount) + 1)
+    local total = duration > 0 and duration * legs * cycles or 0
     local active = self.elapsed - delay
 
     local progress

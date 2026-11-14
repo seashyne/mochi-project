@@ -68,3 +68,18 @@ which is how a script reaches into a model without walking it by hand, and
 
 The search itself lives in `nodeClasses.ts` rather than the node API, which is at its
 line ceiling.
+**Tween audit: an endless loop that ended, and a typo that passed** (2026-11-14): two
+faults in the same class the rest of this week has been about - something accepted, then
+quietly not done.
+
+`TweenInfo.new(time, style, direction, -1)` means repeat forever. The cycle count clamped
+a negative count to zero before adding one, so an endless loop played exactly once and
+reported Completed. The test for it distinguishes the two behaviours rather than checking
+a value that both of them produce: at one and a half cycles the part is at 5, not at 10.
+
+A goal key naming a property the object does not have was skipped without a word. The
+tween ran, wrote nothing for that key, and reported success - the same shape as a
+misspelled material name. It now warns once per key and still runs the valid half.
+
+The test file that grew past its ceiling split by concern: the playback-state tests stay,
+the TweenInfo edges moved to their own file.
