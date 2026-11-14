@@ -5,7 +5,46 @@
 
 import { defineAlias } from './luaProxyUtils';
 import type { RuntimeApiDeps } from './luaNodeApi';
+import { createPlayerGuiProxy } from './luaGuiApi';
 import { toVec3 } from './types';
+
+/** Metres per second a scripted walk uses when the script names no speed. */
+export const DEFAULT_WALK_SPEED = 4;
+
+/** The Lua-visible half of a signal: `:Connect(fn)` returns something with
+ *  `:Disconnect()`. Firing stays non-enumerable so it is not part of the surface. */
+function createSignal(
+  label: string,
+  log: (level: 'info' | 'warn' | 'error', message: string) => void
+): { signal: Record<string, unknown>; fire: () => void } {
+  const handlers = new Set<() => void>();
+  const signal: Record<string, unknown> = {};
+
+  signal.Connect = (...raw: unknown[]) => {
+    // Take the first function argument rather than the first argument: a colon call
+    // hands over a proxy of this table, and whether it is identity-equal to `signal`
+    // depends on how the host marshals it. Looking for the callback sidesteps that.
+    const handler = raw.find((value) => typeof value === 'function');
+    if (!handler) return { Disconnect: () => undefined };
+    const callback = handler as () => void;
+    handlers.add(callback);
+    return { Disconnect: () => handlers.delete(callback) };
+  };
+
+  const fire = () => {
+    // Copy first: a handler is allowed to disconnect itself or its neighbour.
+    for (const handler of [...handlers]) {
+      try {
+        handler();
+      } catch (error) {
+        log('error', `${label} handler failed: ${(error as Error)?.message ?? error}`);
+      }
+    }
+  };
+
+  Object.defineProperty(signal, 'fire', { value: fire, enumerable: false });
+  return { signal, fire };
+}
 
 /** Player proxy backed by the real character controller. */
 export function createPlayerApi(deps: RuntimeApiDeps): Record<string, unknown> {
@@ -47,5 +86,94 @@ export function createPlayerApi(deps: RuntimeApiDeps): Record<string, unknown> {
   };
   api.stopMoving = () => deps.navigation?.stop();
   api.isMoving = () => deps.navigation?.isMoving() ?? false;
+  // The root a ScreenGui hangs from. Cached, so two scripts see the same table.
+  defineAlias(api, ['PlayerGui', 'playerGui'], () => createPlayerGuiProxy(), () => undefined);
+
+  // `player.Character.Humanoid` - the shape avatar scripts reach for. The controller
+  // is not an Instance tree, so this is a table with the same property names, not a
+  // parented instance; `FindFirstChild` and friends do not apply.
+  let walkSpeed = DEFAULT_WALK_SPEED;
+  const humanoid: Record<string, unknown> = {};
+  // A colon call passes the table itself as the first argument and a dot call does
+  // not. Accepting both keeps `humanoid:MoveTo(p)` and `humanoid.MoveTo(p)` working
+  // instead of making the difference a rule the script has to know.
+  const afterSelf = (args: unknown[]): unknown[] => (args[0] === humanoid ? args.slice(1) : args);
+
+  defineAlias(humanoid, ['WalkSpeed'], () => walkSpeed, (value) => {
+    const next = Number(value);
+    if (Number.isFinite(next) && next > 0) walkSpeed = next;
+  });
+  defineAlias(humanoid, ['Health'], () => deps.player.getHealth(), (value) => {
+    deps.player.setHealth(Number(value) || 0);
+  });
+  defineAlias(humanoid, ['MaxHealth'], () => deps.player.getMaxHealth(), () => undefined);
+
+  humanoid.MoveTo = (...raw: unknown[]) => {
+    const args = afterSelf(raw);
+    const first = args[0] as { x?: number; z?: number } | number | undefined;
+    const isVector = typeof first === 'object' && first !== null;
+    const x = Number(isVector ? first.x : first);
+    const z = Number(isVector ? first.z : args[2] ?? args[1]);
+    if (!Number.isFinite(x) || !Number.isFinite(z)) return false;
+    return deps.navigation?.moveTo(x, z, walkSpeed) ?? false;
+  };
+  humanoid.TakeDamage = (...raw: unknown[]) => {
+    const [amount] = afterSelf(raw);
+    deps.player.damage(Number(amount) || 0);
+  };
+
+  humanoid.Heal = (...raw: unknown[]) => {
+    const [amount] = afterSelf(raw);
+    deps.player.heal(Number(amount) || 0);
+  };
+
+  const character: Record<string, unknown> = { Humanoid: humanoid };
+  defineAlias(character, ['Position'], () => deps.player.getPosition(), (value) => {
+    const vec = toVec3(value);
+    deps.player.setPosition(vec.x, vec.y, vec.z);
+  });
+  defineAlias(character, ['Name'], () => deps.player.name, () => undefined);
+  defineAlias(api, ['Character'], () => character, () => undefined);
+
+  // Ported scripts guard before touching a humanoid:
+  //   local h = character:FindFirstChild("Humanoid")
+  // The lookup has to answer, or the guard itself is what raises.
+  const childOf = (name: unknown): unknown =>
+    String(name ?? '').toLowerCase() === 'humanoid' ? humanoid : undefined;
+  const afterCharacter = (args: unknown[]): unknown[] =>
+    args[0] === character ? args.slice(1) : args;
+  character.FindFirstChild = (...args: unknown[]) => childOf(afterCharacter(args)[0]);
+  character.FindFirstChildOfClass = (...args: unknown[]) => childOf(afterCharacter(args)[0]);
+  // The humanoid is created with the character, so waiting returns it immediately.
+  character.WaitForChild = (...args: unknown[]) => childOf(afterCharacter(args)[0]);
+
+  // Death and respawn. The health transition is polled once per frame rather than
+  // pushed from the controller: damage arrives from hazards, other scripts and the
+  // console alike, and a single latch cannot miss any of them.
+  const died = createSignal('Died', deps.log);
+  const characterAdded = createSignal('CharacterAdded', deps.log);
+  humanoid.Died = died.signal;
+  defineAlias(api, ['CharacterAdded'], () => characterAdded.signal, () => undefined);
+
+  // A host may hand over a minimal player handle (a script harness, a headless
+  // test). Reading health must not be what makes the whole context fail to start.
+  const currentHealth = (): number => {
+    try {
+      const value = deps.player.getHealth();
+      return typeof value === 'number' ? value : 1;
+    } catch {
+      return 1;
+    }
+  };
+
+  let wasDead = currentHealth() <= 0;
+  const pollSignals = (): void => {
+    const dead = currentHealth() <= 0;
+    if (dead && !wasDead) died.fire();
+    if (!dead && wasDead) characterAdded.fire();
+    wasDead = dead;
+  };
+  Object.defineProperty(api, 'pollSignals', { value: pollSignals, enumerable: false });
+
   return api;
 }
