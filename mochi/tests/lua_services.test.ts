@@ -98,6 +98,55 @@ describe('RunService', () => {
     expect(logs.some((entry) => entry.message === 'true,false')).toBe(true);
   });
 
+  it('tweens a position over time and reports completion', async () => {
+    const { node, errors } = await run(`
+      local part = script.parent
+      part.Position = Vector3.new(0, 0, 0)
+      local info = TweenInfo.new(1, Enum.EasingStyle.Linear)
+      info.Completed = function() print("done") end
+      TweenService:Create(part, info, { Position = Vector3.new(10, 0, 0) }):Play()
+    `);
+    expect(errors).toEqual([]);
+
+    node.dispatchUpdate(0.5);
+    expect(node.position.x).toBeCloseTo(5, 4);
+
+    node.dispatchUpdate(0.5);
+    expect(node.position.x).toBeCloseTo(10, 4);
+    expect(logs.some((entry) => entry.message === 'done')).toBe(true);
+  });
+
+  it('stops a tween that was cancelled', async () => {
+    const { node, errors } = await run(`
+      local part = script.parent
+      part.Position = Vector3.new(0, 0, 0)
+      local tween = TweenService:Create(part, TweenInfo.new(1, Enum.EasingStyle.Linear), {
+        Position = Vector3.new(10, 0, 0)
+      })
+      tween:Play()
+      tween:Cancel()
+    `);
+    expect(errors).toEqual([]);
+
+    node.dispatchUpdate(0.5);
+    expect(node.position.x).toBeCloseTo(0, 4);
+  });
+
+  it('tweens a CFrame along the shortest rotation', async () => {
+    const { node, errors } = await run(`
+      local part = script.parent
+      part.CFrame = CFrame.new(0, 0, 0)
+      TweenService:Create(part, TweenInfo.new(1, Enum.EasingStyle.Linear), {
+        CFrame = CFrame.new(0, 10, 0) * CFrame.Angles(0, math.pi / 2, 0)
+      }):Play()
+    `);
+    expect(errors).toEqual([]);
+
+    node.dispatchUpdate(1);
+    expect(node.position.y).toBeCloseTo(10, 3);
+    expect(node.rotation.y).toBeCloseTo(Math.PI / 2, 3);
+  });
+
   it('accepts RenderStepped as the same event', async () => {
     const { node, errors } = await run(`
       RunService.RenderStepped:Connect(function(dt) print("render " .. dt) end)

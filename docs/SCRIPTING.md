@@ -78,6 +78,78 @@ end)
 Only writes that go through the script proxy raise it. A part moved by physics does
 not, so poll `part.Position` in `script.onUpdate` when you need that.
 
+## Building an interface
+
+`Instance.new` builds GUI nodes the same way it builds parts, and `Parent` decides
+where they hang. `player.PlayerGui` is the root.
+
+```lua
+local screen = Instance.new("ScreenGui", player.PlayerGui)
+
+local panel = Instance.new("Frame", screen)
+panel.Size = UDim2.new(0, 240, 0, 72)
+panel.Position = UDim2.new(0, 16, 0, 16)
+panel.BackgroundColor3 = Color3.fromRGB(20, 22, 30)
+panel.BackgroundTransparency = 0.15
+
+local label = Instance.new("TextLabel", panel)
+label.Size = UDim2.fromScale(1, 1)
+label.Text = "Score 0"
+label.TextColor3 = Color3.fromRGB(255, 255, 255)
+label.TextSize = 18
+
+local button = Instance.new("TextButton", panel)
+button.Size = UDim2.new(0, 80, 0, 28)
+button.Position = UDim2.new(1, -88, 0, 18)
+button.Text = "Reset"
+button.MouseButton1Click:Connect(function()
+  label.Text = "Score 0"
+end)
+```
+
+| Class | What it is |
+| --- | --- |
+| `ScreenGui` | Fills the viewport; children position against it |
+| `Frame` | A box |
+| `TextLabel` | A box with text |
+| `TextButton` | A box with text that takes clicks |
+
+A node is not drawn until it is parented, and `node.Parent = nil` takes it off screen
+again - building a tree and placing it later works the way it does in the source API.
+
+`Font`, `TextXAlignment` and `TextYAlignment` take an `Enum` member or the bare name in
+any casing, and read back as the name - so `label.Font == Enum.Font.Code` is true after
+either form. A font the app has no face for maps to the nearest shipped family rather
+than failing.
+
+`UDim2.new(scaleX, offsetX, scaleY, offsetY)`; `fromScale` and `fromOffset` are the
+shorthand forms. Scale is a fraction of the parent, offset is pixels, and the two add -
+`UDim2.new(1, -88, 0, 18)` is "parent width minus 88 pixels".
+
+### Layout and decoration
+
+Three classes attach to a box and change how it draws. They are children, not
+properties, exactly as in the source API.
+
+| Class | What it does |
+| --- | --- |
+| `UICorner` | `CornerRadius = UDim.new(0, 12)` rounds the box |
+| `UIPadding` | `PaddingTop` / `PaddingRight` / `PaddingBottom` / `PaddingLeft` inset the children |
+| `UIListLayout` | `Padding`, `FillDirection`, `HorizontalAlignment`, `VerticalAlignment` - children flow in order and their `Position` is ignored |
+
+```lua
+local list = Instance.new("UIListLayout", panel)
+list.Padding = UDim.new(0, 8)
+list.FillDirection = Enum.FillDirection.Vertical
+
+local corner = Instance.new("UICorner", panel)
+corner.CornerRadius = UDim.new(0, 10)
+```
+
+Not implemented: `TextScaled` (needs measured text), `UIGridLayout`, `UIScale`,
+`UIAspectRatioConstraint`, and tweening. For a score or timer readout, `ui.setHud` is
+still less code than a tree.
+
 ## The character
 
 `player.Character.Humanoid` carries the names an avatar script expects. It is a
@@ -154,6 +226,39 @@ Setting a material from Lua is for scripts, and for worlds ported from elsewhere
 
 `part.materialTexture` takes a bundled preset id directly (`"marble_white"`,
 `"lava_flow"`, ...) when you want a specific set rather than a name.
+
+## Services
+
+`RunService.Heartbeat` fires once per frame with the frame delta, and is the same event
+as `script.onUpdate`:
+
+```lua
+RunService.Heartbeat:Connect(function(dt)
+  -- called every frame
+end)
+```
+
+`RenderStepped` is the same event here; `IsClient` is true and `IsServer` false, so a
+script that branches on them runs instead of raising.
+
+### TweenService
+
+`TweenService:Create(part, info, goal):Play()` moves properties over time.
+
+```lua
+local info = TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+info.Completed = function() print("arrived") end
+
+TweenService:Create(part, info, { Position = Vector3.new(0, 10, 0) }):Play()
+```
+
+`goal` takes any property a script can set: `Position`, `Size`, `CFrame`, `Color`,
+`Transparency`. Numbers blend directly, `Vector3` and `Color3` blend field by field, and
+a `CFrame` uses its own `Lerp`, so rotation does not shear.
+
+`tween:Cancel()` stops it where it is. Every tween in a script is driven by one shared
+frame handler rather than one per tween, so starting a tween inside a loop does not add
+a handler each time.
 
 ## Time
 

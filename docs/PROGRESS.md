@@ -251,3 +251,23 @@ is a nil index, and a test compares it against the alias table so the two cannot
 
 Plain strings are still accepted, because scripts often read a material from a config. An
 unknown string warns once and leaves the part alone.
+**TweenService and the service layer** (2026-11-14): nothing answered to
+`RunService.Heartbeat` or `TweenService`, which between them are how a ported script
+moves anything smoothly and how it runs something every frame.
+
+`Heartbeat` and `RenderStepped` alias the node update handler, which already fires once
+per frame with the delta. They cannot be a spawned loop: `task.spawn` schedules a timer
+on the main thread, where `task.wait` cannot yield, so a loop written that way would
+spin forever and freeze the session.
+
+`TweenService` drives every tween in a script from one shared frame handler instead of
+one per tween. `onUpdate.Connect` returns no connection to disconnect with, so a
+per-tween handler could never be removed and a game that opened a thousand doors would
+carry a thousand dead closures; one driver keeps that bounded whatever a script does.
+
+Two interop facts shaped the implementation, both measured rather than assumed.
+`Vector3` and `Color3` reach Lua as userdata, so a `type(value) == "table"` test misses
+them and the tween silently jumps to its target. And a CFrame read off a part is
+userdata too - it carries `x`, `y` and `z` like a vector, and a method call on userdata
+does not pass its arguments the way a table method does. The tween rebuilds it as a real
+Lua CFrame from its fields before lerping, which is what makes `:Lerp` work on it.
