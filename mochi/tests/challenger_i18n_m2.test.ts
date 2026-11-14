@@ -1,14 +1,15 @@
 // Adversarial Empirical Challenger Stress Test Suite for Milestone 2 i18n Expansion
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import {
   Language,
+  LANGUAGE_CODES,
   SUPPORTED_LANGUAGES,
   TranslationDictionary
 } from '../src/i18n/types';
-import { translations } from '../src/i18n/context';
+import { bundledCatalogs, loadAllCatalogs } from '../src/i18n/registry';
 import { translations as legacyTranslations } from '../src/i18n/translations';
 import { th } from '../src/i18n/locales/th';
 import { en } from '../src/i18n/locales/en';
@@ -16,8 +17,14 @@ import { ja } from '../src/i18n/locales/ja';
 import { zh } from '../src/i18n/locales/zh';
 
 describe('Empirical Challenger: i18n Milestone 2 Stress Harness', () => {
-  const LOCALES: Record<Language, TranslationDictionary> = { th, en, ja, zh };
-  const ALL_LANGUAGES: Language[] = ['th', 'en', 'ja', 'zh'];
+  // Loaded through the registry, not the eager map: a locale that ships as a
+  // lazy chunk is still a declared language and must be checked like any other.
+  let LOCALES: Record<Language, TranslationDictionary>;
+  beforeAll(async () => {
+    LOCALES = await loadAllCatalogs();
+  });
+  const catalogOf = (code: Language): TranslationDictionary => LOCALES[code];
+  const ALL_LANGUAGES: Language[] = [...LANGUAGE_CODES];
   const EXPECTED_DOMAINS: (keyof TranslationDictionary)[] = [
     'admin',
     'animation',
@@ -28,6 +35,7 @@ describe('Empirical Challenger: i18n Milestone 2 Stress Harness', () => {
     'footer',
     'landing',
     'install',
+    'legal',
     'nav',
     'pages',
     'player',
@@ -45,7 +53,7 @@ describe('Empirical Challenger: i18n Milestone 2 Stress Harness', () => {
   describe('Stress Probe 1: 100% Exhaustive Key Parity & Leaf Integrity', () => {
     it('guarantees identical domain structures across all 4 locales without exception', () => {
       for (const lang of ALL_LANGUAGES) {
-        const actualDomains = Object.keys(LOCALES[lang]).sort();
+        const actualDomains = Object.keys(catalogOf(lang)).sort();
         expect(actualDomains, `Domain mismatch in locale ${lang}`).toEqual(
           [...EXPECTED_DOMAINS].sort()
         );
@@ -56,7 +64,7 @@ describe('Empirical Challenger: i18n Milestone 2 Stress Harness', () => {
       for (const domain of EXPECTED_DOMAINS) {
         const enKeys = Object.keys(en[domain]).sort();
         for (const lang of ALL_LANGUAGES) {
-          const langKeys = Object.keys(LOCALES[lang][domain]).sort();
+          const langKeys = Object.keys(catalogOf(lang)[domain]).sort();
           expect(langKeys, `Locale ${lang} has key mismatch in domain ${domain}`).toEqual(enKeys);
         }
       }
@@ -70,7 +78,7 @@ describe('Empirical Challenger: i18n Milestone 2 Stress Harness', () => {
       let totalLeafNodes = 0;
       for (const lang of ALL_LANGUAGES) {
         for (const domain of EXPECTED_DOMAINS) {
-          const dict = LOCALES[lang][domain] as Record<string, string>;
+          const dict = catalogOf(lang)[domain] as Record<string, string>;
           for (const [key, value] of Object.entries(dict)) {
             totalLeafNodes++;
             expect(value, `Undefined value at ${lang}.${domain}.${key}`).toBeDefined();
@@ -140,29 +148,31 @@ describe('Empirical Challenger: i18n Milestone 2 Stress Harness', () => {
       }
     });
 
-    it('confirms that core navigational headers differ completely across all 4 locales', () => {
-      const homeHeaders = new Set([th.nav.home, en.nav.home, ja.nav.home, zh.nav.home]);
-      expect(homeHeaders.size).toBe(4);
+    it('confirms that core navigational headers differ completely across every locale', () => {
+      // Distinctness, not a count: a new locale that reuses another one's header
+      // is a translation mistake, and this catches it however many locales exist.
+      const homeHeaders = new Set(ALL_LANGUAGES.map((code) => catalogOf(code).nav.home));
+      expect(homeHeaders.size).toBe(ALL_LANGUAGES.length);
 
-      const catalogTitles = new Set([th.catalog.title, en.catalog.title, ja.catalog.title, zh.catalog.title]);
-      expect(catalogTitles.size).toBe(4);
+      const catalogTitles = new Set(ALL_LANGUAGES.map((code) => catalogOf(code).catalog.title));
+      expect(catalogTitles.size).toBe(ALL_LANGUAGES.length);
     });
   });
 
   describe('Stress Probe 3: Language Metadata, Switcher Contracts & Backward Compatibility', () => {
     it('validates SUPPORTED_LANGUAGES metadata integrity and uniqueness', () => {
-      expect(SUPPORTED_LANGUAGES).toHaveLength(4);
+      expect(SUPPORTED_LANGUAGES).toHaveLength(LANGUAGE_CODES.length);
 
       const codes = SUPPORTED_LANGUAGES.map((l) => l.code);
-      expect(new Set(codes).size).toBe(4);
-      expect(codes).toEqual(['th', 'en', 'ja', 'zh']);
+      expect(new Set(codes).size).toBe(LANGUAGE_CODES.length);
+      expect(codes).toEqual([...LANGUAGE_CODES]);
 
       const shortCodes = SUPPORTED_LANGUAGES.map((l) => l.shortCode);
-      expect(new Set(shortCodes).size).toBe(4);
-      expect(shortCodes).toEqual(['TH', 'EN', 'JA', 'ZH']);
+      expect(new Set(shortCodes).size).toBe(LANGUAGE_CODES.length);
+      expect(new Set(shortCodes).size).toBe(shortCodes.length);
 
       SUPPORTED_LANGUAGES.forEach((item) => {
-        expect(translations[item.code]).toBeDefined();
+        expect(catalogOf(item.code)).toBeDefined();
         expect(item.label.trim().length).toBeGreaterThan(0);
         expect(item.englishLabel.trim().length).toBeGreaterThan(0);
       });
@@ -170,11 +180,12 @@ describe('Empirical Challenger: i18n Milestone 2 Stress Harness', () => {
 
     it('confirms translations object and legacy re-export maintain parity', () => {
       expect(legacyTranslations).toBeDefined();
-      expect(Object.keys(legacyTranslations).sort()).toEqual(['en', 'ja', 'th', 'zh']);
-      expect(legacyTranslations.th).toBe(th);
-      expect(legacyTranslations.en).toBe(en);
-      expect(legacyTranslations.ja).toBe(ja);
-      expect(legacyTranslations.zh).toBe(zh);
+      // The legacy barrel can only carry the bundled tier; a lazy locale is
+      // absent by design, so this asserts against that tier, not every code.
+      expect(Object.keys(legacyTranslations).sort()).toEqual(Object.keys(bundledCatalogs).sort());
+      for (const code of Object.keys(bundledCatalogs) as Language[]) {
+        expect(legacyTranslations[code]).toBe(catalogOf(code));
+      }
     });
   });
 
@@ -183,7 +194,7 @@ describe('Empirical Challenger: i18n Milestone 2 Stress Harness', () => {
       return SUPPORTED_LANGUAGES.some((item) => item.code === code);
     };
 
-    it('correctly accepts only the 4 canonical language codes', () => {
+    it('correctly accepts only the declared language codes', () => {
       expect(isSupported('th')).toBe(true);
       expect(isSupported('en')).toBe(true);
       expect(isSupported('ja')).toBe(true);

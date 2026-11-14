@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { InstallPrompt } from '../src/components/InstallPrompt';
-import { I18nProvider, translations } from '../src/i18n/context';
+import { I18nProvider } from '../src/i18n/context';
+import { bundledCatalog } from '../src/i18n/registry';
 import { SUPPORTED_LANGUAGES, type Language } from '../src/i18n/types';
 import { INSTALL_DISMISS_MS, isInstallDismissed, isIosSafari } from '../src/pwa/useInstallPrompt';
 
@@ -48,7 +49,7 @@ describe('install eligibility and cooldown', () => {
 describe.each(SUPPORTED_LANGUAGES)('install prompt in $code', ({ code }) => {
   it('renders localized title, benefits and accessible actions', () => {
     const html = renderPrompt(code);
-    const t = translations[code].install;
+    const t = bundledCatalog(code).install;
     expect(html).toContain(t.title);
     expect(html).toContain(t.desc);
     expect(html).toContain(t.installBtn);
@@ -59,7 +60,7 @@ describe.each(SUPPORTED_LANGUAGES)('install prompt in $code', ({ code }) => {
 
   it('shows Safari instructions without a fake install button', () => {
     const html = renderPrompt(code, { mode: 'ios' });
-    const t = translations[code].install;
+    const t = bundledCatalog(code).install;
     expect(html).toContain(t.iosTitle);
     expect(html).toContain(t.iosHint);
     expect(html).not.toContain(t.installBtn);
@@ -67,7 +68,7 @@ describe.each(SUPPORTED_LANGUAGES)('install prompt in $code', ({ code }) => {
 
   it('disables the action while the browser prompt is pending', () => {
     const html = renderPrompt(code, { busy: true });
-    expect(html).toContain(translations[code].install.installing);
+    expect(html).toContain(bundledCatalog(code).install.installing);
     expect(html).toContain('disabled=""');
     expect(html).toContain('aria-busy="true"');
   });
@@ -75,8 +76,8 @@ describe.each(SUPPORTED_LANGUAGES)('install prompt in $code', ({ code }) => {
   it('shows localized recovery guidance on failure without reusing the event', () => {
     const html = renderPrompt(code, { failed: true });
     expect(html).toContain('role="alert"');
-    expect(html).toContain(translations[code].install.failed);
-    expect(html).not.toContain(translations[code].install.installBtn);
+    expect(html).toContain(bundledCatalog(code).install.failed);
+    expect(html).not.toContain(bundledCatalog(code).install.installBtn);
   });
 
   it('renders nothing when unavailable or hidden behind a game or dialog', () => {

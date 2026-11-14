@@ -9,7 +9,8 @@ import path from 'node:path';
 import { AvatarEditorModal } from '../src/components/avatar/AvatarEditorModal';
 import { AvatarColorControls } from '../src/components/avatar/AvatarColorControls';
 import { AvatarCatalogPicker } from '../src/components/avatar/AvatarCatalogPicker';
-import { I18nProvider, translations } from '../src/i18n/context';
+import { I18nProvider } from '../src/i18n/context';
+import { bundledCatalog } from '../src/i18n/registry';
 import { Language } from '../src/i18n/types';
 import { AvatarCatalogItem, DEFAULT_STARTER_AVATAR } from '../src/api/types';
 import { DEFAULT_AVATAR_COLORS, UserAvatarColors } from '../src/engine/avatar/avatarBuilder';
@@ -35,7 +36,7 @@ vi.mock('../src/store/useAvatarStore', () => ({
 }));
 
 const ROOT = path.resolve(__dirname, '..');
-const copy = translations.th.avatarEditor;
+const copy = bundledCatalog('th').avatarEditor;
 
 const AVATAR_FILES = [
   'src/components/avatar/AvatarEditorModal.tsx',
@@ -63,7 +64,9 @@ const CATALOG: AvatarCatalogItem[] = [
 const DRAFT: UserAvatarColors = { ...DEFAULT_AVATAR_COLORS, hatId: '', shirtId: '' };
 
 function render(element: React.ReactElement): string {
-  return renderToString(<I18nProvider>{element}</I18nProvider>);
+  // Pinned to Thai: the assertions compare against `bundledCatalog('th')`, and the
+  // provider otherwise negotiates the locale from the host's language list.
+  return renderToString(<I18nProvider initialLocale="th">{element}</I18nProvider>);
 }
 
 function count(html: string, pattern: RegExp): number {
@@ -213,10 +216,10 @@ describe('Avatar compliance invariants', () => {
   });
 
   it('keeps avatarEditor keys in parity over all four locales with non-empty values', () => {
-    const reference = Object.keys(translations.en.avatarEditor).sort();
+    const reference = Object.keys(bundledCatalog('en').avatarEditor).sort();
     expect(reference.length).toBeGreaterThan(15);
     for (const lang of ['th', 'en', 'ja', 'zh'] as Language[]) {
-      const dict = translations[lang].avatarEditor;
+      const dict = bundledCatalog(lang).avatarEditor;
       expect(Object.keys(dict).sort(), `${lang} avatarEditor key mismatch`).toEqual(reference);
       for (const key of reference) {
         const value = dict[key as keyof typeof dict];

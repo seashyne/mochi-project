@@ -1,19 +1,11 @@
 import type { InstallTranslations } from './installTypes';
 import type { PagesTranslations } from './pagesTypes';
-export type { PagesTranslations } from './pagesTypes';
-export type Language = 'th' | 'en' | 'ja' | 'zh';
-export interface LanguageMeta {
-  code: Language;
-  label: string;
-  englishLabel: string;
-  shortCode: string;
-}
-export const SUPPORTED_LANGUAGES: LanguageMeta[] = [
-  { code: 'th', label: 'ไทย', englishLabel: 'Thai', shortCode: 'TH' },
-  { code: 'en', label: 'English', englishLabel: 'English', shortCode: 'EN' },
-  { code: 'ja', label: '日本語', englishLabel: 'Japanese', shortCode: 'JA' },
-  { code: 'zh', label: '简体中文', englishLabel: 'Simplified Chinese', shortCode: 'ZH' }
-];
+import type { LegalTranslations } from './legalTypes';
+export type { PagesTranslations } from './pagesTypes'; export type { LegalTranslations } from './legalTypes';
+// The language list lives in registry.ts so adding a locale never touches this
+// file - it is at the 300-line ceiling and stays a pure shape declaration.
+export type { Language, LanguageMeta } from './registry';
+export { SUPPORTED_LANGUAGES, LANGUAGE_CODES, DEFAULT_LANGUAGE, languageMeta } from './registry';
 export interface TranslationDictionary {
   nav: {
     home: string;
@@ -295,5 +287,5 @@ export interface TranslationDictionary {
     accessDeniedDesc: string;
     returnHome: string;
   };
-  pages: PagesTranslations; install: InstallTranslations; animation: import('./animationTypes').AnimationTranslations; team: import('./studioTeamTypes').StudioTeamTranslations;
+  pages: PagesTranslations; install: InstallTranslations; animation: import('./animationTypes').AnimationTranslations; team: import('./studioTeamTypes').StudioTeamTranslations; legal: LegalTranslations;
 }

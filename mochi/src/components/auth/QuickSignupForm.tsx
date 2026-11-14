@@ -3,7 +3,7 @@
 import React, { useId, useMemo, useState } from 'react';
 import { Eye, EyeOff, User, Lock, Mail, ChevronDown } from 'lucide-react';
 import { useI18n } from '../../i18n/context';
-import { Language } from '../../i18n/types';
+import { languageMeta } from '../../i18n/registry';
 
 export interface QuickSignupFormData {
   username: string;
@@ -18,13 +18,6 @@ export interface QuickSignupFormProps {
   isLoading: boolean;
   error: string | null;
 }
-
-const LOCALE_TAGS: Record<Language, string> = {
-  th: 'th-TH',
-  en: 'en-US',
-  ja: 'ja-JP',
-  zh: 'zh-CN'
-};
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -58,7 +51,7 @@ export const QuickSignupForm: React.FC<QuickSignupFormProps> = ({
   const birthdayLabelId = useId();
 
   const monthNames = useMemo(() => {
-    const formatter = new Intl.DateTimeFormat(LOCALE_TAGS[lang], { month: 'long' });
+    const formatter = new Intl.DateTimeFormat(languageMeta(lang).localeTag, { month: 'long' });
     return Array.from({ length: 12 }, (_, i) => formatter.format(new Date(2020, i, 1)));
   }, [lang]);
 
@@ -111,7 +104,7 @@ export const QuickSignupForm: React.FC<QuickSignupFormProps> = ({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-1 text-left">
+      <div className="space-y-1 text-start">
         <h2 className="mochi-auth-title text-2xl">{t.auth.signUpTitle}</h2>
       </div>
 
@@ -121,7 +114,7 @@ export const QuickSignupForm: React.FC<QuickSignupFormProps> = ({
         </div>
       )}
 
-      <div className="text-left">
+      <div className="text-start">
         <span id={birthdayLabelId} className="mochi-auth-label">
           {t.auth.birthday} <span className="mochi-auth-required">*</span>
         </span>
@@ -178,7 +171,7 @@ export const QuickSignupForm: React.FC<QuickSignupFormProps> = ({
         </div>
       </div>
 
-      <div className="text-left">
+      <div className="text-start">
         <label htmlFor={usernameId} className="mochi-auth-label">
           {t.auth.username} <span className="mochi-auth-required">*</span>
         </label>
@@ -199,7 +192,7 @@ export const QuickSignupForm: React.FC<QuickSignupFormProps> = ({
         </div>
       </div>
 
-      <div className="text-left">
+      <div className="text-start">
         <label htmlFor={emailId} className="mochi-auth-label">
           {t.auth.email} <span className="mochi-auth-required">*</span>
         </label>
@@ -218,7 +211,7 @@ export const QuickSignupForm: React.FC<QuickSignupFormProps> = ({
         </div>
       </div>
 
-      <div className="text-left">
+      <div className="text-start">
         <label htmlFor={passwordId} className="mochi-auth-label">
           {t.auth.password} <span className="mochi-auth-required">*</span>
         </label>

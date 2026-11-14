@@ -3,43 +3,44 @@
 import { describe, it, expect } from 'vitest';
 import {
   SUPPORTED_LANGUAGES,
-  Language,
+  LANGUAGE_CODES,
   TranslationDictionary
 } from '../src/i18n/types';
-import { translations } from '../src/i18n/context';
-import { th } from '../src/i18n/locales/th';
+import { bundledCatalog, hasCatalog, loadAllCatalogs } from '../src/i18n/registry';
 import { en } from '../src/i18n/locales/en';
-import { ja } from '../src/i18n/locales/ja';
-import { zh } from '../src/i18n/locales/zh';
 
 describe('Multi-Language i18n Architecture', () => {
   const EMOJI_REGEX =
     /([\u{1F300}-\u{1F9FF}]|[\u{1FA00}-\u{1FAFF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F1E6}-\u{1F1FF}])/u;
 
-  it('defines 4 supported languages with valid metadata and unique shortcodes', () => {
-    expect(SUPPORTED_LANGUAGES).toHaveLength(4);
+  it('declares a supported language list with valid metadata and unique shortcodes', () => {
+    // The count is the registry's, not a magic number: adding a locale must not
+    // require editing this assertion.
+    expect(SUPPORTED_LANGUAGES).toHaveLength(LANGUAGE_CODES.length);
 
     const codes = SUPPORTED_LANGUAGES.map((l) => l.code);
-    expect(codes).toEqual(['th', 'en', 'ja', 'zh']);
+    expect(codes).toEqual([...LANGUAGE_CODES]);
 
     const shortCodes = SUPPORTED_LANGUAGES.map((l) => l.shortCode);
-    expect(shortCodes).toEqual(['TH', 'EN', 'JA', 'ZH']);
+    expect(new Set(shortCodes).size).toBe(shortCodes.length);
 
     SUPPORTED_LANGUAGES.forEach((item) => {
       expect(item.label.length).toBeGreaterThan(0);
       expect(item.englishLabel.length).toBeGreaterThan(0);
+      expect(item.localeTag.length).toBeGreaterThan(0);
     });
   });
 
-  it('provides complete translation dictionaries for all 4 supported languages in translations map', () => {
-    const supportedCodes: Language[] = ['th', 'en', 'ja', 'zh'];
-    for (const code of supportedCodes) {
-      expect(translations[code]).toBeDefined();
+  it('resolves a catalog for every declared language, bundled or lazy', async () => {
+    const all = await loadAllCatalogs();
+    for (const code of LANGUAGE_CODES) {
+      expect(hasCatalog(code), `${code} has neither a bundled catalog nor a loader`).toBe(true);
+      expect(all[code]).toBeDefined();
     }
   });
 
-  it('guarantees 100% structural key parity across all 4 locales', () => {
-    const locales: Record<Language, TranslationDictionary> = { th, en, ja, zh };
+  it('guarantees 100% structural key parity across every declared locale', async () => {
+    const locales = await loadAllCatalogs();
     const referenceDomains = Object.keys(en).sort() as (keyof TranslationDictionary)[];
 
     expect(referenceDomains).toEqual([
@@ -52,6 +53,7 @@ describe('Multi-Language i18n Architecture', () => {
       'footer',
       'install',
       'landing',
+      'legal',
       'nav',
       'pages',
       'player',
@@ -72,8 +74,8 @@ describe('Multi-Language i18n Architecture', () => {
     }
   });
 
-  it('guarantees all dictionary values are non-empty strings with zero undefined values', () => {
-    const locales: Record<Language, TranslationDictionary> = { th, en, ja, zh };
+  it('guarantees all dictionary values are non-empty strings with zero undefined values', async () => {
+    const locales = await loadAllCatalogs();
 
     for (const [langCode, dict] of Object.entries(locales)) {
       for (const [domain, subDict] of Object.entries(dict)) {
@@ -91,8 +93,8 @@ describe('Multi-Language i18n Architecture', () => {
     }
   });
 
-  it('verifies zero emojis across all 4 translation dictionaries', () => {
-    const locales: Record<Language, TranslationDictionary> = { th, en, ja, zh };
+  it('verifies zero emojis across every translation dictionary', async () => {
+    const locales = await loadAllCatalogs();
     const emojiViolations: string[] = [];
 
     for (const [langCode, dict] of Object.entries(locales)) {
@@ -109,13 +111,16 @@ describe('Multi-Language i18n Architecture', () => {
   });
 
   it('verifies authentic localized text across different languages', () => {
-    expect(th.nav.home).toBe('หน้าหลัก');
-    expect(en.nav.home).toBe('Home');
-    expect(ja.nav.home).toBe('ホーム');
-    expect(zh.nav.home).toBe('首页');
+    expect(bundledCatalog('th').nav.home).toBe('หน้าหลัก');
+    expect(bundledCatalog('en').nav.home).toBe('Home');
+    expect(bundledCatalog('ja').nav.home).toBe('ホーム');
+    expect(bundledCatalog('zh').nav.home).toBe('首页');
 
-    expect(th.catalog.title).not.toEqual(en.catalog.title);
-    expect(ja.catalog.title).not.toEqual(en.catalog.title);
-    expect(zh.catalog.title).not.toEqual(en.catalog.title);
+    for (const code of LANGUAGE_CODES) {
+      if (code === 'en') continue;
+      expect(bundledCatalog(code).catalog.title, `${code} catalog title is untranslated`).not.toEqual(
+        bundledCatalog('en').catalog.title
+      );
+    }
   });
 });
