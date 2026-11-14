@@ -189,6 +189,17 @@ reads as false: a jump is a request, not a state this runtime can report back.
 member raises. The full list, what each name resolves to, and how to pick a surface
 without a script are in [`MATERIALS.md`](./MATERIALS.md).
 
+## Types and children
+
+`part:IsA("Part")` answers true for anything that is one, including the classes it
+inherits from - `BasePart`, `PVInstance`, `Instance`. An agent answers `Model`. The guard
+`if child:IsA("BasePart") then` therefore works the way a ported script expects.
+
+`FindFirstChild(name, recursive)` returns a child by name; the second argument searches
+descendants, which is how a script reaches into a model without walking it. `WaitForChild`
+is the same lookup, because the world exists before a script starts. `FindFirstChildOfClass`
+returns the first child of a class.
+
 ## Raycasting
 
 `world:Raycast(origin, direction, ignore?)` casts a ray and returns what it hit, or nil.

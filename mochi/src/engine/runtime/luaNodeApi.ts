@@ -11,6 +11,7 @@ import { rotationMatrix } from '../physics/oriented';
 import { makeCFrameValue, readCFrameValue } from './cframeBridge';
 import { attachMaterialProps } from './luaMaterialProps';
 import { createRaycast } from './luaRaycast';
+import { findChild, isA } from './nodeClasses';
 
 import { routeSound } from './audioRouting';
 export { createPlayerApi } from './luaPlayerApi';
@@ -197,8 +198,12 @@ export function createLuaNode(node: LiveNode, deps: RuntimeApiDeps): Record<stri
   proxy.Destroy = () => deps.world.destroy(node.id);
   proxy.destroy = () => deps.world.destroy(node.id);
   proxy.GetChildren = () => node.children.map((child) => createLuaNode(child, deps));
-  proxy.FindFirstChild = (name: unknown) => {
-    const match = node.children.find((child) => child.name.toLowerCase() === String(name ?? '').toLowerCase());
+  proxy.FindFirstChild = (name: unknown, recursive?: unknown) => {
+    const match = findChild(node.children, String(name ?? '').toLowerCase(), Boolean(recursive));
+    return match ? createLuaNode(match, deps) : undefined;
+  };
+  proxy.FindFirstChildOfClass = (className: unknown) => {
+    const match = node.children.find((child) => isA(child.def.type, String(className ?? '')));
     return match ? createLuaNode(match, deps) : undefined;
   };
   proxy.findFirstChild = proxy.FindFirstChild;
@@ -206,7 +211,7 @@ export function createLuaNode(node: LiveNode, deps: RuntimeApiDeps): Record<stri
   // cannot block. It is an alias rather than a yield so a missing name returns nil
   // instead of hanging the script.
   proxy.WaitForChild = proxy.FindFirstChild;
-  proxy.IsA = (className: unknown) => String(className ?? '').toLowerCase().replace(/[\s_-]/g, '') === node.type.replace(/_/g, '');
+  proxy.IsA = (className: unknown) => isA(node.def.type, String(className ?? ''));
 
   node.luaProxy = proxy;
   return proxy;

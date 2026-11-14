@@ -292,3 +292,19 @@ directly.
 
 Three tests cover it through a real GUI instance: a frame grows through the middle, the
 axis it is not tweening stays put, and it lands exactly on the target.
+**IsA answers the class a part really is** (2026-11-14): the method compared the object's
+raw type against the name, so `part:IsA("Part")` was false for a block - the type is
+"block", the name asked for "Part". A ported script that guards with
+`if child:IsA("BasePart")` therefore skipped every part in the world, which reads as the
+script doing nothing at all.
+
+The class each object answers to is now a small table: parts are `Part`, `BasePart`,
+`PVInstance` and `Instance`; an agent and a model are `Model`; terrain is `Terrain`; a
+constraint is a `Constraint`. Names are matched case- and punctuation-insensitively.
+
+`FindFirstChild` gained its second argument. The recursive form searches descendants,
+which is how a script reaches into a model without walking it by hand, and
+`FindFirstChildOfClass` was added beside it.
+
+The search itself lives in `nodeClasses.ts` rather than the node API, which is at its
+line ceiling.
