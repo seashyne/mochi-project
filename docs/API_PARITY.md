@@ -92,7 +92,7 @@ Legend: **Yes** same idea, **Shape** same idea but a different call shape,
 
 | Common call | Here | Notes |
 | --- | --- | --- |
-| `ScreenGui`, `Frame`, `TextLabel`, `TextButton`, `ImageLabel`, `ImageButton` | Shape | A real tree under `player.PlayerGui`: `Instance.new(class, parent, props)`, `Parent`, `Position`/`Size` as `UDim2`, `AnchorPoint`, `BackgroundColor3`, `BackgroundTransparency`, `BorderSizePixel`, `ClipsDescendants`, `Text`, `TextColor3`, `TextSize`, `TextScaled`, `TextWrapped`, `Font`, `TextXAlignment`/`TextYAlignment`, `Image`, `ImageColor3`, `ScaleType`, `Visible`, `ZIndex`, `LayoutOrder`, `:Destroy()`, `:FindFirstChild()`, `:GetChildren()`, and `MouseButton1Click` / `Activated`. No `RichText`, no `ScrollingFrame` |
+| `ScreenGui`, `Frame`, `TextLabel`, `TextButton`, `ImageLabel`, `ImageButton`, `ScrollingFrame` | Shape | A real tree under `player.PlayerGui`: `Instance.new(class, parent, props)`, `Parent`, `Position`/`Size` as `UDim2`, `AnchorPoint`, `BackgroundColor3`, `BackgroundTransparency`, `BorderSizePixel`, `ClipsDescendants`, `Text`, `TextColor3`, `TextSize`, `TextScaled`, `TextWrapped`, `Font`, `TextXAlignment`/`TextYAlignment`, `Image`, `ImageColor3`, `ScaleType`, `Visible`, `ZIndex`, `LayoutOrder`, `:Destroy()`, `:FindFirstChild()`, `:GetChildren()`, and `MouseButton1Click` / `Activated`. No `RichText` |
 | `UICorner`, `UIPadding`, `UIScale`, `UIListLayout`, `UIGridLayout`, `UIAspectRatioConstraint` | Shape | Attached as children, the same way the source API does it: `CornerRadius`; `PaddingTop`/`Bottom`/`Left`/`Right`; `Scale`; `Padding`, `FillDirection`, `HorizontalAlignment`/`VerticalAlignment`, `SortOrder`; `CellSize`, `CellPadding`; `AspectRatio`, `DominantAxis`. A layout takes over child positioning, so their `Position` is ignored |
 | `ui.setHud(id, element)` | Mochi | The card list, kept for score and timer readouts. Typography is `font = "mono" \| "ui" \| "display"` and `size = "sm" \| "md" \| "lg"`; unknown values are ignored, not thrown |
 | `player:FindFirstChild("leaderstats")` | Shape | `ui.setLeaderboard(category, score)` |
@@ -157,8 +157,9 @@ a promise.
    `HumanoidDescription`, animation state names, and parenting (`FindFirstChild`).
 2. **GUI tree** - closed. Six drawable classes build a real tree under
    `player.PlayerGui` with `UDim2` positioning, text, images and click events; six
-   decoration and layout classes shape it, and `TweenService` animates it. What is
-   still missing is `RichText`, `ScrollingFrame` and `UITextSizeConstraint`.
+   decoration and layout classes shape it, `ScrollingFrame` scrolls it, and
+   `TweenService` animates it. What is still missing is `RichText` and
+   `UITextSizeConstraint`.
 3. **`CFrame`** - closed for the common surface: `new`, `Angles`, `lookAt`, `*` with
    both a CFrame and a Vector3, `+`/`-` with a Vector3, `Position`, `LookVector` and
    the methods all exist. The one remaining trap is a unit convention: `CFrame.Angles`

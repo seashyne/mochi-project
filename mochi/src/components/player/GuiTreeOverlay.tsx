@@ -15,12 +15,14 @@ import {
   isButtonClass,
   isDecorationClass,
   isImageClass,
+  isScrollingClass,
   isTextClass,
   type GuiNode
 } from '../../engine/gui/guiTypes';
 import { rgba, udim2Length, udimLength } from '../../engine/gui/guiValues';
 import type { XAlignName, YAlignName } from '../../engine/gui/guiEnums';
 import { GuiText } from './GuiScaledText';
+import { GuiScrollingFrame } from './GuiScrollingFrame';
 
 /** How a node sits in its parent: free, in a list run, or filling a grid cell. */
 type Flow = 'none' | 'list' | 'grid';
@@ -137,12 +139,8 @@ function NodeView({
 
   const childFlow: Flow = grid ? 'grid' : list ? 'list' : 'none';
 
-  return (
-    <div
-      style={style}
-      onClick={isButton ? () => store.fireClick(node.id) : undefined}
-      data-gui={node.className}
-    >
+  const inner = (
+    <>
       {isImageClass(node.className) && node.image ? (
         <>
           <img
@@ -173,6 +171,24 @@ function NodeView({
       {store.arrangedChildrenOf(node.id).map((child) => (
         <NodeView key={child.id} node={child} store={store} flow={childFlow} />
       ))}
+    </>
+  );
+
+  if (isScrollingClass(node.className)) {
+    return (
+      <GuiScrollingFrame node={node} store={store} style={style}>
+        {inner}
+      </GuiScrollingFrame>
+    );
+  }
+
+  return (
+    <div
+      style={style}
+      onClick={isButton ? () => store.fireClick(node.id) : undefined}
+      data-gui={node.className}
+    >
+      {inner}
     </div>
   );
 }

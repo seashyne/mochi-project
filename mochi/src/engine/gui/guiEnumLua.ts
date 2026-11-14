@@ -12,6 +12,7 @@ import {
   FONT_NAMES,
   HORIZONTAL_ALIGNMENTS,
   IMAGE_SCALE_TYPES,
+  SCROLLING_DIRECTIONS,
   SORT_ORDERS,
   VERTICAL_ALIGNMENTS
 } from './guiEnums';
@@ -37,4 +38,5 @@ Enum.FillDirection = { ${simpleMembers(FILL_DIRECTIONS)} }
 Enum.SortOrder = { ${simpleMembers(SORT_ORDERS)} }
 Enum.DominantAxis = { ${simpleMembers(ASPECT_AXES)} }
 Enum.ScaleType = { ${simpleMembers(IMAGE_SCALE_TYPES)} }
+Enum.ScrollingDirection = { ${simpleMembers(SCROLLING_DIRECTIONS)} }
 `;

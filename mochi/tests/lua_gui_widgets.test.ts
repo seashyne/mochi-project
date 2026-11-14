@@ -195,4 +195,20 @@ describe('GUI widgets', () => {
     expect(logs.some((entry) => entry.message === 'survived')).toBe(true);
     expect(byName('Panel').backgroundTransparency).toBe(0);
   });
+
+  it('carries a scroll canvas, offset and direction', async () => {
+    const { errors } = await run(`
+      local list = Instance.new("ScrollingFrame", player.PlayerGui)
+      list.Name = "List"
+      list.CanvasSize = UDim2.new(0, 0, 0, 600)
+      list.CanvasPosition = Vector2.new(0, 120)
+      list.ScrollingDirection = Enum.ScrollingDirection.XY
+    `);
+    expect(errors).toEqual([]);
+
+    const list = byName('List');
+    expect(list.canvasSize).toEqual({ xScale: 0, xOffset: 0, yScale: 0, yOffset: 600 });
+    expect(list.canvasPosition).toEqual({ x: 0, y: 120 });
+    expect(list.scrollingDirection).toBe('XY');
+  });
 });

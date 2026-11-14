@@ -118,4 +118,36 @@ describe('GuiTreeOverlay', () => {
     expect(html).toContain('position:relative');
     expect(html).not.toContain('left:0px');
   });
+
+  it('sizes a ScrollingFrame canvas and clips the view', () => {
+    const store = new GuiTreeStore();
+    const screen = store.create('ScreenGui', 'Hud');
+    store.setParent(screen.id, store.playerGuiId);
+    const list = store.create('ScrollingFrame', 'List');
+    store.setParent(list.id, screen.id);
+    store.update(list.id, {
+      size: { xScale: 0, xOffset: 200, yScale: 0, yOffset: 120 },
+      canvasSize: { xScale: 0, xOffset: 0, yScale: 3, yOffset: 0 }
+    });
+
+    const html = renderToString(<GuiTreeOverlay store={store} />);
+    expect(html).toContain('data-gui="ScrollingFrame"');
+    // The canvas is three times the visible height, so there is something to scroll.
+    expect(html).toContain('height:300%');
+    expect(html).toContain('overflow-y:auto');
+    expect(html).toContain('overflow-x:hidden');
+  });
+
+  it('stops scrolling when ScrollingEnabled is off', () => {
+    const store = new GuiTreeStore();
+    const screen = store.create('ScreenGui', 'Hud');
+    store.setParent(screen.id, store.playerGuiId);
+    const list = store.create('ScrollingFrame', 'List');
+    store.setParent(list.id, screen.id);
+    store.update(list.id, { scrollingEnabled: false, scrollingDirection: 'XY' });
+
+    const html = renderToString(<GuiTreeOverlay store={store} />);
+    expect(html).toContain('overflow-y:hidden');
+    expect(html).toContain('overflow-x:hidden');
+  });
 });

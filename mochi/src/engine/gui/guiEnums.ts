@@ -87,6 +87,10 @@ export const VERTICAL_ALIGNMENTS = Y_ALIGN_NAMES;
 export const FILL_DIRECTIONS = ['Vertical', 'Horizontal'] as const;
 export type FillDirectionName = (typeof FILL_DIRECTIONS)[number];
 
+/** Which axes a ScrollingFrame scrolls on. */
+export const SCROLLING_DIRECTIONS = ['X', 'Y', 'XY'] as const;
+export type ScrollingDirectionName = (typeof SCROLLING_DIRECTIONS)[number];
+
 /** How a list or grid orders its children. */
 export const SORT_ORDERS = ['LayoutOrder', 'Name'] as const;
 export type SortOrderName = (typeof SORT_ORDERS)[number];
@@ -144,6 +148,13 @@ export function toYAlignName(value: unknown, fallback: YAlignName): YAlignName {
 
 export function toFillDirection(value: unknown, fallback: FillDirectionName): FillDirectionName {
   return pickFrom(FILL_DIRECTIONS, value, fallback);
+}
+
+export function toScrollingDirection(
+  value: unknown,
+  fallback: ScrollingDirectionName
+): ScrollingDirectionName {
+  return pickFrom(SCROLLING_DIRECTIONS, value, fallback);
 }
 
 export function toSortOrder(value: unknown, fallback: SortOrderName): SortOrderName {

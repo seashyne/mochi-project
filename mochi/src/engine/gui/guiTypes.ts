@@ -21,6 +21,7 @@ import type {
   FillDirectionName,
   FontName,
   ImageScaleTypeName,
+  ScrollingDirectionName,
   SortOrderName,
   XAlignName,
   YAlignName
@@ -34,6 +35,7 @@ export const GUI_CLASSES = [
   'TextButton',
   'ImageLabel',
   'ImageButton',
+  'ScrollingFrame',
   'UICorner',
   'UIPadding',
   'UIScale',
@@ -72,6 +74,10 @@ export function isTextClass(className: GuiClass): boolean {
 
 export function isImageClass(className: GuiClass): boolean {
   return className === 'ImageLabel' || className === 'ImageButton';
+}
+
+export function isScrollingClass(className: GuiClass): boolean {
+  return className === 'ScrollingFrame';
 }
 
 export interface GuiNode {
@@ -134,6 +140,12 @@ export interface GuiNode {
   // UIGridLayout
   cellSize: UDim2;
   cellPadding: UDim2;
+
+  // ScrollingFrame
+  canvasSize: UDim2;
+  canvasPosition: Vector2;
+  scrollingDirection: ScrollingDirectionName;
+  scrollingEnabled: boolean;
 }
 
 export type GuiNodeInit = Omit<GuiNode, 'id' | 'parentId'>;
@@ -177,7 +189,13 @@ const SHARED: Omit<GuiNodeInit, 'className' | 'name'> = {
   listVAlign: 'Top',
   sortOrder: 'LayoutOrder',
   cellSize: { xScale: 0, xOffset: 100, yScale: 0, yOffset: 100 },
-  cellPadding: ZERO_UDIM2
+  cellPadding: ZERO_UDIM2,
+  // Two screens tall, which is what the source API defaults to and what makes an
+  // empty ScrollingFrame visibly scrollable while a creator fills it in.
+  canvasSize: { xScale: 0, xOffset: 0, yScale: 2, yOffset: 0 },
+  canvasPosition: { x: 0, y: 0 },
+  scrollingDirection: 'Y',
+  scrollingEnabled: true
 };
 
 /** Defaults per class. A frame is a visible box, text starts empty and centred. */

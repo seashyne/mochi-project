@@ -113,6 +113,8 @@ end)
 | `Frame` | A box |
 | `TextLabel` | A box with text |
 | `TextButton` | A box with text that takes clicks |
+| `ImageLabel` / `ImageButton` | A box showing `Image`, tinted by `ImageColor3` |
+| `ScrollingFrame` | A clipped box with a `CanvasSize`; `CanvasPosition` is the scroll offset |
 
 A node is not drawn until it is parented, and `node.Parent = nil` takes it off screen
 again - building a tree and placing it later works the way it does in the source API.
@@ -150,7 +152,7 @@ corner.CornerRadius = UDim.new(0, 10)
 wrap; `ClipsDescendants` decides whether a child may spill out (clipping is on by
 default here, which the source API leaves off).
 
-Not implemented: `RichText`, `ScrollingFrame` and `UITextSizeConstraint`. For a score or
+Not implemented: `RichText` and `UITextSizeConstraint`. For a score or
 timer readout, `ui.setHud` is still less code than a tree.
 
 For state, `React.mount` gives you components over the same tree - see `docs/REACT.md`.
