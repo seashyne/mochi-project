@@ -5,6 +5,10 @@
 // resume it on a later frame. That is the whole point: the genre-standard loop
 // patterns assume `task.wait` yields.
 
+import { GUI_ENUM_LUA } from '../gui/guiEnumLua';
+
+import { SERVICES_PRELUDE } from './luaPreludeServices';
+
 export const PRELUDE_MARKER = '-- __mochi_prelude_end';
 
 const PRELUDE = `-- Mochi script prelude: coroutine-driven task library.
@@ -39,6 +43,8 @@ if script ~= nil then script.wait = task.wait end
 tick = function() return world.getTime() end
 os = os or {}
 os.time = function() return __mochi_wall_clock() end
+${SERVICES_PRELUDE}
+
 -- CFrame: a position plus a row-major 3x3 rotation.
 --
 -- Defined in Lua rather than JS because the * operator needs a metamethod, and only
@@ -201,16 +207,7 @@ end
 -- be false for an object; as a string the comparison holds, and the same string still
 -- assigns. An unknown member is nil, so indexing it raises - which is the point.
 Enum = Enum or {}
-
--- The GUI enums. Names the app ships a face for, plus the alignments; a font name the
--- app has no face for still renders, mapped to the nearest shipped family.
-Enum.Font = {
-  SourceSans = "SourceSans", SourceSansBold = "SourceSansBold", SourceSansLight = "SourceSansLight",
-  Gotham = "Gotham", GothamBold = "GothamBold", GothamBlack = "GothamBlack",
-  Code = "Code", Arial = "Arial", ArialBold = "ArialBold", Fantasy = "Fantasy", Antique = "Antique",
-}
-Enum.TextXAlignment = { Left = "Left", Center = "Center", Right = "Right" }
-Enum.TextYAlignment = { Top = "Top", Center = "Center", Bottom = "Bottom" }
+${GUI_ENUM_LUA}
 Enum.Material = {
   Air = "Air",
   Asphalt = "Asphalt",
