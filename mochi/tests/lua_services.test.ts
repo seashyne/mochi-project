@@ -155,4 +155,128 @@ describe('RunService', () => {
     node.dispatchUpdate(0.5);
     expect(logs.some((entry) => entry.message === 'render 0.5')).toBe(true);
   });
+
+  it('fires Completed as a signal and stops after Disconnect', async () => {
+    const { node, errors } = await run(`
+      local part = script.parent
+      local tween = TweenService:Create(part, TweenInfo.new(1, Enum.EasingStyle.Linear), {
+        Position = Vector3.new(10, 0, 0)
+      })
+      local connection = tween.Completed:Connect(function() print("fired") end)
+      tween.Completed:Connect(function() connection:Disconnect() end)
+      tween:Play()
+    `);
+    expect(errors).toEqual([]);
+
+    node.dispatchUpdate(1.1);
+    expect(logs.filter((entry) => entry.message === 'fired')).toHaveLength(1);
+  });
+
+  it('waits out DelayTime before it moves', async () => {
+    const { node, errors } = await run(`
+      local part = script.parent
+      part.Position = Vector3.new(0, 0, 0)
+      TweenService:Create(part, TweenInfo.new(0.5, Enum.EasingStyle.Linear, Enum.EasingDirection.In, 0, false, 0.5), {
+        Position = Vector3.new(10, 0, 0)
+      }):Play()
+    `);
+    expect(errors).toEqual([]);
+
+    node.dispatchUpdate(0.25);
+    expect(node.position.x).toBeCloseTo(0, 4);
+
+    node.dispatchUpdate(0.5);
+    expect(node.position.x).toBeCloseTo(5, 4);
+  });
+
+  it('comes back to where it started when Reverses is set', async () => {
+    const { node, errors } = await run(`
+      local part = script.parent
+      part.Position = Vector3.new(0, 0, 0)
+      TweenService:Create(part, TweenInfo.new(0.5, Enum.EasingStyle.Linear, Enum.EasingDirection.In, 0, true), {
+        Position = Vector3.new(10, 0, 0)
+      }):Play()
+    `);
+    expect(errors).toEqual([]);
+
+    node.dispatchUpdate(0.75);
+    expect(node.position.x).toBeCloseTo(5, 4);
+
+    node.dispatchUpdate(0.5);
+    expect(node.position.x).toBeCloseTo(0, 4);
+  });
+
+  it('runs the whole tween RepeatCount extra times', async () => {
+    const { node, errors } = await run(`
+      local part = script.parent
+      part.Position = Vector3.new(0, 0, 0)
+      TweenService:Create(part, TweenInfo.new(0.5, Enum.EasingStyle.Linear, Enum.EasingDirection.In, 1), {
+        Position = Vector3.new(10, 0, 0)
+      }):Play()
+    `);
+    expect(errors).toEqual([]);
+
+    // Half way through the second pass: the value is on its way up again, not parked
+    // at the end of the first.
+    node.dispatchUpdate(0.75);
+    expect(node.position.x).toBeCloseTo(5, 4);
+
+    node.dispatchUpdate(0.4);
+    expect(node.position.x).toBeCloseTo(10, 4);
+  });
+  describe('easing styles', () => {
+  async function positionAt(style: string, step: number): Promise<{ x: number; errors: Array<{ message: string }> }> {
+    const { node, errors } = await run(`
+      local part = script.parent
+      part.Position = Vector3.new(0, 0, 0)
+      TweenService:Create(part, TweenInfo.new(1, Enum.EasingStyle.${style}, Enum.EasingDirection.In), {
+        Position = Vector3.new(10, 0, 0)
+      }):Play()
+    `);
+    node.dispatchUpdate(step);
+    return { x: node.position.x, errors };
+  }
+
+  it('gives every advertised style its own curve', async () => {
+    // Quad In at the halfway mark is 0.25 of the way; if the other styles were
+    // silently falling through to it they would all read 2.5.
+    const quad = await positionAt('Quad', 0.5);
+    const quart = await positionAt('Quart', 0.5);
+    const quint = await positionAt('Quint', 0.5);
+    const back = await positionAt('Back', 0.5);
+    const bounce = await positionAt('Bounce', 0.5);
+
+    expect(quad.x).toBeCloseTo(2.5, 3);
+    expect(quart.x).toBeLessThan(quad.x);
+    expect(quint.x).toBeLessThan(quart.x);
+    // Back overshoots below the start on the way in, by design.
+    expect(back.x).toBeLessThan(0);
+    expect(bounce.x).not.toBeCloseTo(quad.x, 1);
+  });
+
+  it('lands exactly on the target whatever the curve', async () => {
+    for (const style of ['Linear', 'Quad', 'Cubic', 'Quart', 'Quint', 'Back', 'Elastic', 'Bounce', 'Sine']) {
+      const { x, errors } = await positionAt(style, 1);
+      expect(errors, style).toEqual([]);
+      expect(x, style).toBeCloseTo(10, 3);
+    }
+  });
+
+  it('warns once about a style it does not have instead of quietly using Quad', async () => {
+    const { node } = await run(`
+      local part = script.parent
+      part.Position = Vector3.new(0, 0, 0)
+      for i = 1, 3 do
+        TweenService:Create(part, TweenInfo.new(1, "Quadd", Enum.EasingDirection.In), {
+          Position = Vector3.new(10, 0, 0)
+        }):Play()
+      end
+    `);
+    node.dispatchUpdate(0.5);
+    const warnings = logs.filter((entry) => entry.level === 'warn' && entry.message.includes('Quadd'));
+    expect(warnings).toHaveLength(1);
+    // It still runs, on the fallback curve, rather than failing the script.
+    expect(node.position.x).toBeCloseTo(2.5, 3);
+  });
+});
 });
