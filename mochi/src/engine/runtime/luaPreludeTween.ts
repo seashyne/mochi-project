@@ -27,70 +27,6 @@ function TweenInfo.new(time, style, direction, repeatCount, reverses, delay)
   }
 end
 
-local warnedStyles = {}
-
-local function styleName(value, fallback)
-  if value == nil then return fallback end
-  local name = tostring(value)
-  local known = Enum.EasingStyle[name] ~= nil
-  if not known and not warnedStyles[name] then
-    warnedStyles[name] = true
-    warn("Unknown easing style '" .. name .. "'; using " .. fallback)
-  end
-  return known and name or fallback
-end
-
-local function easeIn(style, t)
-  if style == "Sine" then return 1 - math.cos(t * math.pi / 2) end
-  if style == "Quad" then return t * t end
-  if style == "Cubic" then return t * t * t end
-  if style == "Quart" then return t * t * t * t end
-  if style == "Quint" then return t ^ 5 end
-  if style == "Back" then
-    local c1 = 1.70158
-    return (c1 + 1) * t * t * t - c1 * t * t
-  end
-  if style == "Elastic" then
-    if t == 0 or t == 1 then return t end
-    local c4 = (2 * math.pi) / 3
-    return -(2 ^ (10 * t - 10)) * math.sin((t * 10 - 10.75) * c4)
-  end
-  if style == "Bounce" then
-    local n1, d1 = 7.5625, 2.75
-    local x = 1 - t
-    if x < 1 / d1 then return 1 - n1 * x * x end
-    if x < 2 / d1 then x = x - 1.5 / d1; return 1 - (n1 * x * x + 0.75) end
-    if x < 2.5 / d1 then x = x - 2.25 / d1; return 1 - (n1 * x * x + 0.9375) end
-    x = x - 2.625 / d1
-    return 1 - (n1 * x * x + 0.984375)
-  end
-  return t * t
-end
-
-local function easeOut(style, t)
-  if style == "Bounce" then return 1 - easeIn("Bounce", 1 - t) end
-  if style == "Elastic" then
-    if t == 0 or t == 1 then return t end
-    local c4 = (2 * math.pi) / 3
-    return (2 ^ (-10 * t)) * math.sin((t * 10 - 0.75) * c4) + 1
-  end
-  return 1 - easeIn(style, 1 - t)
-end
-
--- Linear, then the three directions of every style. Back and Elastic overshoot on
--- purpose, so an Out curve can read above 1 mid-flight; only the endpoints are fixed.
-local function ease(style, direction, t)
-  local s = styleName(style, "Quad")
-  if s == "Linear" then return t end
-  local d = tostring(direction or "Out")
-  if d == "In" then return easeIn(s, t) end
-  if d == "InOut" then
-    if t < 0.5 then return easeIn(s, t * 2) / 2 end
-    return 1 - easeIn(s, (1 - t) * 2) / 2
-  end
-  return easeOut(s, t)
-end
-
 -- Vector3 and Color3 reach Lua as userdata, not tables, so nothing here may test
 -- type(value) == "table" and expect to see them. capture and lerpValue both walk
 -- these keys, so the list has to exist above them.
@@ -175,6 +111,13 @@ local function ensureDriver()
 end
 
 TweenService = {}
+
+-- The eased value for a normalised alpha, without a tween: useful for driving a value
+-- by hand, and the way a script checks what a curve will do before committing to it.
+function TweenService:GetValue(alpha, style, direction)
+  return tweenValue(alpha, style, direction)
+end
+
 function TweenService:Create(instance, info, goal)
   local tween = {
     instance = instance,
@@ -183,7 +126,7 @@ function TweenService:Create(instance, info, goal)
     elapsed = 0,
     done = false,
     cancelled = false,
-    playing = false,
+    PlaybackState = Enum.PlaybackState.Begin,
     handlers = {}
   }
 
@@ -224,7 +167,9 @@ function TweenService:Create(instance, info, goal)
   }
 
   function tween:Play()
-    if self.playing or self.done or self.cancelled then return end
+    local state = self.PlaybackState
+    if state == Enum.PlaybackState.Playing or state == Enum.PlaybackState.Delayed then return end
+    if state == Enum.PlaybackState.Completed or state == Enum.PlaybackState.Cancelled then return end
     if self.from == nil then
       self.from = {}
       -- Only keys the target actually has: anything else is a typo, and the goal is
@@ -234,18 +179,32 @@ function TweenService:Create(instance, info, goal)
         if current ~= nil then self.from[key] = capture(current) end
       end
     end
-    self.playing = true
+    local delay = tonumber(self.info.DelayTime) or 0
+    self.PlaybackState = delay > 0 and Enum.PlaybackState.Delayed or Enum.PlaybackState.Playing
     ensureDriver()
     table.insert(running, self)
   end
 
   function tween:Cancel()
     self.cancelled = true
-    self.playing = false
+    self.PlaybackState = Enum.PlaybackState.Cancelled
+  end
+
+  function tween:Pause()
+    if self.PlaybackState == Enum.PlaybackState.Playing then
+      self.PlaybackState = Enum.PlaybackState.Paused
+    end
+  end
+
+  function tween:Resume()
+    if self.PlaybackState == Enum.PlaybackState.Paused then
+      self.PlaybackState = Enum.PlaybackState.Playing
+    end
   end
 
   function tween:step(dt)
-    if not self.playing then return end
+    local state = self.PlaybackState
+    if state ~= Enum.PlaybackState.Playing and state ~= Enum.PlaybackState.Delayed then return end
     local info = self.info
     self.elapsed = self.elapsed + dt
 
@@ -253,6 +212,7 @@ function TweenService:Create(instance, info, goal)
     -- lost when a frame is long.
     local delay = tonumber(info.DelayTime) or 0
     if self.elapsed < delay then return end
+    self.PlaybackState = Enum.PlaybackState.Playing
 
     local duration = tonumber(info.Time) or 1
     local legs = info.Reverses and 2 or 1
@@ -285,7 +245,7 @@ function TweenService:Create(instance, info, goal)
 
     if finished then
       self.done = true
-      self.playing = false
+      self.PlaybackState = Enum.PlaybackState.Completed
       complete()
     end
   end

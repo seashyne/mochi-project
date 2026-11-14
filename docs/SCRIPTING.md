@@ -146,9 +146,15 @@ local corner = Instance.new("UICorner", panel)
 corner.CornerRadius = UDim.new(0, 10)
 ```
 
-Not implemented: `TextScaled` (needs measured text), `UIGridLayout`, `UIScale`,
-`UIAspectRatioConstraint`, and tweening. For a score or timer readout, `ui.setHud` is
-still less code than a tree.
+`TextScaled` shrinks the font until the string fits the box, and `TextWrapped` lets it
+wrap; `ClipsDescendants` decides whether a child may spill out (clipping is on by
+default here, which the source API leaves off).
+
+Not implemented: `RichText`, `ScrollingFrame` and `UITextSizeConstraint`. For a score or
+timer readout, `ui.setHud` is still less code than a tree.
+
+When the interface has state - a counter, a menu, a filtered list - `React.mount` gives
+you components, `useState` and `useEffect` over the same tree. See `docs/REACT.md`.
 
 ## The character
 
@@ -256,9 +262,15 @@ TweenService:Create(part, info, { Position = Vector3.new(0, 10, 0) }):Play()
 `Transparency`. Numbers blend directly, `Vector3` and `Color3` blend field by field, and
 a `CFrame` uses its own `Lerp`, so rotation does not shear.
 
-`tween:Cancel()` stops it where it is. Every tween in a script is driven by one shared
-frame handler rather than one per tween, so starting a tween inside a loop does not add
-a handler each time.
+`tween:Cancel()` stops it where it is, and `tween:Pause()` / `tween:Resume()` hold it
+and pick it up again. `tween.PlaybackState` reports `Begin`, `Delayed`, `Playing`,
+`Paused`, `Completed` or `Cancelled`, so a script can ask rather than track its own flag.
+
+`TweenService:GetValue(alpha, style, direction)` returns the curve on its own, clamped to
+0..1, which is useful for driving a value by hand or checking a curve before using it.
+
+Every tween in a script is driven by one shared frame handler rather than one per tween,
+so starting a tween inside a loop does not add a handler each time.
 
 ## Time
 

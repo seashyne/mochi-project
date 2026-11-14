@@ -271,3 +271,20 @@ them and the tween silently jumps to its target. And a CFrame read off a part is
 userdata too - it carries `x`, `y` and `z` like a vector, and a method call on userdata
 does not pass its arguments the way a table method does. The tween rebuilds it as a real
 Lua CFrame from its fields before lerping, which is what makes `:Lerp` work on it.
+**Tween playback state, and a duplicate easing block removed** (2026-11-14): a tween
+could be started and cancelled and nothing else. A script that wanted to know whether
+its tween was still running had to keep its own flag, which drifts the moment anything
+else cancels the tween.
+
+`tween.PlaybackState` now reports Begin, Delayed, Playing, Paused, Completed or
+Cancelled, with `Pause` and `Resume` behind it - `state` was already the driver's single
+source of truth, so the change was to expose it under the name a script reads instead of
+keeping a parallel boolean.
+
+`TweenService:GetValue(alpha, style, direction)` returns the curve on its own, clamped.
+It is the same function the driver uses, so a value checked before committing to a tween
+matches what the tween will do.
+
+The merge that split the service prelude left the easing block in the tween file twice:
+once through the interpolation and once inline, 63 identical lines with the second
+shadowing the first. Removing the copy is what made room for the above.

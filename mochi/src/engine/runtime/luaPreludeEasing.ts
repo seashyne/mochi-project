@@ -14,6 +14,12 @@ Enum.EasingStyle = {
 }
 Enum.EasingDirection = { In = "In", Out = "Out", InOut = "InOut" }
 
+-- What a tween is doing, so a script can read it rather than guess.
+Enum.PlaybackState = {
+  Begin = "Begin", Delayed = "Delayed", Playing = "Playing",
+  Paused = "Paused", Completed = "Completed", Cancelled = "Cancelled"
+}
+
 local warnedStyles = {}
 
 local function styleName(value, fallback)
@@ -76,5 +82,12 @@ local function ease(style, direction, t)
     return 1 - easeIn(s, (1 - t) * 2) / 2
   end
   return easeOut(s, t)
+end
+
+-- The eased value for a normalised alpha: TweenService:GetValue without a tween.
+local function tweenValue(alpha, style, direction)
+  local value = tonumber(alpha) or 0
+  if value < 0 then value = 0 elseif value > 1 then value = 1 end
+  return ease(style, direction, value)
 end
 `;
