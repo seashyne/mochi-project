@@ -28,8 +28,10 @@ Legend: **Yes** same idea, **Shape** same idea but a different call shape,
 | `:FindFirstChild(name)` | Yes | Also `findFirstChild` |
 | `:IsA("Part")` | Shape | Compares against Mochi object types (`block`, `coin`, `agent`...), not Roblox class names |
 | `game.Workspace`, `game:GetService(...)` | No | Use `world.getParts()` / `world.findPart(name)` |
-| `:WaitForChild()` | No | Scripts start after the world exists; there is nothing to wait for |
-| `Instance.new("Folder" / "Model" / "Script")` | No | Only placeable object types can be created at runtime |
+| `:WaitForChild(name)` | Yes | An alias of `:FindFirstChild`. The world exists before a script starts, so waiting is a lookup - it returns nil for a name that is not there instead of blocking |
+| `Instance.new("Folder")` / `"Model"` / `"Configuration"` | Yes | An invisible grouping node: no mesh, no collider, children attach to it |
+| `Instance.new("Constraint")` / `"ParticleEmitter"` | Yes | Maps onto the `constraint` and `particle` object types |
+| `Instance.new("Script")` | No | A script is authored in the editor, not created at runtime |
 
 ## Object properties
 
@@ -151,10 +153,12 @@ walk, no `GetPlayerFromCharacter`, and scoring plus audio are direct calls.
 Ordered by how quickly a porting creator hits them. Each line is a work item, not
 a promise.
 
-1. **`Humanoid` / `Character` tree** - the names exist as a table now, so a script
-   that sets `WalkSpeed` and calls `Humanoid:MoveTo` runs unchanged. Still missing is
-   everything that needs a real instance tree: `HumanoidDescription`, animation state
-   names, and parenting (`FindFirstChild`). `JumpPower` and `Jump` reach the controller.
+1. **`Humanoid` / `Character` tree** - closed for behaviour: `WalkSpeed`, `JumpPower`,
+   `Jump`, health, `:MoveTo`, `:TakeDamage`, `Died`, `CharacterAdded`, and
+   `FindFirstChild` / `WaitForChild` on the character. Still missing are the two things
+   that need an asset pipeline rather than a property: `HumanoidDescription` and
+   animation tracks (`:LoadAnimation`). The runtime animates from a state graph, not
+   from keyframe assets, so there is no track to hand back.
 2. **GUI tree** - closed. Six drawable classes build a real tree under
    `player.PlayerGui` with `UDim2` positioning, text, images and click events; six
    decoration and layout classes shape it, `ScrollingFrame` scrolls it, and
@@ -166,10 +170,13 @@ a promise.
    is radians while the `rotateY` property is degrees.
 4. **Services** - `DataStoreService`, `TeleportService` and `MarketplaceService` have
    no direct equivalent. `RunService` and `TweenService` do.
-5. **Instance classes** - folders, models, constraints, attachments, particle
-   emitters are manifest objects here, not runtime-created instances.
-6. **`WaitForChild` / `CharacterAdded` semantics** - the world is ready before a
-   script starts, so the patterns disappear rather than needing a replacement.
+5. **Instance classes** - `Folder`, `Model`, `Configuration`, `Constraint` and
+   `ParticleEmitter` are created at runtime and behave as groups. `Attachment` and
+   per-face surfaces have no equivalent: attachment points exist for asset mounting in
+   the scene loader, not as a scripting concept.
+6. **`WaitForChild` / `CharacterAdded` semantics** - `WaitForChild` is an alias of
+   `FindFirstChild` on every proxy, because the world is ready before a script starts.
+   `CharacterAdded` fires on respawn, not on load.
 
 ## Maintenance
 

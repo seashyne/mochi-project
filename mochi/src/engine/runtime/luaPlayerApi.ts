@@ -154,6 +154,16 @@ export function createPlayerApi(deps: RuntimeApiDeps): Record<string, unknown> {
   defineAlias(character, ['Name'], () => deps.player.name, () => undefined);
   defineAlias(api, ['Character'], () => character, () => undefined);
 
+  // `player:WaitForChild("PlayerGui")` is in half the examples anyone ports. Every
+  // member it can ask for already exists, so this is a lookup, not a wait.
+  api.WaitForChild = (...args: unknown[]) => {
+    const name = String([...args].reverse().find((value) => typeof value === 'string') ?? '');
+    if (name === 'PlayerGui') return createPlayerGuiProxy();
+    if (name === 'Character') return character;
+    if (name === 'Humanoid') return humanoid;
+    return undefined;
+  };
+
   // Ported scripts guard before touching a humanoid:
   //   local h = character:FindFirstChild("Humanoid")
   // The lookup has to answer, or the guard itself is what raises.

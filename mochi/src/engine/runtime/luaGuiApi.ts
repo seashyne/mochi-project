@@ -109,6 +109,8 @@ export function createGuiProxy(store: GuiTreeStore, node: GuiNode): Record<strin
     return child ? createGuiProxy(store, child) : undefined;
   };
   proxy.GetChildren = () => store.childrenOf(node.id).map((child) => createGuiProxy(store, child));
+  // The tree is built before the call, so waiting is a lookup that cannot block.
+  proxy.WaitForChild = proxy.FindFirstChild;
 
   // Both names are the same event. The store owns the handler set, so the overlay can
   // fire it without knowing anything about Lua.

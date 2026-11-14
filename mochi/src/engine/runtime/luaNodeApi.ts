@@ -202,6 +202,10 @@ export function createLuaNode(node: LiveNode, deps: RuntimeApiDeps): Record<stri
     return match ? createLuaNode(match, deps) : undefined;
   };
   proxy.findFirstChild = proxy.FindFirstChild;
+  // The world exists before a script starts, so waiting for a child is a lookup that
+  // cannot block. It is an alias rather than a yield so a missing name returns nil
+  // instead of hanging the script.
+  proxy.WaitForChild = proxy.FindFirstChild;
   proxy.IsA = (className: unknown) => String(className ?? '').toLowerCase().replace(/[\s_-]/g, '') === node.type.replace(/_/g, '');
 
   node.luaProxy = proxy;

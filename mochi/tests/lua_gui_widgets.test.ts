@@ -211,4 +211,19 @@ describe('GUI widgets', () => {
     expect(list.canvasPosition).toEqual({ x: 0, y: 120 });
     expect(list.scrollingDirection).toBe('XY');
   });
+
+  it('resolves WaitForChild without yielding', async () => {
+    const { errors } = await run(`
+      local screen = Instance.new("ScreenGui", player.PlayerGui)
+      screen.Name = "Hud"
+      local frame = Instance.new("Frame", screen)
+      frame.Name = "Panel"
+
+      print(tostring(player:WaitForChild("PlayerGui") ~= nil))
+      print(tostring(screen:WaitForChild("Panel") == frame))
+      print(tostring(player:WaitForChild("Nope") == nil))
+    `);
+    expect(errors).toEqual([]);
+    expect(logs.map((entry) => entry.message)).toEqual(['true', 'true', 'true']);
+  });
 });

@@ -27,6 +27,8 @@ const CLASS_ALIASES: Record<string, StudioObjectType> = {
   movingplatform: 'platform',
   coin: 'coin',
   collectible: 'coin',
+  // A Configuration is a Folder with no children of its own; it groups settings.
+  configuration: 'model',
   jumppad: 'jump_pad',
   trampoline: 'jump_pad',
   hazard: 'hazard',
@@ -43,7 +45,8 @@ const CLASS_ALIASES: Record<string, StudioObjectType> = {
   constraint: 'constraint',
   joint: 'constraint',
   particle: 'particle',
-  emitter: 'particle'
+  emitter: 'particle',
+  particleemitter: 'particle'
 };
 
 /** Maps `Instance.new("JumpPad")` style names onto Studio object types. */
