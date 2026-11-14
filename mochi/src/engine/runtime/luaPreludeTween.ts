@@ -12,6 +12,7 @@
 // concatenated after them in the same chunk, so `ease` stays in scope.
 
 import { DAMP_PRELUDE } from './luaPreludeDamp';
+import { TWEEN_VALUES_PRELUDE } from './luaPreludeTweenValues';
 import { EASING_PRELUDE } from './luaPreludeEasing';
 
 export const TWEEN_PRELUDE = `${EASING_PRELUDE}
@@ -30,66 +31,7 @@ function TweenInfo.new(time, style, direction, repeatCount, reverses, delay)
   }
 end
 
--- Vector3 and Color3 reach Lua as userdata, not tables, so nothing here may test
--- type(value) == "table" and expect to see them. capture and lerpValue both walk
--- these keys, so the list has to exist above them.
-local VECTOR_KEYS = { "x", "y", "z", "r", "g", "b" }
-
--- A CFrame carries x, y and z as well, so it has to be recognised before the vector
--- keys are read or it looks like a Vector3 and the tween silently writes nothing.
-local function isCFrame(value)
-  return value ~= nil and value.m00 ~= nil and value.Lerp ~= nil
-end
-
--- A CFrame read off a part comes back as userdata, and a method call on userdata does
--- not pass its arguments the way a table method does. Rebuild it as a real Lua CFrame
--- from its fields, which is what makes :Lerp work on it.
-local function asLuaCFrame(value)
-  if type(value) == "table" then return value end
-  if not isCFrame(value) then return nil end
-  return __mochi_cframe(value.x, value.y, value.z,
-    value.m00, value.m01, value.m02,
-    value.m10, value.m11, value.m12,
-    value.m20, value.m21, value.m22)
-end
-
-local function capture(value)
-  -- An unknown property reads as nil. Capturing it would index nil below, so a typo in
-  -- a tween goal would take the whole script down at Play time.
-  if value == nil then return nil end
-  if type(value) == "number" then return value end
-  if isCFrame(value) then return asLuaCFrame(value) end
-  local copy = {}
-  local found = false
-  for _, key in ipairs(VECTOR_KEYS) do
-    local entry = value[key]
-    if type(entry) == "number" then
-      copy[key] = entry
-      found = true
-    end
-  end
-  if found then return copy end
-  return value
-end
-
--- Numbers tween directly; a CFrame knows how to lerp itself, which keeps rotation on
--- the shortest arc instead of blending matrices; anything else blends its numeric
--- fields, which is what Vector3 and Color3 need.
-local function lerpValue(a, b, t)
-  if type(a) == "number" and type(b) == "number" then return a + (b - a) * t end
-  if isCFrame(a) then return a:Lerp(b, t) end
-  local out = {}
-  local found = false
-  for _, key in ipairs(VECTOR_KEYS) do
-    local from, target = a[key], b[key]
-    if type(from) == "number" and type(target) == "number" then
-      out[key] = from + (target - from) * t
-      found = true
-    end
-  end
-  if found then return out end
-  return b
-end
+${TWEEN_VALUES_PRELUDE}
 
 local running = {}
 local driving = false

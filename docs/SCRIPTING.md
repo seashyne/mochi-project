@@ -232,8 +232,9 @@ TweenService:Create(part, info, { Position = Vector3.new(0, 10, 0) }):Play()
 ```
 
 `goal` takes any property a script can set: `Position`, `Size`, `CFrame`, `Color`,
-`Transparency`. Numbers blend directly, `Vector3` and `Color3` blend field by field, and
-a `CFrame` uses its own `Lerp`, so rotation does not shear.
+`Transparency`, and the same on a GUI object - a `UDim2` size grows through the middle
+rather than jumping. Numbers blend directly, every other value blends field by field,
+and a `CFrame` uses its own `Lerp`, so rotation does not shear.
 
 `tween:Cancel()` stops it where it is, and `tween:Pause()` / `tween:Resume()` hold it
 and pick it up again. `tween.PlaybackState` reports `Begin`, `Delayed`, `Playing`,

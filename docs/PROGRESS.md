@@ -280,3 +280,15 @@ property, which is the rule the platform documents.
 
 Still absent, and stated rather than implied: tweening a GUI object (the HUD is a store,
 not an instance tree), `NumberSequence` / `ColorSequence`, and Model pivots.
+**Tweening a GUI object** (2026-11-14): the tween blended a fixed list of keys - x, y, z,
+r, g, b - which covered Vector3 and Color3 and silently missed everything else. A UDim2
+is four numbers under different names, so a GUI size tween did not interpolate at all: it
+sat at the old value and jumped to the new one at the end.
+
+Blending now walks whatever numeric fields the two values share, so UDim, UDim2, Vector2
+and Color3 all work without a branch per type. Userdata cannot be walked, so the value
+types the runtime hands to a script are read by name from one list; a Lua table is walked
+directly.
+
+Three tests cover it through a real GUI instance: a frame grows through the middle, the
+axis it is not tweening stays put, and it lands exactly on the target.
