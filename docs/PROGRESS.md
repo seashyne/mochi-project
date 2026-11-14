@@ -230,3 +230,24 @@ change it.
 The alias table lives in `scene/materialAliases.ts` and deliberately names no platform:
 the rebrand check forbids that string anywhere in `mochi/src`, so the module describes
 "names imported scripts use" and the mapping itself is documented in `SCRIPTING.md`.
+**Material names take an enum shape** (2026-11-13): the first version of the alias table
+took a plain string, and a typo in that string was silently ignored - the part kept its
+old surface and nothing said why. That is the failure mode a typed API exists to prevent.
+
+The obvious fix - an `Enum.Material` of objects - does not survive this host. A Lua table
+returned through the JavaScript boundary loses its identity, so `part.Material` could
+never compare equal to `Enum.Material.Grass`, and a table does not compare to a string
+either. Both were measured before choosing.
+
+So `Enum.Material` is a table of names whose values are the names themselves. That keeps
+both properties that matter: a misspelled member is `nil`, and assigning it raises
+instead of clearing the property; and `part.Material == Enum.Material.Grass` is true
+because both sides are the same string.
+
+The set is the full 43 names a ported script might use, mapped onto the thirteen bundled
+PBR sets with everything else degrading to a sensible shading mode - a script that asks
+for asphalt gets concrete rather than an error. The prelude list is hard-coded so a typo
+is a nil index, and a test compares it against the alias table so the two cannot drift.
+
+Plain strings are still accepted, because scripts often read a material from a config. An
+unknown string warns once and leaves the part alone.

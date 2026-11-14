@@ -32,6 +32,13 @@ function task.spawn(fn)
 end
 wait = task.wait
 if script ~= nil then script.wait = task.wait end
+
+-- Session time and the wall clock. tick() is the session clock the engine already
+-- exposes, so a paused game does not advance it; os.time() is the real epoch, which
+-- is what a script wants for a timestamp.
+tick = function() return world.getTime() end
+os = os or {}
+os.time = function() return __mochi_wall_clock() end
 -- CFrame: a position plus a row-major 3x3 rotation.
 --
 -- Defined in Lua rather than JS because the * operator needs a metamethod, and only
@@ -110,7 +117,51 @@ function CFrame.Angles(rx, ry, rz)
     bf - ae * d, be + af * d, a * c)
 end
 
+function CFrame.lookAt(at, target, up)
+  local from = at or Vector3.new(0, 0, 0)
+  local to = target or Vector3.new(0, 0, -1)
+  local fx, fy, fz = to.x - from.x, to.y - from.y, to.z - from.z
+  local flen = math.sqrt(fx * fx + fy * fy + fz * fz)
+  if flen < 1e-6 then
+    return CFrame.new(from.x, from.y, from.z)
+  end
+  fx, fy, fz = fx / flen, fy / flen, fz / flen
+
+  local ux, uy, uz = 0, 1, 0
+  if up ~= nil then ux, uy, uz = up.x, up.y, up.z end
+  local d = ux * fx + uy * fy + uz * fz
+  ux, uy, uz = ux - fx * d, uy - fy * d, uz - fz * d
+  local ulen = math.sqrt(ux * ux + uy * uy + uz * uz)
+  if ulen < 1e-6 then
+    -- Looking straight along the up axis: any perpendicular will do, and Z is the
+    -- one that stays stable for the common case of looking straight up or down.
+    ux, uy, uz = 0, 0, 1
+    d = ux * fx + uy * fy + uz * fz
+    ux, uy, uz = ux - fx * d, uy - fy * d, uz - fz * d
+    ulen = math.sqrt(ux * ux + uy * uy + uz * uz)
+    if ulen < 1e-6 then return CFrame.new(from.x, from.y, from.z) end
+  end
+  ux, uy, uz = ux / ulen, uy / ulen, uz / ulen
+
+  -- Right = up x (-forward); the third column is -forward, which is why
+  -- LookVector reads as (-m02, -m12, -m22).
+  local rx = uy * (-fz) - uz * (-fy)
+  local ry = uz * (-fx) - ux * (-fz)
+  local rz = ux * (-fy) - uy * (-fx)
+  return __mochi_cframe(from.x, from.y, from.z,
+    rx, ux, -fx,
+    ry, uy, -fy,
+    rz, uz, -fz)
+end
+
 cf_mt.__mul = function(a, b)
+  -- CFrame * Vector3 transforms a point; anything with a matrix is composition.
+  if b.m00 == nil and b.x ~= nil then
+    return Vector3.new(
+      a.x + a.m00 * b.x + a.m01 * b.y + a.m02 * b.z,
+      a.y + a.m10 * b.x + a.m11 * b.y + a.m12 * b.z,
+      a.z + a.m20 * b.x + a.m21 * b.y + a.m22 * b.z)
+  end
   return __mochi_cframe(
     a.x + a.m00 * b.x + a.m01 * b.y + a.m02 * b.z,
     a.y + a.m10 * b.x + a.m11 * b.y + a.m12 * b.z,
@@ -125,6 +176,76 @@ cf_mt.__mul = function(a, b)
     a.m20 * b.m01 + a.m21 * b.m11 + a.m22 * b.m21,
     a.m20 * b.m02 + a.m21 * b.m12 + a.m22 * b.m22)
 end
+
+-- Translation by a vector, which is how most scripts move a part relative to its
+-- own frame: part.CFrame = part.CFrame + Vector3.new(0, 5, 0).
+cf_mt.__add = function(a, b)
+  return __mochi_cframe(a.x + b.x, a.y + b.y, a.z + b.z,
+    a.m00, a.m01, a.m02,
+    a.m10, a.m11, a.m12,
+    a.m20, a.m21, a.m22)
+end
+
+cf_mt.__sub = function(a, b)
+  return __mochi_cframe(a.x - b.x, a.y - b.y, a.z - b.z,
+    a.m00, a.m01, a.m02,
+    a.m10, a.m11, a.m12,
+    a.m20, a.m21, a.m22)
+end
+
+-- Enum: the names a script may use, spelled once so a typo fails loudly instead of
+-- silently doing nothing.
+--
+-- The values are the names themselves rather than objects. A table handed back through
+-- the host boundary loses its identity, so "part.Material == Enum.Material.Grass" would
+-- be false for an object; as a string the comparison holds, and the same string still
+-- assigns. An unknown member is nil, so indexing it raises - which is the point.
+Enum = Enum or {}
+Enum.Material = {
+  Air = "Air",
+  Asphalt = "Asphalt",
+  Basalt = "Basalt",
+  Brick = "Brick",
+  Cardboard = "Cardboard",
+  Carpet = "Carpet",
+  CeramicTiles = "CeramicTiles",
+  ClayRoofTiles = "ClayRoofTiles",
+  Cobblestone = "Cobblestone",
+  Concrete = "Concrete",
+  CorrodedMetal = "CorrodedMetal",
+  CrackedLava = "CrackedLava",
+  DiamondPlate = "DiamondPlate",
+  Fabric = "Fabric",
+  Foil = "Foil",
+  ForceField = "ForceField",
+  Glacier = "Glacier",
+  Glass = "Glass",
+  Granite = "Granite",
+  Grass = "Grass",
+  Ground = "Ground",
+  Ice = "Ice",
+  LeafyGrass = "LeafyGrass",
+  Limestone = "Limestone",
+  Marble = "Marble",
+  Metal = "Metal",
+  Mud = "Mud",
+  Neon = "Neon",
+  Pavement = "Pavement",
+  Pebble = "Pebble",
+  Plaster = "Plaster",
+  Plastic = "Plastic",
+  Rock = "Rock",
+  RoofShingles = "RoofShingles",
+  Rubber = "Rubber",
+  Salt = "Salt",
+  Sand = "Sand",
+  Sandstone = "Sandstone",
+  Slate = "Slate",
+  SmoothPlastic = "SmoothPlastic",
+  Snow = "Snow",
+  Wood = "Wood",
+  WoodPlanks = "WoodPlanks",
+}
 
 ${PRELUDE_MARKER}
 __mochi_thread = coroutine.create(function()

@@ -3,15 +3,14 @@
 
 import { AudioBus } from './audioBus';
 import { GameState } from './gameState';
-import { LiveNode, TouchHandler, UpdateHandler } from './liveNode';
+import { LiveNode } from './liveNode';
 import { resolveLuaClass } from './nodeFactory';
-import { defineAlias } from './luaProxyUtils';
-import { addTouchEndedHandler } from './touchEnded';
-import { connectChanged, emitChanged } from './nodeChanged';
+import { defineAlias, lastFunction } from './luaProxyUtils';
+import { attachNodeSignals, notifyChanged } from './nodeSignals';
 import { rotationMatrix } from '../physics/oriented';
 import { makeCFrameValue, readCFrameValue } from './cframeBridge';
-import { aliasForSurface } from '../scene/materialAliases';
-import { setNodeMaterial, setNodeMaterialTexture } from './nodeSurface';
+import { attachMaterialProps } from './luaMaterialProps';
+
 import { routeSound } from './audioRouting';
 export { createPlayerApi } from './luaPlayerApi';
 import { RuntimeWorld } from './objectRegistry';
@@ -78,13 +77,8 @@ export function nodeFromLuaValue(value: unknown): LiveNode | undefined {
   return proxyOwner.get(value as object);
 }
 
-/** Colon-calls (`obj:Method()`) pass the receiver first, so grab the last function. */
-export function lastFunction(args: unknown[]): ((...params: unknown[]) => void) | undefined {
-  for (let i = args.length - 1; i >= 0; i -= 1) {
-    if (typeof args[i] === 'function') return args[i] as (...params: unknown[]) => void;
-  }
-  return undefined;
-}
+/** Re-exported so existing importers keep working; it lives in luaProxyUtils now. */
+export { lastFunction };
 
 function firstString(args: unknown[]): string | undefined {
   for (const arg of args) {
@@ -98,6 +92,7 @@ function applyPosition(node: LiveNode, args: unknown[]): void {
   if (first && typeof first === 'object') {
     const vec = toVec3(first);
     node.setPosition(vec.x, vec.y, vec.z);
+    notifyChanged(node, 'Position');
     return;
   }
   node.setPosition(Number(args[0]) || 0, Number(args[1]) || 0, Number(args[2]) || 0);
@@ -115,28 +110,35 @@ export function createLuaNode(node: LiveNode, deps: RuntimeApiDeps): Record<stri
 
   defineAlias(proxy, ['name', 'Name'], () => node.name, (value) => {
     node.name = String(value ?? '');
+    notifyChanged(node, 'Name');
   });
   defineAlias(proxy, ['type', 'ClassName'], () => node.type, () => undefined);
   defineAlias(proxy, ['position', 'Position'], () => node.position, (value) => {
     const vec = toVec3(value);
     node.setPosition(vec.x, vec.y, vec.z);
+    notifyChanged(node, 'Position');
   });
   defineAlias(proxy, ['rotation', 'Rotation'], () => node.rotation, (value) => {
     const vec = toVec3(value);
     node.setRotation(vec.x, vec.y, vec.z);
+    notifyChanged(node, 'Rotation');
   });
   defineAlias(proxy, ['size', 'Size', 'scale', 'Scale'], () => node.scale, (value) => {
     const vec = toVec3(value, { x: 1, y: 1, z: 1 });
     node.setScale(vec.x, vec.y, vec.z);
+    notifyChanged(node, 'Size');
   });
   defineAlias(proxy, ['visible', 'Visible'], () => node.visible, (value) => {
     node.setVisible(Boolean(value));
+    notifyChanged(node, 'Visible');
   });
   defineAlias(proxy, ['anchored', 'Anchored'], () => node.anchored, (value) => {
     node.anchored = Boolean(value);
+    notifyChanged(node, 'Anchored');
   });
   defineAlias(proxy, ['color', 'Color'], () => node.def.color, (value) => {
     node.setColor(parseColor(value, node.def.color));
+    notifyChanged(node, 'Color');
   });
   defineAlias(
     proxy,
@@ -148,44 +150,30 @@ export function createLuaNode(node: LiveNode, deps: RuntimeApiDeps): Record<stri
     }
   );
 
-  const connectTouch = (...args: unknown[]) => {
-    const handler = lastFunction(args);
-    if (handler) node.addTouchHandler(handler as TouchHandler);
-  };
-  const connectTouchEnded = (...args: unknown[]) => {
-    const handler = lastFunction(args);
-    if (handler) addTouchEndedHandler(node, handler as TouchHandler);
-  };
-  const connectUpdate = (...args: unknown[]) => {
-    const handler = lastFunction(args);
-    if (handler) node.addUpdateHandler(handler as UpdateHandler);
-  };
+  attachNodeSignals(proxy, node);
 
-  proxy.onTouch = (...args: unknown[]) => connectTouch(...args);
-  proxy.Touched = { Connect: connectTouch };
-  proxy.TouchEnded = { Connect: connectTouchEnded };
-  proxy.onUpdate = { Connect: connectUpdate };
-
-  const connectChangedHandler = (property: string | null, ...args: unknown[]) => {
-    const handler = lastFunction(args);
-    if (handler) connectChanged(node, property, handler as (name: string) => void);
+  proxy.setVisible = (value: unknown) => {
+    node.setVisible(Boolean(value));
+    notifyChanged(node, 'Visible');
   };
-  proxy.Changed = { Connect: (...args: unknown[]) => connectChangedHandler(null, ...args) };
-  proxy.GetPropertyChangedSignal = (property: unknown) => ({
-    Connect: (...args: unknown[]) => connectChangedHandler(String(property ?? ''), ...args)
-  });
-
-  proxy.setVisible = (value: unknown) => node.setVisible(Boolean(value));
-  proxy.setPosition = (...args: unknown[]) => applyPosition(node, args);
+  proxy.setPosition = (...args: unknown[]) => {
+    applyPosition(node, args);
+    notifyChanged(node, 'Position');
+  };
   proxy.setRotation = (...args: unknown[]) => {
     const vec = toVec3(args[0] && typeof args[0] === 'object' ? args[0] : { x: args[0], y: args[1], z: args[2] });
     node.setRotation(vec.x, vec.y, vec.z);
+    notifyChanged(node, 'Rotation');
   };
   proxy.setScale = (...args: unknown[]) => {
     const vec = toVec3(args[0] && typeof args[0] === 'object' ? args[0] : { x: args[0], y: args[1], z: args[2] }, { x: 1, y: 1, z: 1 });
     node.setScale(vec.x, vec.y, vec.z);
+    notifyChanged(node, 'Size');
   };
-  proxy.setColor = (value: unknown) => node.setColor(parseColor(value, node.def.color));
+  proxy.setColor = (value: unknown) => {
+    node.setColor(parseColor(value, node.def.color));
+    notifyChanged(node, 'Color');
+  };
   defineAlias(
     proxy,
     ['CFrame'],
@@ -197,20 +185,8 @@ export function createLuaNode(node: LiveNode, deps: RuntimeApiDeps): Record<stri
       node.setRotation(parsed.rotation.x, parsed.rotation.y, parsed.rotation.z);
     }
   );
-  defineAlias(
-    proxy,
-    ['material', 'Material'],
-    () => aliasForSurface(node.def.material, node.def.materialTexture),
-    (value) => {
-      if (value !== undefined && value !== null) setNodeMaterial(node.def, node.mesh, String(value));
-    }
-  );
-  defineAlias(
-    proxy,
-    ['materialTexture'],
-    () => node.def.materialTexture ?? null,
-    (value) => setNodeMaterialTexture(node.def, node.mesh, value ? String(value) : null)
-  );
+  attachMaterialProps(proxy, node, deps);
+
   proxy.rotateY = (degrees: unknown) => {
     const radians = ((Number(degrees) || 0) * Math.PI) / 180;
     node.setRotation(node.rotation.x, node.rotation.y + radians, node.rotation.z);

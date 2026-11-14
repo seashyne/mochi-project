@@ -4,6 +4,8 @@
 // Our model splits shading from texture, so the alias table maps one onto the other.
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import fs from 'node:fs';
+import path from 'node:path';
 import * as THREE from 'three';
 import { PhysicsWorld } from '../src/engine/physics';
 import { OBJECT_TYPE_DEFAULTS, StudioObject } from '../src/engine/studio/types';
@@ -13,7 +15,7 @@ import { RuntimeApiDeps, createPlayerApi } from '../src/engine/runtime/luaNodeAp
 import { RuntimeWorld } from '../src/engine/runtime/objectRegistry';
 import { ScriptContext } from '../src/engine/runtime/scriptContext';
 import { RuntimePlayerHandle, RuntimeVec3 } from '../src/engine/runtime/types';
-import { aliasForSurface, resolveMaterialAlias } from '../src/engine/scene/materialAliases';
+import { aliasForSurface, MATERIAL_ALIAS_NAMES, resolveMaterialAlias } from '../src/engine/scene/materialAliases';
 
 class StubPlayer implements RuntimePlayerHandle {
   readonly id = 'player_local';
@@ -34,16 +36,29 @@ class StubPlayer implements RuntimePlayerHandle {
 
 describe('material aliases', () => {
   it('maps a surface name onto shading plus a bundled texture set', () => {
-    expect(resolveMaterialAlias('Grass')).toEqual({ material: 'plastic', preset: 'grass_field' });
-    expect(resolveMaterialAlias('Brick')).toEqual({ material: 'plastic', preset: 'brick_red' });
-    expect(resolveMaterialAlias('Wood')).toEqual({ material: 'wood', preset: 'wood_planks' });
-    expect(resolveMaterialAlias('Neon')).toEqual({ material: 'neon', preset: null });
+    expect(resolveMaterialAlias('Grass')).toEqual({ name: 'Grass', material: 'plastic', preset: 'grass_field' });
+    expect(resolveMaterialAlias('Brick')).toEqual({ name: 'Brick', material: 'plastic', preset: 'brick_red' });
+    expect(resolveMaterialAlias('Wood')).toEqual({ name: 'Wood', material: 'wood', preset: 'wood_planks' });
+    expect(resolveMaterialAlias('Neon')).toEqual({ name: 'Neon', material: 'neon', preset: null });
   });
 
   it('ignores case, spaces and underscores', () => {
     for (const name of ['DiamondPlate', 'diamond plate', 'diamond_plate', 'DIAMOND-PLATE']) {
       expect(resolveMaterialAlias(name)?.preset, name).toBe('diamond_plate');
     }
+  });
+
+  it('keeps the Lua enum and the alias table in step', () => {
+    // The prelude hard-codes the names so a typo is a nil index rather than a silent
+    // no-op; this is the guard that the two lists cannot drift apart.
+    const source = fs.readFileSync(
+      path.resolve(__dirname, '../src/engine/runtime/luaPrelude.ts'),
+      'utf8'
+    );
+    const start = source.indexOf('Enum.Material = {');
+    const block = source.slice(start, source.indexOf('${PRELUDE_MARKER}', start));
+    const names = [...block.matchAll(/^\s+([A-Za-z]+) = "/gm)].map((match) => match[1]);
+    expect(names.sort()).toEqual([...MATERIAL_ALIAS_NAMES].sort());
   });
 
   it('returns null for a name it does not know', () => {
@@ -53,7 +68,7 @@ describe('material aliases', () => {
 
   it('reports back the name that was set, not the internal pair', () => {
     expect(aliasForSurface('plastic', 'grass_field')).toBe('Grass');
-    expect(aliasForSurface('metal', 'diamond_plate')).toBe('Diamondplate');
+    expect(aliasForSurface('metal', 'diamond_plate')).toBe('DiamondPlate');
     expect(aliasForSurface('glass', null)).toBe('Glass');
     expect(aliasForSurface(undefined, null)).toBe('Plastic');
   });
@@ -108,6 +123,35 @@ describe('Material in Lua', () => {
     for (const context of contexts) context.dispose();
     world.clear();
     state.dispose();
+  });
+
+  it('accepts an enum member and compares equal to it', async () => {
+    const { node, errors } = await run(`
+      script.parent.Material = Enum.Material.Grass
+      print(tostring(script.parent.Material == Enum.Material.Grass))
+    `);
+    expect(errors).toEqual([]);
+    expect(node.def.materialTexture).toBe('grass_field');
+    expect(logs.some((entry) => entry.message === 'true')).toBe(true);
+  });
+
+  it('fails loudly on a misspelled enum member', async () => {
+    const { errors } = await run(`
+      script.parent.Material = Enum.Material.Grasss
+    `);
+    expect(errors).toHaveLength(1);
+    // The name is gone by the time the setter runs - Lua evaluated it to nil - so the
+    // message has to explain the shape instead of echoing the typo.
+    expect(errors[0].message).toContain('Enum.Material');
+  });
+
+  it('warns once when a string name is unknown', async () => {
+    await run(`
+      for i = 1, 3 do script.parent.Material = "Nonsenseium" end
+    `);
+    const warnings = logs.filter((entry) => entry.level === 'warn');
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0].message).toContain('Nonsenseium');
   });
 
   it('sets the surface from a script and reads it back', async () => {

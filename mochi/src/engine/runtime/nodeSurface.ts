@@ -13,16 +13,17 @@ import { resolveMaterialAlias } from '../scene/materialAliases';
 import { materialFor } from '../scene/objectMeshes';
 
 /**
- * Sets the surface by name. A name that imported scripts use resolves through the
- * alias table; an unknown name is ignored rather than raising, because a ported script
- * should not die on a material it cannot find.
+ * Sets the surface by name. Returns false when the name is not one we know, so the
+ * caller can tell the creator instead of failing silently - the node itself is left
+ * untouched, because a ported script should not die on a material it cannot find.
  */
-export function setNodeMaterial(def: StudioObject, mesh: THREE.Object3D, name: string): void {
+export function setNodeMaterial(def: StudioObject, mesh: THREE.Object3D, name: string): boolean {
   const alias = resolveMaterialAlias(name);
-  if (!alias) return;
+  if (!alias) return false;
   def.material = alias.material;
   def.materialTexture = alias.preset;
   refreshMaterial(def, mesh);
+  return true;
 }
 
 export function setNodeMaterialTexture(
