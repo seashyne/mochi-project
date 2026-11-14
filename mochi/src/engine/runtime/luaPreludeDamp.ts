@@ -34,6 +34,45 @@ export const DAMP_PRELUDE = `local function __mochi_damp_scalar(current, target,
   return output, nextVelocity
 end
 
+-- A CFrame is damped as two quantities: the position, component by component, and the
+-- angle left to turn. The axis is recomputed every call from where the frame is pointing
+-- and where it should point, so only the angular *speed* has to be carried between calls.
+--
+-- The velocity this returns is a table, not a CFrame: Position is the linear velocity
+-- and Angular is radians per second. A CFrame cannot carry both without an encoding
+-- that loses magnitude, and a lossy round trip is worse than a shape that says what it
+-- holds. Feed the whole table back in next frame.
+function __mochi_smooth_damp_frame(current, target, velocity, smoothTime, maxSpeed, dt)
+  local linear = type(velocity) == "table" and velocity.Position or nil
+  local angular = type(velocity) == "table" and tonumber(velocity.Angular) or 0
+
+  local function axis(key)
+    local from = tonumber(current[key]) or 0
+    local to = tonumber(target and target[key]) or from
+    local speed = tonumber(linear and linear[key]) or 0
+    return __mochi_damp_scalar(from, to, speed, smoothTime, maxSpeed, dt)
+  end
+
+  local x, vx = axis("x")
+  local y, vy = axis("y")
+  local z, vz = axis("z")
+
+  local from = { __mochi_quat_from(current) }
+  local to = { __mochi_quat_from(target) }
+  local dot = from[1] * to[1] + from[2] * to[2] + from[3] * to[3] + from[4] * to[4]
+  local angle = 2 * math.acos(math.max(-1, math.min(1, math.abs(dot))))
+
+  local nextAngle, nextAngular = __mochi_damp_scalar(angle, 0, angular, smoothTime, maxSpeed, dt)
+  local fraction = angle > 1e-6 and (1 - nextAngle / angle) or 0
+  local turned = __mochi_slerp_frame(current, target, fraction)
+
+  return __mochi_cframe(x, y, z,
+      turned.m00, turned.m01, turned.m02,
+      turned.m10, turned.m11, turned.m12,
+      turned.m20, turned.m21, turned.m22),
+    { Position = Vector3.new(vx, vy, vz), Angular = nextAngular }
+end
+
 function __mochi_smooth_damp(current, target, velocity, smoothTime, maxSpeed, dt)
   local smooth = tonumber(smoothTime) or 0.3
   local step = tonumber(dt) or (1 / 60)
@@ -48,8 +87,12 @@ function __mochi_smooth_damp(current, target, velocity, smoothTime, maxSpeed, dt
     )
   end
 
-  if current == nil or current.m00 ~= nil then
-    error("SmoothDamp supports a number or a Vector3, not a CFrame", 2)
+  if current == nil then
+    error("SmoothDamp needs a current value", 2)
+  end
+
+  if current.m00 ~= nil then
+    return __mochi_smooth_damp_frame(current, target, velocity, smooth, cap, step)
   end
 
   local function axis(key)

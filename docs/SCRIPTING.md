@@ -256,8 +256,9 @@ and pick it up again. `tween.PlaybackState` reports `Begin`, `Delayed`, `Playing
 
 `TweenService:SmoothDamp(current, target, velocity, smoothTime, maxSpeed, dt)` is the
 other half: a critically damped spring for something that follows a target every frame
-without overshooting. Feed the returned velocity back in next frame. It takes a number or
-a Vector3; a CFrame raises rather than damping only its position.
+without overshooting. Feed the returned velocity back in next frame. It takes a number, a
+Vector3 or a CFrame; for a CFrame the velocity is a table - `Position` is linear velocity
+and `Angular` is radians per second - and the whole table is what goes back in.
 
 Starting a tween on a property cancels an older tween on the same property, so two tweens
 cannot fight over one value.

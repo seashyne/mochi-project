@@ -14,7 +14,9 @@
 
 export const ROTATION_PRELUDE = `-- Row-major matrix to quaternion (Shepperd). Picks the largest diagonal term so the
 -- square root never takes a value near zero.
-local function __mochi_quat_from(m)
+-- Global, not local: the damping code in the service prelude runs earlier in the
+-- chunk and needs to read a frame's rotation.
+function __mochi_quat_from(m)
   local trace = m.m00 + m.m11 + m.m22
   local x, y, z, w
   if trace > 0 then

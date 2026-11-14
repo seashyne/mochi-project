@@ -83,3 +83,19 @@ misspelled material name. It now warns once per key and still runs the valid hal
 
 The test file that grew past its ceiling split by concern: the playback-state tests stay,
 the TweenInfo edges moved to their own file.
+**SmoothDamp on a CFrame** (2026-11-14): the last gap in the tween service. It took a
+number and a Vector3 and raised on a CFrame, because damping one means damping two
+different quantities - where it is and which way it points - and only the first of them is
+a vector.
+
+Position is damped component by component, as before. Rotation is damped as the angle
+left to turn: the axis comes from the two orientations, so only the angular speed has to
+be carried between calls. Both go through the same critically damped spring, so the
+approach is the same shape in both.
+
+The velocity it returns is a table, not a CFrame: `Position` holds the linear velocity and
+`Angular` the radians per second. A CFrame cannot carry both without an encoding that
+loses magnitude, and a lossy round trip would look correct until something turned fast.
+
+The quaternion reader in the rotation prelude is now a global, because the service prelude
+is concatenated before it and needs to read a frame's rotation at call time.

@@ -253,16 +253,24 @@ describe('tween playback state', () => {
     expect(parts[2]).toBeCloseTo(-2, 0);
   });
 
-  it('refuses a CFrame rather than damping only its position', async () => {
+  it('damps a CFrame in position and rotation together', async () => {
     const { errors } = await run(`
-      local ok, message = pcall(function()
-        return TweenService:SmoothDamp(CFrame.new(), CFrame.new(1, 0, 0), 0, 0.2)
-      end)
-      print(tostring(ok) .. ":" .. tostring(message))
+      local target = CFrame.new(10, 0, 0) * CFrame.Angles(0, math.pi / 2, 0)
+      local frame = CFrame.new(0, 0, 0)
+      local velocity = nil
+      local peak = 0
+      for step = 1, 200 do
+        frame, velocity = TweenService:SmoothDamp(frame, target, velocity, 0.2, nil, 1 / 60)
+        if frame.x > peak then peak = frame.x end
+      end
+      print(string.format("%.2f %.2f %.2f %s", frame.x, frame.m22, peak, type(velocity.Angular)))
     `);
     expect(errors).toEqual([]);
-    const line = logs.map((entry) => entry.message).find((message) => message.startsWith('false:'));
-    expect(line).toBeDefined();
-    expect(line).toContain('CFrame');
+    const [x, m22, peak, angularType] = (logs[0].message as string).split(' ');
+    expect(Number(x)).toBeCloseTo(10, 1);
+    // A quarter turn about Y leaves the third column pointing along -X, so m22 is zero.
+    expect(Number(m22)).toBeCloseTo(0, 1);
+    expect(Number(peak)).toBeLessThanOrEqual(10.0001);
+    expect(angularType).toBe('number');
   });
 });
