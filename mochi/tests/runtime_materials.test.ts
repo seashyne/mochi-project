@@ -7,6 +7,8 @@ import * as THREE from 'three';
 import { createInstancedBatches } from '../src/engine/scene/instancedBatch';
 import { buildObjectMesh } from '../src/engine/scene/objectMeshes';
 import { createRuntimeMaterial, setRuntimeTextureResolver, surfaceKey } from '../src/engine/scene/runtimeMaterial';
+import { attachWorld } from '../src/engine/scene/attachWorld';
+import { PhysicsWorld } from '../src/engine/physics';
 import type { StudioObject } from '../src/engine/studio/types';
 
 function block(id: string, extra: Partial<StudioObject> = {}): StudioObject {
@@ -108,5 +110,42 @@ describe('runtime materials', () => {
     expect(surfaceKey({ material: 'metal' })).toBe('metal');
     expect(surfaceKey({ material: 'neon', color: '#ff0000' })).toBe('neon:#ff0000');
     expect(surfaceKey({ materialTexture: 'brick_red' })).toBe('preset:brick_red');
+  });
+});
+
+describe('published material', () => {
+  it('survives publish and reaches the batch built from the manifest', () => {
+    // The whole point of the surface fields: a creator picks them in the Studio, they
+    // are serialised into the manifest, and the game has to render the same thing.
+    const manifest = JSON.stringify({
+      title: 'Materials',
+      version: '1.0.0',
+      objects: [
+        {
+          id: 'crate', name: 'Crate', type: 'block',
+          position: { x: 0, y: 0, z: 0 }, rotation: { x: 0, y: 0, z: 0 }, scale: { x: 1, y: 1, z: 1 },
+          color: '#8899aa', material: 'metal'
+        },
+        {
+          id: 'crate2', name: 'Crate2', type: 'block',
+          position: { x: 3, y: 0, z: 0 }, rotation: { x: 0, y: 0, z: 0 }, scale: { x: 1, y: 1, z: 1 },
+          color: '#8899aa'
+        }
+      ]
+    });
+
+    const scene = new THREE.Scene();
+    const attachment = attachWorld(scene, manifest, new PhysicsWorld());
+    const batches = scene.children.filter((child) => (child as THREE.InstancedMesh).isInstancedMesh);
+    expect(batches).toHaveLength(2);
+
+    const metalness = batches
+      .map((batch) => (batch as THREE.Mesh).material as THREE.MeshStandardMaterial)
+      .map((material) => material.metalness)
+      .sort((a, b) => a - b);
+    expect(metalness[0]).toBeCloseTo(0.3);
+    expect(metalness[1]).toBeCloseTo(0.95);
+
+    attachment.dispose();
   });
 });

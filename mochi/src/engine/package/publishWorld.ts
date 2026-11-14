@@ -112,7 +112,6 @@ export async function buildPublishManifest(
       ...(remoteEvents?.length ? { remoteEvents } : {}),
       ...(animations?.length ? { animations } : {}),
       ...(animationStateMachine ? { animationStateMachine } : {}),
-    ...(environment ? { environment } : {}),
       ...(environment ? { environment } : {}),
       version
     });

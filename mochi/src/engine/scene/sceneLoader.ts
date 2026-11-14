@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { PhysicsWorld, RigidBody } from '../physics';
-import { StudioObject, StudioSceneSnapshot, StudioVec3 } from '../studio/types';
+import { StudioMaterial, StudioObject, StudioSceneSnapshot, StudioVec3 } from '../studio/types';
 import { attachModelObject } from './modelCollider';
 import { registerCullTarget } from './distanceCulling';
 import { registerOcclusionTarget } from './occlusionCulling';
@@ -86,8 +86,34 @@ function sanitizeStudioObject(raw: unknown, index: number): StudioObject | null 
     ...(luaScript ? { luaScript } : {}),
     ...(typeof rec.canCollide === 'boolean' ? { canCollide: rec.canCollide } : {}),
     ...(typeof rec.anchored === 'boolean' ? { anchored: rec.anchored } : {}),
+    ...sanitizeSurfaceFields(rec),
     ...sanitizeAssetFields(rec),
     ...sanitizeAdvancedFields(rec)
+  };
+}
+
+const STUDIO_MATERIALS: StudioMaterial[] = ['plastic', 'neon', 'metal', 'glass', 'wood'];
+
+/**
+ * The surface a creator chose. These were missing from the whitelist, so a world
+ * looked one way in the Studio and another once published: the fields were written,
+ * serialised, and dropped on load.
+ */
+function sanitizeSurfaceFields(rec: Record<string, unknown>): Partial<StudioObject> {
+  const material = STUDIO_MATERIALS.includes(rec.material as StudioMaterial)
+    ? (rec.material as StudioMaterial)
+    : undefined;
+  const text = (value: unknown): string | null =>
+    typeof value === 'string' && value.trim() ? value.trim() : null;
+
+  const preset = text(rec.materialTexture);
+  const accessId = text(rec.textureAccessId);
+  const url = text(rec.textureUrl);
+  return {
+    ...(material ? { material } : {}),
+    ...(preset ? { materialTexture: preset } : {}),
+    ...(accessId ? { textureAccessId: accessId } : {}),
+    ...(url ? { textureUrl: url } : {})
   };
 }
 
