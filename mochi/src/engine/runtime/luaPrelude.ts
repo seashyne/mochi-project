@@ -11,6 +11,7 @@ import { REACT_PRELUDE } from './luaPreludeReact';
 import { SERVICES_PRELUDE } from './luaPreludeServices';
 
 import { ROTATION_PRELUDE } from './luaPreludeRotation';
+import { SEQUENCES_PRELUDE } from './luaPreludeSequences';
 
 export const PRELUDE_MARKER = '-- __mochi_prelude_end';
 
@@ -51,6 +52,8 @@ ${SERVICES_PRELUDE}
 ${REACT_PRELUDE}
 
 ${ROTATION_PRELUDE}
+
+${SEQUENCES_PRELUDE}
 
 -- CFrame: a position plus a row-major 3x3 rotation.
 --

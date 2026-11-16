@@ -29,7 +29,7 @@ Legend: **Yes** same idea, **Shape** same idea but a different call shape,
 | `:IsA("Part")` | Shape | Compares against Mochi object types (`block`, `coin`, `agent`...), not Roblox class names |
 | `game.Workspace`, `game:GetService(...)` | No | Use `world.getParts()` / `world.findPart(name)` |
 | `:WaitForChild(name)` | Yes | An alias of `:FindFirstChild`. The world exists before a script starts, so waiting is a lookup - it returns nil for a name that is not there instead of blocking |
-| `Instance.new("Folder")` / `"Model"` / `"Configuration"` | Yes | An invisible grouping node: no mesh, no collider, children attach to it |
+| `Instance.new("Folder")` / `"Model"` / `"Configuration"` | Yes | An invisible grouping node: no mesh, no collider, children attach to it. Models expose `:GetPivot()`, `:PivotTo(cf)`, `WorldPivot` and `PrimaryPart` |
 | `Instance.new("Constraint")` / `"ParticleEmitter"` | Yes | Maps onto the `constraint` and `particle` object types |
 | `Instance.new("Script")` | No | A script is authored in the editor, not created at runtime |
 
@@ -41,6 +41,7 @@ Legend: **Yes** same idea, **Shape** same idea but a different call shape,
 | `Rotation` | Shape | **Radians** in a `{x,y,z}` table. `rotateY(degrees)` is the degree-based helper |
 | `part.Transparency` | No | `part.visible` is a boolean; use material presets for translucency |
 | `CFrame` | Shape | `CFrame.new`, `CFrame.Angles`, `CFrame.lookAt`, `cf * cf`, `cf * Vector3`, `cf + Vector3`, `cf - Vector3`, `Position`, `LookVector`, `RightVector`, `UpVector`, `:Inverse()`, `:Lerp()`, `:ToEulerAnglesXYZ()` |
+| `:GetPivot()`, `:PivotTo(cf)`, `PivotOffset` | Yes | Parts use `CFrame * PivotOffset`; Models use `PrimaryPart`, `WorldPivot`, or bounding centre and transform descendants rigidly |
 | `Material` | Shape | Five names: `plastic`, `neon`, `metal`, `glass`, `wood`. Not Roblox's full enum (no grass, sand or fabric), and a part takes one material, not per-face surfaces |
 | `SurfaceAppearance`, `Texture` | Shape | `materialTexture` picks from 13 bundled CC0 PBR sets; `textureUrl` takes an uploaded image. No per-face mapping |
 | `Orientation`, `CanCollide` | No | `anchored` covers the common physics intent |
@@ -117,6 +118,7 @@ Legend: **Yes** same idea, **Shape** same idea but a different call shape,
 | `CFrame` | Shape | Position plus a row-major 3x3; see the property table above |
 | `UDim2.new`, `UDim2.fromScale`, `UDim2.fromOffset` | Yes | Plain `{xScale, xOffset, yScale, yOffset}` tables |
 | `Vector2.new` | Yes | Plain `{x,y}` tables; used for `AnchorPoint` |
+| `NumberSequence`, `ColorSequence` | Yes | `.new(v)` / `.new(v0, v1)` / `.new({keypoints})`, `NumberSequenceKeypoint`, `ColorSequenceKeypoint`, `.Keypoints` and `:Evaluate(alpha)` |
 | `Enum.Font`, `Enum.TextXAlignment`, `Enum.TextYAlignment` | Yes | Members are strings, so `label.Font == Enum.Font.Code` holds. A bare `"code"` or `"Roboto Mono"` assigns too; a name the app has no face for maps to the nearest shipped family instead of failing |
 | `Ray`, `BrickColor`, `NumberRange`, the rest of `Enum` | No | Not part of the runtime |
 | `math.*`, `string.*`, `table.*`, `pairs`, `ipairs`, `pcall` | Yes | Real Lua 5.4 from wasmoon |

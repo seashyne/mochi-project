@@ -19,7 +19,11 @@ export const MOCHI_GLOBALS: Completion[] = [
   { label: 'RunService', type: 'class', detail: 'RunService.Heartbeat', info: 'Frame step simulation events and execution context flags.', boost: 7 },
   { label: 'Enum', type: 'constant', detail: 'Enum.Material | Enum.EasingStyle', info: 'Engine enumeration constants for materials, easings, and fonts.', boost: 7 },
   { label: 'Color3', type: 'class', detail: 'Color3.fromRGB(r, g, b)', info: 'RGB color representation for surface materials and GUI tinting.', boost: 6 },
-  { label: 'UDim2', type: 'class', detail: 'UDim2.new(xs, xo, ys, yo)', info: '2D coordinate format with scale and pixel offset for GUI.', boost: 6 }
+  { label: 'UDim2', type: 'class', detail: 'UDim2.new(xs, xo, ys, yo)', info: '2D coordinate format with scale and pixel offset for GUI.', boost: 6 },
+  { label: 'NumberSequence', type: 'class', detail: 'NumberSequence.new(...)', info: 'Ordered 0..1 keypoint sequence of numeric values.', boost: 6 },
+  { label: 'NumberSequenceKeypoint', type: 'class', detail: 'NumberSequenceKeypoint.new(t, v, [env])', info: 'Single keypoint on a NumberSequence.', boost: 5 },
+  { label: 'ColorSequence', type: 'class', detail: 'ColorSequence.new(...)', info: 'Ordered 0..1 keypoint sequence of Color3 values.', boost: 6 },
+  { label: 'ColorSequenceKeypoint', type: 'class', detail: 'ColorSequenceKeypoint.new(t, color)', info: 'Single keypoint on a ColorSequence.', boost: 5 }
 ];
 
 export const LUA_KEYWORDS: Completion[] = [
@@ -102,6 +106,10 @@ export const MEMBER_COMPLETIONS: Record<string, Completion[]> = {
     { label: 'Destroy', type: 'method', detail: '()', info: 'Removes this node and cleans up resources.' },
     { label: 'FindFirstChild', type: 'method', detail: '(name, [recur]) -> Node', info: 'Finds child node by name.' },
     { label: 'IsA', type: 'method', detail: '(className) -> boolean', info: 'Tests class inheritance.' },
+    { label: 'GetPivot', type: 'method', detail: '() -> CFrame', info: 'Returns world-space pivot CFrame for this part or model.' },
+    { label: 'PivotTo', type: 'method', detail: '(cframe)', info: 'Moves this part or model subtree rigidly to the target pivot CFrame.' },
+    { label: 'WorldPivot', type: 'property', detail: 'CFrame', info: 'Model pivot CFrame used when PrimaryPart is unset.' },
+    { label: 'PrimaryPart', type: 'property', detail: 'Node', info: 'Reference part controlling a Model pivot.' },
     { label: 'rotateY', type: 'method', detail: '(degrees)', info: 'Rotates node around Y axis in degrees.' }
   ],
   TweenService: [
@@ -110,6 +118,18 @@ export const MEMBER_COMPLETIONS: Record<string, Completion[]> = {
   ],
   TweenInfo: [
     { label: 'new', type: 'method', detail: '(time, [style], [dir], [repeat], [reverses], [delay])', info: 'Constructs tween timing settings.' }
+  ],
+  NumberSequence: [
+    { label: 'new', type: 'method', detail: '(v0, [v1]) | ({keypoints})', info: 'Constructs a numeric 0..1 keypoint sequence.' }
+  ],
+  NumberSequenceKeypoint: [
+    { label: 'new', type: 'method', detail: '(time, value, [envelope])', info: 'Constructs a NumberSequence keypoint.' }
+  ],
+  ColorSequence: [
+    { label: 'new', type: 'method', detail: '(c0, [c1]) | ({keypoints})', info: 'Constructs a Color3 0..1 keypoint sequence.' }
+  ],
+  ColorSequenceKeypoint: [
+    { label: 'new', type: 'method', detail: '(time, color)', info: 'Constructs a ColorSequence keypoint.' }
   ],
   touchSignal: [
     { label: 'Connect', type: 'method', detail: '(function(player) ... end)', info: 'Subscribes listener callback to touch events receiving LuaPlayerProxy.' }

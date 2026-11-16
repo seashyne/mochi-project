@@ -12,6 +12,7 @@ import { makeCFrameValue, readCFrameValue } from './cframeBridge';
 import { attachMaterialProps } from './luaMaterialProps';
 import { createRaycast } from './luaRaycast';
 import { findChild, isA } from './nodeClasses';
+import { attachNodePivot } from './nodePivot';
 
 import { routeSound } from './audioRouting';
 export { createPlayerApi } from './luaPlayerApi';
@@ -188,6 +189,11 @@ export function createLuaNode(node: LiveNode, deps: RuntimeApiDeps): Record<stri
     }
   );
   attachMaterialProps(proxy, node, deps);
+  attachNodePivot(proxy, node, {
+    world: deps.world,
+    wrapNode: (n) => createLuaNode(n, deps),
+    resolveNode: nodeFromLuaValue
+  });
 
   proxy.rotateY = (degrees: unknown) => {
     const radians = ((Number(degrees) || 0) * Math.PI) / 180;

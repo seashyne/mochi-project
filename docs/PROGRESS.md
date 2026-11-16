@@ -99,3 +99,16 @@ loses magnitude, and a lossy round trip would look correct until something turne
 
 The quaternion reader in the rotation prelude is now a global, because the service prelude
 is concatenated before it and needs to read a frame's rotation at call time.
+
+**Sequences and Model pivots** (2026-11-16): closes the two remaining value and transform
+gaps noted above.
+
+`NumberSequence`, `NumberSequenceKeypoint`, `ColorSequence`, and `ColorSequenceKeypoint`
+now construct from single values, pairs, or keypoint arrays (sorted and clamped to `[0, 1]`),
+exposing `.Keypoints` and `:Evaluate(alpha)` in `luaPreludeSequences.ts`.
+
+`nodePivot.ts` adds `:GetPivot()`, `:PivotTo(cframe)`, `PivotOffset` on parts, and
+`WorldPivot` / `PrimaryPart` on models. `Model:GetPivot()` resolves `PrimaryPart`, then
+`WorldPivot`, then the world-space bounding centre of descendants; `Model:PivotTo(cframe)`
+applies the rigid delta matrix across the entire subtree while updating `Position`,
+`Rotation`, and `Changed` signals.

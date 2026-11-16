@@ -6,6 +6,11 @@ import { RigidBody } from '../physics';
 import { StudioObject } from '../studio/types';
 import { RuntimeVec3 } from './types';
 
+export interface NodeTransform {
+  position: RuntimeVec3;
+  rotation: RuntimeVec3;
+}
+
 /** Touch callbacks receive the Lua player proxy, not the raw controller. */
 export type LuaPlayerProxy = Record<string, unknown>;
 export type TouchHandler = (player: LuaPlayerProxy) => void;
@@ -30,6 +35,11 @@ export class LiveNode {
   luaProxy: Record<string, unknown> | null = null;
   /** Routes handler failures to the session console instead of only the browser log. */
   onError: ((error: unknown) => void) | null = null;
+  /** Optional model pivot override (`WorldPivot`) and part pivot offset (`PivotOffset`). */
+  worldPivot: NodeTransform | null = null;
+  pivotOffset: NodeTransform | null = null;
+  /** Optional `PrimaryPart` node id for `Model` pivots. */
+  primaryPartId: string | null = null;
 
   private readonly touchHandlers: TouchHandler[] = [];
   private readonly touchEndedHandlers: TouchHandler[] = [];
