@@ -1,10 +1,10 @@
-// Mochi unauthenticated landing: a minimal platform introduction with a clay diorama
+// Mochi unauthenticated landing: cinematic hero plate.
+// Game catalog grid will be populated from live published games later.
 
 import React from 'react';
 import { LogIn } from 'lucide-react';
 import { useI18n } from '../i18n/context';
 import { GameSummary } from '../api/types';
-import { MochiDiorama } from './landing/MochiDiorama';
 
 export interface LandingHeroProps {
   games: GameSummary[];
@@ -13,33 +13,23 @@ export interface LandingHeroProps {
   onRequestPlay: (game: GameSummary) => void;
 }
 
-export const LandingHero: React.FC<LandingHeroProps> = ({ onOpenSignIn, onOpenSignUp }) => {
+export const LandingHero: React.FC<LandingHeroProps> = ({
+  onOpenSignIn, onOpenSignUp,
+}) => {
   const { t } = useI18n();
 
   return (
     <div className="landing-shell flex-1">
-      <section className="landing-wrap landing-hero">
-        <div>
-          <div className="landing-title-wrap">
-            <h1 className="landing-title">{t.landing.heroTitle}</h1>
-            <svg
-              className="landing-underline"
-              viewBox="0 0 300 16"
-              fill="none"
-              preserveAspectRatio="none"
-              aria-hidden="true"
-            >
-              <path
-                d="M3 11 C60 3 120 13 180 8 C225 4 265 9 297 6"
-                stroke="currentColor"
-                strokeWidth="6"
-                strokeLinecap="round"
-              />
-            </svg>
-          </div>
-
+      <section className="landing-hero">
+        <div
+          className="landing-hero-media"
+          style={{ ['--l-hero-image' as string]: `url(/landing/hero-valley.jpg)` }}
+        />
+        <div className="landing-hero-scrim" />
+        <div className="landing-hero-body">
+          <span className="landing-badge">{t.landing.badge}</span>
+          <h1 className="landing-title">{t.landing.heroTitle}</h1>
           <p className="landing-sub">{t.landing.heroSub}</p>
-
           <div className="landing-actions">
             <button type="button" onClick={onOpenSignUp} className="landing-btn-primary">
               {t.landing.createAccount}
@@ -50,8 +40,6 @@ export const LandingHero: React.FC<LandingHeroProps> = ({ onOpenSignIn, onOpenSi
             </button>
           </div>
         </div>
-
-        <MochiDiorama />
       </section>
     </div>
   );
