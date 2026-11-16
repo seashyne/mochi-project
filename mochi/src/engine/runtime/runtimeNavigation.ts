@@ -49,7 +49,14 @@ export function createRuntimeNavigation(
   const navigator = new PlayerNavigator(player);
 
   const ensureGrid = (): NavGrid => {
-    if (!grid) grid = buildNavGrid(objects, options);
+    // Runtime paths resolve through `findNavMeshPath`, so skip the dense per-cell
+    // region flood fill unless a caller explicitly asks for region labels.
+    if (!grid) {
+      grid = buildNavGrid(objects, {
+        ...options,
+        includeRegions: options.includeRegions ?? false
+      });
+    }
     return grid;
   };
 

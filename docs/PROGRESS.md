@@ -112,3 +112,10 @@ exposing `.Keypoints` and `:Evaluate(alpha)` in `luaPreludeSequences.ts`.
 `WorldPivot`, then the world-space bounding centre of descendants; `Model:PivotTo(cframe)`
 applies the rigid delta matrix across the entire subtree while updating `Position`,
 `Rotation`, and `Changed` signals.
+
+**Sparse runtime nav bake** (2026-11-16): resolves the open decision in
+`docs/KERNEL_AUDIT.md`. `buildNavGrid` adds `includeRegions` (default `true`) plus a
+single-region fast path for 0-box grids, and `createRuntimeNavigation` passes
+`includeRegions: false` so gameplay bakes use the sparse TypeScript rasteriser (~0.22 ms
+at 512x512 vs 1.66 ms dense WASM flood fill) while `findWaypoints` rejects disconnected
+islands directly from `findNavMeshPath` (`decompose_navmesh`).

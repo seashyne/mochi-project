@@ -240,6 +240,8 @@ export function findWaypoints(grid: NavGrid, start: Waypoint, goal: Waypoint): W
 
   const taut = findNavMeshPath(grid, start, target);
   if (taut && taut.length >= 2) return taut;
+  // Unwalkable endpoints or disconnected navmesh islands: no 4-way grid route exists.
+  if (taut === null) return null;
 
   const path = findPath(grid, startCell, goalCell);
   if (!path) return null;

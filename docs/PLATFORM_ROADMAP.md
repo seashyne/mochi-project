@@ -222,9 +222,9 @@ account, needs hardware, or is a product decision. Ordered by what unblocks the 
 2. **Run G2's frame-rate half on real hardware.** `npm run benchmark:client` measures
    draw calls exactly, but a headless browser rasterises in software, so the 30 fps
    question needs a mid-range laptop. One command, one number.
-3. **Decide what the nav region labels are worth.** The bake costs 2-8x the
-   TypeScript rasteriser and buys labels only `findPath` reads. Keeping them is a
-   behaviour choice, not a mechanical one - see `docs/KERNEL_AUDIT.md`.
+3. **Nav region labels (decided 2026-11-16).** `createRuntimeNavigation` uses the
+   sparse TypeScript rasteriser (`includeRegions: false`) + WASM `decompose_navmesh`;
+   `findWaypoints` rejects disconnected islands via the navmesh without flood fill.
 4. **Close the parity gaps in order.** `docs/API_PARITY.md` ranks them by how quickly
    a porting creator hits them: Humanoid/Character first, then the GUI tree, then
    `CFrame`. Each is a feature, not a fix.

@@ -251,4 +251,15 @@ describe('grid rebuild discipline', () => {
     navigation.setObjects(scene.slice(1));
     expect(navigation.grid()).not.toBe(first);
   });
+
+  it('uses the sparse bake by default while rejecting disconnected targets via the navmesh', () => {
+    const player = new FakePlayer(-6, 0, 0);
+    const fullWall: StudioObject[] = [box(0, 0, 2, 40)];
+    const navigation = createRuntimeNavigation(player, { cellSize: 1, agentRadius: 0, ...BOUNDS });
+    navigation.setObjects(fullWall);
+
+    expect(navigation.grid().regions).toBeNull();
+    expect(navigation.moveTo(6, 0)).toBe(false);
+    expect(navigation.moveTo(-6, 4)).toBe(true);
+  });
 });

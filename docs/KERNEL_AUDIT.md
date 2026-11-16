@@ -80,12 +80,14 @@ grid away. The world was being rebaked several times a second whether or not any
 had moved.
 
 **Fixed**: `setObjects` now compares the resident objects themselves and keeps the
-grid when they are unchanged. **Still open**: whether regions are worth their remaining cost, and whether the bake
-should be sparse (TypeScript rasterise, kernel flood fill only when regions are asked
-for). That is a navigation-behaviour decision, not a mechanical one - `findPath` uses
-the region labels to refuse a route between disconnected areas. With bakes now rare,
-the absolute numbers are 0.5 ms at 256x256 and 2.4 ms at 512x512, which is a hitch at
-a chunk boundary rather than a per-frame cost.
+grid when they are unchanged, and `createRuntimeNavigation` now opts out of dense
+per-cell region labels (`includeRegions: false`), using the sparse TypeScript
+rasteriser (~0.22 ms at 512x512) alongside WASM `decompose_navmesh` (~0.57 ms at
+256x256). Because `findWaypoints` returns `null` directly when `findNavMeshPath`
+finds no portal route between islands, disconnected targets are rejected without
+per-cell flood-fill labels. `buildNavGrid` still keeps `includeRegions: true` by
+default (with an O(1)-logic single-region shortcut for 0-box scenes) so explicit
+region queries and kernel parity tests continue to exercise `bake_nav_grid`.
 
 ## Test-only exports
 

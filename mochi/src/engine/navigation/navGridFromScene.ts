@@ -22,6 +22,12 @@ export interface NavGridFromSceneOptions {
    * is loaded; the parity test compares the two paths.
    */
   useKernel?: boolean;
+  /**
+   * Compute connected-region labels on the grid (default true). Runtime navigation
+   * passes `false` because the convex navmesh already checks island reachability,
+   * keeping the bake sparse.
+   */
+  includeRegions?: boolean;
 }
 
 // Objects a character can walk through or over. Decorations, pickups and other
@@ -60,6 +66,34 @@ export function buildNavGrid(
   const width = Math.max(1, Math.ceil((bounds.maxX - bounds.minX) / cellSize));
   const height = Math.max(1, Math.ceil((bounds.maxZ - bounds.minZ) / cellSize));
   const origin = { x: bounds.minX, z: bounds.minZ };
+  const wantKernel = options.useKernel !== false;
+  const wantRegions = options.includeRegions !== false;
+
+  // An open map has one connected walkable region; skip both WASM and flood fill.
+  if (blocking.length === 0) {
+    const cells = width * height;
+    return new NavGrid({
+      width,
+      height,
+      cellSize,
+      origin,
+      blocked: new Uint8Array(cells),
+      ...(wantKernel && wantRegions
+        ? { regions: new Uint32Array(cells).fill(1), regionCount: 1 }
+        : {})
+    });
+  }
+
+  // Without region labels, the sparse TypeScript rasteriser only touches blocked cells.
+  if (!wantKernel || !wantRegions) {
+    return new NavGrid({
+      width,
+      height,
+      cellSize,
+      origin,
+      blocked: rasterise(blocking, { cellSize, radius, bounds, width, height })
+    });
+  }
 
   const boxes = new Float32Array(blocking.length * 4);
   blocking.forEach((object, index) => {
@@ -72,18 +106,16 @@ export function buildNavGrid(
 
   // The kernel rasterises and labels regions in one pass. It returns null when it
   // is not loaded, and `useKernel: false` forces the reference path.
-  const baked = options.useKernel === false
-    ? null
-    : bakeNavGridWasm({
-        boxes,
-        boxCount: blocking.length,
-        originX: origin.x,
-        originZ: origin.z,
-        cellSize,
-        width,
-        height,
-        agentRadius: radius
-      });
+  const baked = bakeNavGridWasm({
+    boxes,
+    boxCount: blocking.length,
+    originX: origin.x,
+    originZ: origin.z,
+    cellSize,
+    width,
+    height,
+    agentRadius: radius
+  });
 
   if (baked) {
     const blocked = new Uint8Array(baked.walkable.length);

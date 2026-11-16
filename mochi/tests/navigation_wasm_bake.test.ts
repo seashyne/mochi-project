@@ -197,4 +197,12 @@ describe('region labelling', () => {
     expect(kernel).toEqual(reference);
     expect(grid.regionCount).toBe(reference.length);
   });
+
+  it('labels an obstacle-free grid as a single region without running flood fill', () => {
+    const grid = buildNavGrid([], OPTIONS);
+    expect(grid.regionCount).toBe(1);
+    expect(grid.regions).not.toBeNull();
+    expect(grid.regionAt(0, 0)).toBe(1);
+    expect(grid.regionAt(grid.width - 1, grid.height - 1)).toBe(1);
+  });
 });
