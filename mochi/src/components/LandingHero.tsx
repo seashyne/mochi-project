@@ -1,8 +1,7 @@
-// Mochi unauthenticated landing: cinematic hero plate.
-// Game catalog grid will be populated from live published games later.
+// Mochi unauthenticated landing: cinematic hero plate followed by a playable worlds grid.
 
 import React from 'react';
-import { LogIn } from 'lucide-react';
+import { LogIn, Play, Users } from 'lucide-react';
 import { useI18n } from '../i18n/context';
 import { GameSummary } from '../api/types';
 
@@ -13,17 +12,38 @@ export interface LandingHeroProps {
   onRequestPlay: (game: GameSummary) => void;
 }
 
+const FALLBACK_THUMBS = [
+  '/landing/thumb-obby.jpg',
+  '/landing/thumb-tycoon.jpg',
+  '/landing/thumb-arena.jpg'
+];
+
+function resolveThumb(game: GameSummary, index: number): string {
+  if (game.thumbnailUrl) return game.thumbnailUrl;
+  const slug = game.slug.toLowerCase();
+  if (slug.includes('tycoon')) return FALLBACK_THUMBS[1];
+  if (slug.includes('arena') || slug.includes('drift')) return FALLBACK_THUMBS[2];
+  return FALLBACK_THUMBS[index % FALLBACK_THUMBS.length];
+}
+
 export const LandingHero: React.FC<LandingHeroProps> = ({
-  onOpenSignIn, onOpenSignUp,
+  games,
+  onOpenSignIn,
+  onOpenSignUp,
+  onRequestPlay
 }) => {
   const { t } = useI18n();
+  const featuredGames = games.slice(0, 6);
 
   return (
     <div className="landing-shell flex-1">
       <section className="landing-hero">
-        <div
+        <img
+          src="/landing/hero-valley.jpg"
+          alt=""
+          fetchPriority="high"
+          decoding="async"
           className="landing-hero-media"
-          style={{ ['--l-hero-image' as string]: `url(/landing/hero-valley.jpg)` }}
         />
         <div className="landing-hero-scrim" />
         <div className="landing-hero-body">
@@ -39,6 +59,58 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
               {t.landing.signIn}
             </button>
           </div>
+        </div>
+      </section>
+
+      <section className="landing-section">
+        <div className="landing-wrap">
+          <div className="landing-section-head">
+            <h2 className="landing-section-title">{t.landing.gamesToStart}</h2>
+            <p className="landing-section-sub">{t.landing.simpleControls}</p>
+          </div>
+
+          {featuredGames.length === 0 ? (
+            <div className="landing-empty">{t.landing.defaultDesc}</div>
+          ) : (
+            <div className="landing-grid">
+              {featuredGames.map((game, index) => (
+                <button
+                  key={game.id}
+                  type="button"
+                  onClick={() => onRequestPlay(game)}
+                  className="landing-game-card"
+                >
+                  <span className="landing-game-thumb">
+                    <img
+                      src={resolveThumb(game, index)}
+                      alt={game.title}
+                      loading="lazy"
+                      decoding="async"
+                    />
+                    <span className="landing-game-badge">
+                      {game.genre || game.currentVersion || '3D'}
+                    </span>
+                  </span>
+                  <div className="landing-game-meta">
+                    <h3 className="landing-game-title">{game.title}</h3>
+                    <p className="landing-game-desc">
+                      {game.description || t.landing.defaultDesc}
+                    </p>
+                    <div className="landing-game-stats">
+                      <Users className="h-3.5 w-3.5" />
+                      <span>
+                        {game.playCount.toLocaleString()} {t.catalog.plays}
+                      </span>
+                      <span className="ms-auto inline-flex items-center gap-1 text-[#00a2ff] font-semibold">
+                        <Play className="h-3 w-3" />
+                        {t.landing.playNow}
+                      </span>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </section>
     </div>

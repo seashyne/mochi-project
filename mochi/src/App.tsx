@@ -180,8 +180,8 @@ export const App: React.FC = () => {
   if (isCreditsView) return <CreditsPage />;
   if (legalKind) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-[#090b10] text-slate-900 dark:text-[#ffffff] flex flex-col font-sans transition-colors">
-        <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+      <div className="min-h-screen min-h-[100dvh] bg-slate-50 dark:bg-[#090b10] text-slate-900 dark:text-[#ffffff] flex flex-col font-sans transition-colors">
+        <main className="flex-1 flex flex-col min-w-0">
           <LegalPage kind={legalKind} />
         </main>
         <Footer onNavigateLegal={navigateToLegal} />
@@ -190,28 +190,26 @@ export const App: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#090b10] text-slate-900 dark:text-[#ffffff] flex flex-col font-sans transition-colors">
-      {user && (
-        <MochiNavbar
-          user={user}
-          activeTab={activeTab}
-          onOpenAuth={() => handleOpenAuth('signin')}
-          onOpenProfile={() => setIsProfileModalOpen(true)}
-          onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-          onNavigateTab={(tab) => {
-            if (tab === 'studio') {
-              if (!user) { handleOpenAuth('signin'); return; }
-              openStudioApp();
-              return;
-            }
-            if (tab === 'player' && !user) { handleOpenAuth('signin'); return; }
-            navigateToTab(tab);
-          }}
-          onSearch={(query) => { setCatalogSearch(query); navigateToTab('catalog'); }}
-        />
-      )}
+    <div className="min-h-screen min-h-[100dvh] bg-slate-50 dark:bg-[#090b10] text-slate-900 dark:text-[#ffffff] flex flex-col font-sans transition-colors">
+      <MochiNavbar
+        user={user}
+        activeTab={activeTab}
+        onOpenAuth={() => handleOpenAuth('signin')}
+        onOpenProfile={() => setIsProfileModalOpen(true)}
+        onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+        onNavigateTab={(tab) => {
+          if (tab === 'studio') {
+            if (!user) { handleOpenAuth('signin'); return; }
+            openStudioApp();
+            return;
+          }
+          if (tab === 'player' && !user) { handleOpenAuth('signin'); return; }
+          navigateToTab(tab);
+        }}
+        onSearch={(query) => { setCatalogSearch(query); navigateToTab('catalog'); }}
+      />
 
-      <div className="flex-1 flex">
+      <div className="flex-1 flex min-w-0">
         {user && (
           <Sidebar
             user={user}
@@ -226,7 +224,7 @@ export const App: React.FC = () => {
           />
         )}
 
-        <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+        <main className="flex-1 flex flex-col min-w-0">
           <AppContent
             activeTab={activeTab}
             user={user}

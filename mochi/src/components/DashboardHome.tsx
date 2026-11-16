@@ -1,7 +1,7 @@
 // Mochi authenticated home dashboard using the real published catalogue
 
 import React, { useMemo } from 'react';
-import { ChevronRight, Shield, Compass, Layers, Orbit, Cpu, Zap } from 'lucide-react';
+import { ChevronRight, Shield, Compass, Layers, Orbit, Cpu, Zap, Play, Wrench } from 'lucide-react';
 import { FriendsBar, FriendEntry } from './FriendsBar';
 import { GameCard3D } from './home/GameCard3D';
 import { useI18n } from '../i18n/context';
@@ -59,9 +59,57 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({ games, onPlayGame,
 
   return (
     <div className="mochi-page mochi-ambient-mesh">
+      <section className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0a0d12] min-h-[240px] sm:min-h-[280px] flex items-end">
+        <img
+          src="/landing/hero-valley.jpg"
+          alt=""
+          fetchPriority="high"
+          decoding="async"
+          className="absolute inset-0 w-full h-full object-cover object-[center_35%] block"
+        />
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              'linear-gradient(90deg, rgba(6,8,12,0.92) 0%, rgba(6,8,12,0.72) 48%, rgba(6,8,12,0.22) 100%), linear-gradient(0deg, rgba(6,8,12,0.9) 0%, rgba(6,8,12,0.2) 60%)'
+          }}
+        />
+        <div className="relative z-10 p-6 sm:p-8 max-w-2xl space-y-3">
+          <span className="inline-block px-2.5 py-1 rounded bg-[#00a2ff]/20 border border-[#00a2ff]/40 text-[10px] font-mono font-semibold tracking-wider text-[#7ec8ff] uppercase">
+            {t.landing.badge}
+          </span>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-white leading-tight whitespace-pre-line">
+            {t.landing.heroTitle}
+          </h1>
+          <p className="text-sm text-slate-300 max-w-xl">{t.landing.heroSub}</p>
+          <div className="flex flex-wrap items-center gap-2.5 pt-1">
+            {featured[0] && (
+              <button
+                type="button"
+                onClick={() => onPlayGame(featured[0])}
+                className="mochi-btn-primary inline-flex items-center gap-2"
+              >
+                <Play className="w-4 h-4" />
+                <span>{t.landing.playNow}</span>
+              </button>
+            )}
+            {onNavigateTab && (
+              <button
+                type="button"
+                onClick={() => onNavigateTab('studio')}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-semibold border border-white/15 backdrop-blur-sm transition-colors"
+              >
+                <Wrench className="w-4 h-4" />
+                <span>{t.nav.create}</span>
+              </button>
+            )}
+          </div>
+        </div>
+      </section>
+
       <div>
         <div className="mochi-eyebrow">MOCHI // DASHBOARD</div>
-        <h1 className="mochi-page-title">{t.dashboard.homeTitle}</h1>
+        <h2 className="mochi-page-title">{t.dashboard.homeTitle}</h2>
       </div>
 
       <FriendsBar

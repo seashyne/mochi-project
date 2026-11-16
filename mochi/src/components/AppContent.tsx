@@ -90,6 +90,13 @@ export const AppContent: React.FC<AppContentProps> = ({
     }
 
     if (!user) {
+      if (activeTab === 'catalog') {
+        return (
+          <div className="max-w-7xl mx-auto w-full px-2 sm:px-4 py-4">
+            <GameCatalog games={games} onPlayGame={onPlayGame} initialSearch={catalogSearch} />
+          </div>
+        );
+      }
       return (
         <LandingHero
           games={games}
