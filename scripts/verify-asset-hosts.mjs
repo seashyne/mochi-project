@@ -97,7 +97,7 @@ console.log(
 if (process.argv.includes('--live')) {
   const probe = async (host) => {
     try {
-      const response = await fetch(`https://${host}/api/v1/assets/file/__health__`, {
+      const response = await fetch(`https://${host}/api/v1/assets/file/assets/sha256/__health__`, {
         signal: AbortSignal.timeout(8000)
       });
       return response.status;
