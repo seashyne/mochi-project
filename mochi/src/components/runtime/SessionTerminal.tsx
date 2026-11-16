@@ -31,8 +31,8 @@ function CodeView({ code, highlightLine }: { code: string; highlightLine?: numbe
           const active = highlightLine === index + 1;
           return (
             <div key={index} className={`flex ${active ? 'bg-rose-500/15 text-rose-200' : ''}`}>
-              <span className="w-9 shrink-0 text-right pr-2 text-slate-600 select-none tabular-nums">{index + 1}</span>
-              <span className="pr-3 whitespace-pre">{line || ' '}</span>
+              <span className="w-9 shrink-0 text-end pe-2 text-slate-600 select-none tabular-nums">{index + 1}</span>
+              <span className="pe-3 whitespace-pre">{line || ' '}</span>
             </div>
           );
         })}
@@ -144,7 +144,7 @@ export const SessionTerminal: React.FC<SessionTerminalProps> = ({
         >
           <Terminal className="w-3.5 h-3.5 text-[#38bdf8]" />
           {title}
-          <span className="ml-1 text-slate-500 tabular-nums">{snapshot.entries.length}</span>
+          <span className="ms-1 text-slate-500 tabular-nums">{snapshot.entries.length}</span>
         </button>
       </div>
     );
@@ -163,7 +163,7 @@ export const SessionTerminal: React.FC<SessionTerminalProps> = ({
     <div className={`pointer-events-auto flex flex-col rounded-xl overflow-hidden border border-white/[0.1] bg-[#090b10]/95 backdrop-blur-md shadow-2xl ${className}`}>
       <div className="flex items-center gap-1.5 px-2.5 py-1.5 border-b border-white/[0.08] bg-black/30">
         <Terminal className="w-3.5 h-3.5 text-[#38bdf8] shrink-0" />
-        <span className="text-[11px] font-bold text-slate-200 mr-1">{title}</span>
+        <span className="text-[11px] font-bold text-slate-200 me-1">{title}</span>
         <button type="button" onClick={() => setTab('output')} className={`px-2 py-0.5 rounded text-[10px] font-mono ${tab === 'output' ? 'bg-[#38bdf8]/20 text-[#7dd3fc]' : 'text-slate-500 hover:text-slate-300'}`}>Output</button>
         <button type="button" onClick={() => setTab('scripts')} className={`px-2 py-0.5 rounded text-[10px] font-mono flex items-center gap-1 ${tab === 'scripts' ? 'bg-[#38bdf8]/20 text-[#7dd3fc]' : 'text-slate-500 hover:text-slate-300'}`}>
           <FileCode2 className="w-3 h-3" /> Scripts ({snapshot.scripts.length})
@@ -202,7 +202,7 @@ export const SessionTerminal: React.FC<SessionTerminalProps> = ({
                   <button
                     type="button"
                     onClick={() => hasCode && setExpanded(isExpanded ? null : entry.id)}
-                    className="w-full flex items-start gap-1.5 px-1.5 py-1 text-left hover:bg-white/[0.03] rounded"
+                    className="w-full flex items-start gap-1.5 px-1.5 py-1 text-start hover:bg-white/[0.03] rounded"
                   >
                     {hasCode ? (isExpanded ? <ChevronDown className="w-3 h-3 mt-0.5 shrink-0 text-slate-600" /> : <ChevronRight className="w-3 h-3 mt-0.5 shrink-0 text-slate-600" />) : <span className="w-3 shrink-0" />}
                     <LevelIcon level={entry.level} />
@@ -211,7 +211,7 @@ export const SessionTerminal: React.FC<SessionTerminalProps> = ({
                     <span className={`break-all ${entry.level === 'error' ? 'text-rose-200' : entry.level === 'warn' ? 'text-amber-200' : 'text-slate-300'}`}>{entry.message}</span>
                   </button>
                   {isExpanded && (
-                    <div className="px-2 pb-2 pl-6">
+                    <div className="px-2 pb-2 ps-6">
                       {entry.code ? (
                         <CodeView code={entry.code} highlightLine={entry.line} />
                       ) : (
@@ -250,14 +250,14 @@ export const SessionTerminal: React.FC<SessionTerminalProps> = ({
         </>
       ) : (
         <div className="flex min-h-[140px] max-h-[240px]">
-          <div className="w-36 shrink-0 border-r border-white/[0.08] overflow-y-auto py-1">
+          <div className="w-36 shrink-0 border-e border-white/[0.08] overflow-y-auto py-1">
             {snapshot.scripts.length === 0 && <div className="px-2 py-2 text-[10px] text-slate-600">No scripts</div>}
             {snapshot.scripts.map((script) => (
               <button
                 key={script.source}
                 type="button"
                 onClick={() => setSelectedScript(script.source)}
-                className={`w-full text-left px-2 py-1 truncate text-[11px] font-mono ${activeScript?.source === script.source ? 'bg-[#38bdf8]/15 text-[#7dd3fc]' : 'text-slate-400 hover:text-white'}`}
+                className={`w-full text-start px-2 py-1 truncate text-[11px] font-mono ${activeScript?.source === script.source ? 'bg-[#38bdf8]/15 text-[#7dd3fc]' : 'text-slate-400 hover:text-white'}`}
               >
                 {script.source}
               </button>

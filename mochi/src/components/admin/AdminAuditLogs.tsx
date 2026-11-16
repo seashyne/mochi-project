@@ -58,7 +58,7 @@ export const AdminAuditLogs: React.FC<AdminAuditLogsProps> = ({
   return (
     <div className="rounded-2xl bg-white dark:bg-[#121621]/90 backdrop-blur-md border border-slate-200 dark:border-white/[0.08] overflow-hidden shadow-sm">
       <div className="p-4 border-b border-slate-200 dark:border-white/[0.08] flex items-center justify-between">
-        <div className="flex items-center space-x-2.5">
+        <div className="flex items-center gap-x-2.5">
           <ScrollText className="w-4 h-4 text-[#00a2ff]" />
           <h3 className="text-sm font-bold text-slate-900 dark:text-white">{t.admin.auditHeader}</h3>
           <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-white/[0.05] text-[11px] font-mono text-slate-700 dark:text-slate-400">
@@ -70,7 +70,7 @@ export const AdminAuditLogs: React.FC<AdminAuditLogsProps> = ({
           type="button"
           onClick={onRefresh}
           disabled={isLoading}
-          className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] border border-slate-200 dark:border-white/[0.08] text-xs text-slate-700 dark:text-slate-200 transition-colors disabled:opacity-50"
+          className="inline-flex items-center gap-x-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] border border-slate-200 dark:border-white/[0.08] text-xs text-slate-700 dark:text-slate-200 transition-colors disabled:opacity-50"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
           <span>{t.admin.refresh}</span>
@@ -78,7 +78,7 @@ export const AdminAuditLogs: React.FC<AdminAuditLogsProps> = ({
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
+        <table className="w-full text-start border-collapse">
           <thead>
             <tr className="border-b border-slate-200 dark:border-white/[0.08] text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-white/[0.02]">
               <th className="py-3 px-4 font-semibold">Timestamp</th>
@@ -130,7 +130,7 @@ export const AdminAuditLogs: React.FC<AdminAuditLogsProps> = ({
         <span className="font-mono">
           Page {page} / {totalPages}
         </span>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-x-2">
           <button
             type="button"
             disabled={page <= 1 || isLoading}

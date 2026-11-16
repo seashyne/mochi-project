@@ -81,7 +81,7 @@ export const PartMenuButton: React.FC<{ onAddObject: (type: StudioObjectType) =>
       </button>
       {open && (
         <div
-          className="absolute left-0 top-full mt-1 w-40 py-1 rounded-md bg-studio-panel border border-studio-border shadow-xl z-50"
+          className="absolute start-0 top-full mt-1 w-40 py-1 rounded-md bg-studio-panel border border-studio-border shadow-xl z-50"
           onMouseLeave={() => setOpen(false)}
         >
           {PART_MENU.map((item) => (

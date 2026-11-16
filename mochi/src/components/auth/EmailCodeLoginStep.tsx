@@ -108,7 +108,7 @@ export const EmailCodeLoginStep: React.FC<EmailCodeLoginStepProps> = ({
       {step === 'email' ? (
         <form onSubmit={handleSendCode} className="space-y-3">
           <div className="relative">
-            <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <Mail className="w-4 h-4 text-slate-500 absolute start-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="email"
               value={email}
@@ -116,7 +116,7 @@ export const EmailCodeLoginStep: React.FC<EmailCodeLoginStepProps> = ({
               placeholder={t.auth.email}
               required
               autoFocus
-              className="mochi-input w-full pl-10 pr-3.5 py-2.5 rounded-xl text-xs"
+              className="mochi-input w-full ps-10 pe-3.5 py-2.5 rounded-xl text-xs"
             />
           </div>
 
@@ -135,7 +135,7 @@ export const EmailCodeLoginStep: React.FC<EmailCodeLoginStepProps> = ({
           </div>
 
           <div className="relative">
-            <ShieldCheck className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <ShieldCheck className="w-4 h-4 text-slate-500 absolute start-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               value={code}
@@ -144,7 +144,7 @@ export const EmailCodeLoginStep: React.FC<EmailCodeLoginStepProps> = ({
               required
               maxLength={6}
               autoFocus
-              className="mochi-input w-full pl-10 pr-3.5 py-2.5 rounded-xl text-xs font-mono tracking-widest text-center"
+              className="mochi-input w-full ps-10 pe-3.5 py-2.5 rounded-xl text-xs font-mono tracking-widest text-center"
             />
           </div>
 

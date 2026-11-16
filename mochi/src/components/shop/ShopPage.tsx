@@ -154,13 +154,13 @@ export const ShopPage: React.FC<ShopPageProps> = ({ onOpenAuth }) => {
       {/* Search and Filters */}
       <div className="flex flex-col sm:flex-row items-center gap-3">
         <div className="relative flex-1 w-full">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 z-10" />
+          <Search className="w-4 h-4 text-slate-400 absolute start-3.5 top-1/2 -translate-y-1/2 z-10" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search avatar accessories, hats, shirts, gear..."
-            className="mochi-input-soft pl-10"
+            className="mochi-input-soft ps-10"
           />
         </div>
 

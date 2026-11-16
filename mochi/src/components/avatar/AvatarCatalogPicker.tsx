@@ -32,7 +32,7 @@ export const AvatarCatalogPicker: React.FC<AvatarCatalogPickerProps> = ({
           type="button"
           onClick={() => onSelect('')}
           aria-pressed={selectedId === ''}
-          className={`flex items-center gap-2 px-2.5 py-2 rounded-xl border text-left text-[11px] font-semibold transition-colors ${
+          className={`flex items-center gap-2 px-2.5 py-2 rounded-xl border text-start text-[11px] font-semibold transition-colors ${
             selectedId === ''
               ? 'border-[#00a2ff]/50 bg-[#00a2ff]/10 text-[#00a2ff]'
               : 'border-slate-200 dark:border-white/[0.08] text-slate-600 dark:text-slate-300 hover:bg-slate-100/70 dark:hover:bg-white/[0.04]'
@@ -52,7 +52,7 @@ export const AvatarCatalogPicker: React.FC<AvatarCatalogPickerProps> = ({
               onClick={() => onSelect(item.id)}
               aria-pressed={isSelected}
               title={item.name}
-              className={`flex items-center gap-2 px-2.5 py-2 rounded-xl border text-left text-[11px] font-semibold transition-colors ${
+              className={`flex items-center gap-2 px-2.5 py-2 rounded-xl border text-start text-[11px] font-semibold transition-colors ${
                 isSelected
                   ? 'border-[#00a2ff]/50 bg-[#00a2ff]/10 text-[#00a2ff]'
                   : 'border-slate-200 dark:border-white/[0.08] text-slate-600 dark:text-slate-300 hover:bg-slate-100/70 dark:hover:bg-white/[0.04]'

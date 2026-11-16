@@ -59,13 +59,13 @@ export const StudioEditorShell: React.FC<StudioEditorShellProps> = ({
 
     <div className="flex-1 flex min-h-0">
       {panels.toolbox && toolbox && (
-        <aside className="w-[266px] shrink-0 min-h-0 border-r border-studio-border">{toolbox}</aside>
+        <aside className="w-[266px] shrink-0 min-h-0 border-e border-studio-border">{toolbox}</aside>
       )}
 
       <main className="flex-1 min-w-0 min-h-0 flex flex-col bg-studio-bg">{viewport}</main>
 
       {(panels.explorer || panels.properties) && (
-        <aside className="w-[292px] shrink-0 min-h-0 flex flex-col border-l border-studio-border">
+        <aside className="w-[292px] shrink-0 min-h-0 flex flex-col border-s border-studio-border">
           {panels.explorer && (
             <div className="h-[42%] min-h-0 border-b border-studio-border">{explorer}</div>
           )}

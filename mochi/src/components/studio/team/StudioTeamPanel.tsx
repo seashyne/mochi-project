@@ -43,7 +43,7 @@ export const StudioTeamPanel: React.FC<StudioTeamPanelProps> = ({ team, onClose 
 
   return (
     <div className="fixed inset-0 z-[80] flex justify-end bg-studio-overlay/60" data-testid="team-panel-overlay">
-      <div className="w-full max-w-sm h-full bg-studio-panel border-l border-studio-border shadow-2xl flex flex-col text-studio-text">
+      <div className="w-full max-w-sm h-full bg-studio-panel border-s border-studio-border shadow-2xl flex flex-col text-studio-text">
         <header className="flex items-center justify-between gap-2 px-4 py-3 border-b border-studio-border bg-studio-ribbon">
           <div className="flex items-center gap-2">
             <Users className="w-4 h-4 text-studio-accent" />

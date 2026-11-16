@@ -50,7 +50,7 @@ export const QrLoginStep: React.FC<QrLoginStepProps> = ({ onSuccess, onBack }) =
       {/* Cyber QR Matrix Graphic */}
       <div className="relative mx-auto w-48 h-48 rounded-2xl bg-[#090b10] border border-[#00a2ff]/40 p-4 flex flex-col items-center justify-center shadow-mochi-cyan overflow-hidden group">
         <div className="absolute inset-0 bg-mochi-grid bg-[size:12px_12px] opacity-40 pointer-events-none" />
-        <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-[#00a2ff] to-transparent animate-pulse" />
+        <div className="absolute top-0 start-0 end-0 h-0.5 bg-gradient-to-r from-transparent via-[#00a2ff] to-transparent animate-pulse" />
 
         {/* Clean SVG QR Pattern Representation */}
         <svg viewBox="0 0 100 100" className="w-36 h-36 text-[#38bdf8] relative z-10" fill="currentColor">

@@ -132,13 +132,13 @@ export const AdminGameModeration: React.FC<AdminGameModerationProps> = ({
 
         <div className="flex items-center gap-2">
           <div className="relative flex-1 sm:w-64">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-slate-400 absolute start-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={t.admin.gameSearchPlaceholder}
-              className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-100 dark:bg-[#090b10] border border-slate-200 dark:border-white/[0.08] focus:border-[#00a2ff] text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none"
+              className="w-full ps-9 pe-3 py-2 rounded-xl bg-slate-100 dark:bg-[#090b10] border border-slate-200 dark:border-white/[0.08] focus:border-[#00a2ff] text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none"
             />
           </div>
 
@@ -161,14 +161,14 @@ export const AdminGameModeration: React.FC<AdminGameModerationProps> = ({
 
       {/* Moderation Table */}
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
+        <table className="w-full text-start border-collapse">
           <thead>
             <tr className="border-b border-slate-200 dark:border-white/[0.08] text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-white/[0.02]">
               <th className="py-3 px-4 font-semibold">{t.studio.worldTitle}</th>
               <th className="py-3 px-4 font-semibold">{t.catalog.plays}</th>
               <th className="py-3 px-4 font-semibold">{t.admin.status}</th>
               <th className="py-3 px-4 font-semibold">{t.admin.featured}</th>
-              <th className="py-3 px-4 font-semibold text-right">Moderation</th>
+              <th className="py-3 px-4 font-semibold text-end">Moderation</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200 dark:divide-white/[0.06] text-xs">
@@ -202,7 +202,7 @@ export const AdminGameModeration: React.FC<AdminGameModerationProps> = ({
                       type="button"
                       disabled={isBusy}
                       onClick={() => void handleModerate(g, { isFeatured: !g.isFeatured })}
-                      className={`inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg border text-[11px] font-semibold transition-colors disabled:opacity-50 ${
+                      className={`inline-flex items-center gap-x-1.5 px-2.5 py-1 rounded-lg border text-[11px] font-semibold transition-colors disabled:opacity-50 ${
                         g.isFeatured
                           ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
                           : 'bg-white/[0.03] border-white/[0.08] text-slate-400 hover:text-white'
@@ -217,14 +217,14 @@ export const AdminGameModeration: React.FC<AdminGameModerationProps> = ({
                     </button>
                   </td>
 
-                  <td className="py-3 px-4 text-right">
-                    <div className="inline-flex items-center space-x-2">
+                  <td className="py-3 px-4 text-end">
+                    <div className="inline-flex items-center gap-x-2">
                       {g.status !== 'published' && (
                         <button
                           type="button"
                           disabled={isBusy}
                           onClick={() => void handleModerate(g, { status: 'published' })}
-                          className="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 text-xs font-semibold transition-colors disabled:opacity-50"
+                          className="inline-flex items-center gap-x-1 px-2.5 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 text-xs font-semibold transition-colors disabled:opacity-50"
                         >
                           <CheckCircle2 className="w-3.5 h-3.5" />
                           <span>{t.admin.approve}</span>
@@ -236,7 +236,7 @@ export const AdminGameModeration: React.FC<AdminGameModerationProps> = ({
                           type="button"
                           disabled={isBusy}
                           onClick={() => void handleModerate(g, { status: 'rejected' })}
-                          className="inline-flex items-center space-x-1 px-2.5 py-1.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 text-xs font-semibold transition-colors disabled:opacity-50"
+                          className="inline-flex items-center gap-x-1 px-2.5 py-1.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 text-xs font-semibold transition-colors disabled:opacity-50"
                         >
                           <XCircle className="w-3.5 h-3.5" />
                           <span>{t.admin.unpublish}</span>
@@ -256,7 +256,7 @@ export const AdminGameModeration: React.FC<AdminGameModerationProps> = ({
         <span className="font-mono">
           Page {page} / {totalPages}
         </span>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-x-2">
           <button
             type="button"
             disabled={page <= 1 || isLoading}

@@ -32,7 +32,7 @@ export interface StudioExplorerRowProps {
 }
 
 const rowBase =
-  'group flex items-center gap-1.5 h-[22px] pr-2 rounded-[3px] cursor-pointer text-[11px] transition-colors';
+  'group flex items-center gap-1.5 h-[22px] pe-2 rounded-[3px] cursor-pointer text-[11px] transition-colors';
 
 export const StudioExplorerRow: React.FC<StudioExplorerRowProps> = ({
   object,
@@ -76,8 +76,8 @@ export const StudioExplorerRow: React.FC<StudioExplorerRowProps> = ({
       style={{ paddingLeft: `${8 + depth * 12}px` }}
       className={`${rowBase} ${
         isSelected
-          ? 'bg-studio-accent/25 text-studio-text border-l-2 border-studio-accent'
-          : 'text-studio-text/85 hover:bg-studio-card/60 border-l-2 border-transparent'
+          ? 'bg-studio-accent/25 text-studio-text border-s-2 border-studio-accent'
+          : 'text-studio-text/85 hover:bg-studio-card/60 border-s-2 border-transparent'
       } ${isDropTarget ? 'ring-1 ring-inset ring-studio-accent bg-studio-accent/10' : ''}`}
     >
       {hasChildren ? (

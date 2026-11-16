@@ -93,12 +93,12 @@ export const StudioAssetLibraryPanel: React.FC<StudioAssetLibraryPanelProps> = (
       </div>
 
       <div className="relative">
-        <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-studio-muted" />
+        <Search className="absolute start-2 top-1/2 -translate-y-1/2 w-3 h-3 text-studio-muted" />
         <input
           value={library.search}
           onChange={(e) => library.setSearch(e.target.value)}
           placeholder="Search assets..."
-          className="w-full pl-7 pr-2 py-1.5 rounded-lg bg-studio-card border border-studio-border text-[11px] font-mono text-studio-text placeholder:text-studio-muted focus:outline-none focus:border-studio-accent"
+          className="w-full ps-7 pe-2 py-1.5 rounded-lg bg-studio-card border border-studio-border text-[11px] font-mono text-studio-text placeholder:text-studio-muted focus:outline-none focus:border-studio-accent"
         />
       </div>
 
@@ -154,7 +154,7 @@ export const StudioAssetLibraryPanel: React.FC<StudioAssetLibraryPanelProps> = (
               key={folder.id}
               type="button"
               onClick={() => library.openFolder(folder.id)}
-              className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-studio-card border border-studio-border hover:border-studio-muted text-left"
+              className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-studio-card border border-studio-border hover:border-studio-muted text-start"
             >
               <Folder className="w-3.5 h-3.5 text-studio-accent shrink-0" />
               <span className="text-[10px] font-mono text-studio-text truncate">{folder.name}</span>
@@ -168,7 +168,7 @@ export const StudioAssetLibraryPanel: React.FC<StudioAssetLibraryPanelProps> = (
           No files yet. Upload an asset to get started.
         </div>
       ) : (
-        <ul className="space-y-1 max-h-72 overflow-y-auto pr-1">
+        <ul className="space-y-1 max-h-72 overflow-y-auto pe-1">
           {library.files.map((file) => {
             const Icon = KIND_ICONS[file.kind] ?? FileIcon;
             const VisibilityIcon = VISIBILITY_ICON[file.visibility] ?? Lock;

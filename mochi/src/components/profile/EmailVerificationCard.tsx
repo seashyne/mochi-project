@@ -85,7 +85,7 @@ export const EmailVerificationCard: React.FC<EmailVerificationCardProps> = ({
   };
 
   return (
-    <div className="p-4 bg-slate-100/70 dark:bg-[#090b10]/80 border border-slate-200 dark:border-white/[0.08] rounded-2xl text-left space-y-3">
+    <div className="p-4 bg-slate-100/70 dark:bg-[#090b10]/80 border border-slate-200 dark:border-white/[0.08] rounded-2xl text-start space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Mail className="w-4 h-4 text-[#00a2ff]" />

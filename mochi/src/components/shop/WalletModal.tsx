@@ -105,7 +105,7 @@ export const WalletModal: React.FC<WalletModalProps> = ({
             </span>
           </div>
 
-          <div className="max-h-48 overflow-y-auto space-y-2 pr-1">
+          <div className="max-h-48 overflow-y-auto space-y-2 pe-1">
             {loading ? (
               <div className="text-center py-6 text-xs text-slate-500">Loading transactions...</div>
             ) : ledger.length === 0 ? (

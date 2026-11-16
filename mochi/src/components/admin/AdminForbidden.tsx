@@ -27,13 +27,13 @@ export const AdminForbidden: React.FC<AdminForbiddenProps> = ({
         {/* Shield Lock Emblem */}
         <div className="mx-auto mb-5 w-16 h-16 rounded-2xl bg-rose-500/10 border border-rose-500/25 flex items-center justify-center relative shadow-lg shadow-rose-500/10">
           <ShieldAlert className="w-8 h-8 text-rose-400" />
-          <span className="absolute -bottom-1.5 -right-1.5 w-6 h-6 rounded-lg bg-slate-100 dark:bg-[#090b10] border border-slate-200 dark:border-white/10 flex items-center justify-center">
+          <span className="absolute -bottom-1.5 -end-1.5 w-6 h-6 rounded-lg bg-slate-100 dark:bg-[#090b10] border border-slate-200 dark:border-white/10 flex items-center justify-center">
             <Lock className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
           </span>
         </div>
 
         {/* HTTP 403 Telemetry Pill */}
-        <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/20 text-[11px] font-mono font-bold tracking-wider text-rose-600 dark:text-rose-300 mb-4">
+        <div className="inline-flex items-center gap-x-2 px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/20 text-[11px] font-mono font-bold tracking-wider text-rose-600 dark:text-rose-300 mb-4">
           <span>HTTP 403</span>
           <span className="text-slate-300 dark:text-white/25">/</span>
           <span>RBAC PROTECTED</span>
@@ -52,7 +52,7 @@ export const AdminForbidden: React.FC<AdminForbiddenProps> = ({
             <button
               type="button"
               onClick={onOpenSignIn}
-              className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-5 py-2.5 rounded-xl bg-[#00a2ff] hover:bg-[#008ee0] text-white text-xs font-bold tracking-wide transition-colors shadow-lg shadow-[#00a2ff]/20"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-x-2 px-5 py-2.5 rounded-xl bg-[#00a2ff] hover:bg-[#008ee0] text-white text-xs font-bold tracking-wide transition-colors shadow-lg shadow-[#00a2ff]/20"
             >
               <LogIn className="w-4 h-4" />
               <span>{t.nav.signIn}</span>
@@ -62,7 +62,7 @@ export const AdminForbidden: React.FC<AdminForbiddenProps> = ({
           <button
             type="button"
             onClick={onReturnHome}
-            className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] border border-slate-200 dark:border-white/[0.08] text-slate-700 dark:text-slate-200 text-xs font-semibold transition-colors"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-x-2 px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] border border-slate-200 dark:border-white/[0.08] text-slate-700 dark:text-slate-200 text-xs font-semibold transition-colors"
           >
             <ArrowLeft className="w-4 h-4 text-[#00a2ff]" />
             <span>{t.admin.returnHome}</span>

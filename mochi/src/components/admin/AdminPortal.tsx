@@ -78,7 +78,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
         {/* Backoffice Header */}
         <div className="rounded-2xl bg-white dark:bg-[#121621]/90 backdrop-blur-xl border border-slate-200 dark:border-white/[0.08] p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
           <div className="space-y-1.5">
-            <div className="inline-flex items-center space-x-2 px-2.5 py-0.5 rounded-full bg-[#00a2ff]/15 border border-[#00a2ff]/30 text-[11px] font-mono font-bold text-[#00a2ff]">
+            <div className="inline-flex items-center gap-x-2 px-2.5 py-0.5 rounded-full bg-[#00a2ff]/15 border border-[#00a2ff]/30 text-[11px] font-mono font-bold text-[#00a2ff]">
               <Shield className="w-3.5 h-3.5" />
               <span>ADMINISTRATION // {currentUser.username.toUpperCase()}</span>
             </div>
@@ -92,7 +92,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
             type="button"
             onClick={() => void loadTelemetryAndLogs()}
             disabled={isLoading}
-            className="self-start md:self-auto inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-[#00a2ff] hover:bg-[#008ee0] text-white text-xs font-bold tracking-wide transition-colors shadow-lg shadow-[#00a2ff]/20 disabled:opacity-50"
+            className="self-start md:self-auto inline-flex items-center gap-x-2 px-4 py-2.5 rounded-xl bg-[#00a2ff] hover:bg-[#008ee0] text-white text-xs font-bold tracking-wide transition-colors shadow-lg shadow-[#00a2ff]/20 disabled:opacity-50"
           >
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
             <span>{t.admin.refresh}</span>
@@ -109,7 +109,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                 key={tab.key}
                 type="button"
                 onClick={() => setActiveTab(tab.key)}
-                className={`inline-flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                className={`inline-flex items-center gap-x-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
                   isSelected
                     ? 'bg-[#00a2ff] text-white shadow-md shadow-[#00a2ff]/25'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/[0.04]'
@@ -125,7 +125,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
         {/* Non-blocking Telemetry Error Banner */}
         {error && (
           <div className="rounded-xl bg-rose-500/10 border border-rose-500/25 px-4 py-3 flex items-center justify-between gap-3 text-xs text-rose-200">
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center gap-x-2">
               <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
               <span>{error}</span>
             </div>

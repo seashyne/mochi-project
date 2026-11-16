@@ -97,7 +97,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ initialThreadId }) =
                   key={thread.id}
                   type="button"
                   onClick={() => selectThread(thread.id)}
-                  className={`mochi-row text-left w-full ${
+                  className={`mochi-row text-start w-full ${
                     thread.id === activeId ? 'border-sky-400/40 bg-sky-500/[0.06]' : ''
                   }`}
                 >

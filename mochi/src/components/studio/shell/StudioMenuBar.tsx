@@ -124,7 +124,7 @@ export const StudioMenuBar: React.FC<StudioMenuBarProps> = ({
       className="relative z-40 flex items-center justify-between gap-3 h-8 px-2 bg-studio-ribbon border-b border-studio-border shrink-0"
     >
       <div className="flex items-center gap-2 min-w-0">
-        <div className="flex items-center gap-1.5 pl-1 pr-2">
+        <div className="flex items-center gap-1.5 ps-1 pe-2">
           <span className="w-4 h-4 rounded-[3px] bg-studio-accent flex items-center justify-center">
             <Box className="w-2.5 h-2.5 text-studio-on-accent" />
           </span>
@@ -152,7 +152,7 @@ export const StudioMenuBar: React.FC<StudioMenuBarProps> = ({
                 {menu.label}
               </button>
               {openMenu === menu.label && (
-                <div className="absolute left-0 top-full mt-0.5 w-52 py-1 rounded-md bg-studio-panel border border-studio-border shadow-xl">
+                <div className="absolute start-0 top-full mt-0.5 w-52 py-1 rounded-md bg-studio-panel border border-studio-border shadow-xl">
                   {menu.items.map((item, index) =>
                     item.separator ? (
                       <div key={`sep-${index}`} className="my-1 h-px bg-studio-border" />

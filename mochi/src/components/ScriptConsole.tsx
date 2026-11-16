@@ -22,7 +22,7 @@ export const ScriptConsole: React.FC<ScriptConsoleProps> = ({
   return (
     <div className="bg-[#090b10] border border-gray-800 rounded-lg p-3 flex flex-col space-y-2 text-xs font-mono">
       <div className="flex items-center justify-between border-b border-gray-800/80 pb-2">
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-x-2">
           <Terminal className="w-3.5 h-3.5 text-indigo-400" />
           <span className="font-semibold text-gray-200">{title}</span>
           {executionTimeMs !== undefined && executionTimeMs !== null && (
@@ -31,12 +31,12 @@ export const ScriptConsole: React.FC<ScriptConsoleProps> = ({
             </span>
           )}
           {hasError ? (
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 flex items-center space-x-1">
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 flex items-center gap-x-1">
               <AlertCircle className="w-3 h-3" />
               <span>Error</span>
             </span>
           ) : logs.length > 0 ? (
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center space-x-1">
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-x-1">
               <CheckCircle2 className="w-3 h-3" />
               <span>Ready</span>
             </span>
@@ -52,7 +52,7 @@ export const ScriptConsole: React.FC<ScriptConsoleProps> = ({
         </button>
       </div>
 
-      <div className="max-h-36 overflow-y-auto space-y-1 pr-1 text-[11px]">
+      <div className="max-h-36 overflow-y-auto space-y-1 pe-1 text-[11px]">
         {logs.length === 0 ? (
           <div className="text-gray-500 italic py-1">No console output yet. Click 'Run & Test Script' to execute.</div>
         ) : (
@@ -61,7 +61,7 @@ export const ScriptConsole: React.FC<ScriptConsoleProps> = ({
             return (
               <div
                 key={index}
-                className={`flex items-start space-x-2 py-0.5 leading-relaxed ${
+                className={`flex items-start gap-x-2 py-0.5 leading-relaxed ${
                   log.level === 'error'
                     ? 'text-red-400'
                     : log.level === 'warn'
@@ -72,9 +72,9 @@ export const ScriptConsole: React.FC<ScriptConsoleProps> = ({
                 <span className="text-gray-600 shrink-0 select-none">[{timeStr}]</span>
                 <span className="shrink-0 uppercase font-bold text-[9px] px-1 rounded bg-white/5">
                   {log.level === 'error' ? (
-                    <span className="flex items-center space-x-0.5"><AlertCircle className="w-2.5 h-2.5" /><span>ERR</span></span>
+                    <span className="flex items-center gap-x-0.5"><AlertCircle className="w-2.5 h-2.5" /><span>ERR</span></span>
                   ) : log.level === 'warn' ? (
-                    <span className="flex items-center space-x-0.5"><AlertTriangle className="w-2.5 h-2.5" /><span>WARN</span></span>
+                    <span className="flex items-center gap-x-0.5"><AlertTriangle className="w-2.5 h-2.5" /><span>WARN</span></span>
                   ) : (
                     <span>INFO</span>
                   )}

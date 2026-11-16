@@ -186,10 +186,10 @@ export const StudioHub: React.FC<StudioHubProps> = ({
                 placeholder="Search templates..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-44 sm:w-56 px-3 py-1.5 pl-8 text-xs rounded-lg bg-studio-panel border border-studio-border text-studio-text placeholder-studio-muted focus:outline-none focus:border-studio-accent focus:ring-1 focus:ring-studio-accent transition-colors"
+                className="w-44 sm:w-56 px-3 py-1.5 ps-8 text-xs rounded-lg bg-studio-panel border border-studio-border text-studio-text placeholder-studio-muted focus:outline-none focus:border-studio-accent focus:ring-1 focus:ring-studio-accent transition-colors"
               />
               <svg
-                className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-studio-muted"
+                className="w-3.5 h-3.5 absolute start-2.5 top-1/2 -translate-y-1/2 text-studio-muted"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"

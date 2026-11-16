@@ -253,7 +253,7 @@ export const PortalHeroCanvas: React.FC<PortalHeroCanvasProps> = ({
       )}
 
       {caption && (
-        <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between px-3 py-1.5 rounded-lg bg-white/90 dark:bg-[#090b10]/80 border border-slate-200 dark:border-white/10 backdrop-blur-md pointer-events-none">
+        <div className="absolute bottom-3 start-3 end-3 flex items-center justify-between px-3 py-1.5 rounded-lg bg-white/90 dark:bg-[#090b10]/80 border border-slate-200 dark:border-white/10 backdrop-blur-md pointer-events-none">
           <span className="text-[11px] font-mono text-sky-700 dark:text-sky-300 font-semibold truncate">{caption}</span>
           <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">
             WebGL 3D

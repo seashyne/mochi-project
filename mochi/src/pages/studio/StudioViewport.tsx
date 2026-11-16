@@ -117,7 +117,7 @@ export const StudioViewport: React.FC<StudioViewportProps> = ({ view, canvas, ob
     <div className="flex-1 flex min-h-0">
       {canvas}
       {view === 'animation' && (
-        <div className="w-[380px] shrink-0 border-l border-studio-border bg-studio-panel min-h-0 flex flex-col">
+        <div className="w-[380px] shrink-0 border-s border-studio-border bg-studio-panel min-h-0 flex flex-col">
           <div className="flex-1 min-h-0 overflow-hidden">
             <StudioAnimationEditor api={animation} objects={objects} />
           </div>

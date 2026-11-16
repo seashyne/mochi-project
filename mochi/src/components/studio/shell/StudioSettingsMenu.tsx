@@ -88,7 +88,7 @@ export const StudioSettingsMenu: React.FC<StudioSettingsMenuProps> = ({
   return (
     <div
       ref={rootRef}
-      className="absolute right-1 top-full mt-1 w-64 p-2 rounded-md bg-studio-panel border border-studio-border shadow-xl z-50 space-y-2"
+      className="absolute end-1 top-full mt-1 w-64 p-2 rounded-md bg-studio-panel border border-studio-border shadow-xl z-50 space-y-2"
     >
       <div className="text-[10px] font-bold uppercase tracking-wider text-studio-muted">
         {t.pages.studioSettings}

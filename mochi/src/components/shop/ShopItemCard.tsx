@@ -46,14 +46,14 @@ export const ShopItemCard: React.FC<ShopItemCardProps> = ({
 
         {/* Slot tag */}
         <span
-          className={`absolute top-2.5 left-2.5 px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wider uppercase border ${badgeClass}`}
+          className={`absolute top-2.5 start-2.5 px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wider uppercase border ${badgeClass}`}
         >
           {item.slot}
         </span>
 
         {/* Owned indicator */}
         {isOwned && (
-          <span className="absolute top-2.5 right-2.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 border border-emerald-500/30">
+          <span className="absolute top-2.5 end-2.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 border border-emerald-500/30">
             <Check className="w-3 h-3" />
             <span>Owned</span>
           </span>

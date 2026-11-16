@@ -170,7 +170,7 @@ export const Studio3DCanvas: React.FC<Studio3DCanvasProps> = ({
         brush={brush}
       />
       {!isDocked && (
-        <div className="absolute bottom-3 left-3 flex flex-wrap items-center gap-2 pointer-events-none text-[10px] font-mono text-studio-muted">
+        <div className="absolute bottom-3 start-3 flex flex-wrap items-center gap-2 pointer-events-none text-[10px] font-mono text-studio-muted">
         <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-studio-panel/90 backdrop-blur-md border border-studio-border text-studio-text shadow-sm">
           <MousePointer className="w-3 h-3 text-studio-accent" /><span>Click: Select</span>
         </div>

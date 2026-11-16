@@ -112,7 +112,7 @@ export const PlayerControlsBar: React.FC<PlayerControlsBarProps> = ({
 
       {/* Compact Keybind HUD Strip */}
       <div className="flex flex-wrap items-center gap-2 pt-2.5 border-t border-slate-200 dark:border-white/[0.06]">
-        <span className="inline-flex items-center gap-1.5 text-[11px] font-mono text-slate-500 dark:text-slate-400 mr-1">
+        <span className="inline-flex items-center gap-1.5 text-[11px] font-mono text-slate-500 dark:text-slate-400 me-1">
           <Keyboard className="w-3.5 h-3.5 text-[#38bdf8]" />
           <span>CONTROLS</span>
         </span>

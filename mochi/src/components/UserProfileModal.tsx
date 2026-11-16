@@ -111,18 +111,18 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 
         <div className="px-6 pt-5 pb-2">
           <form onSubmit={handleSearch} className="relative">
-            <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <Search className="w-4 h-4 text-slate-500 absolute start-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               placeholder={t.profile.searchPlaceholder}
-              className="mochi-input w-full pl-10 pr-24 py-2.5 rounded-xl text-xs"
+              className="mochi-input w-full ps-10 pe-24 py-2.5 rounded-xl text-xs"
             />
             <button
               type="submit"
               disabled={isSearching}
-              className="mochi-btn-primary absolute right-1.5 top-1/2 -translate-y-1/2 px-3.5 py-1.5 rounded-lg text-xs font-bold disabled:opacity-50"
+              className="mochi-btn-primary absolute end-1.5 top-1/2 -translate-y-1/2 px-3.5 py-1.5 rounded-lg text-xs font-bold disabled:opacity-50"
             >
               {isSearching ? t.profile.searching : t.profile.searchBtn}
             </button>
@@ -162,7 +162,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                         onSelectGame(g);
                         onClose();
                       }}
-                      className="mochi-card-glow text-left p-3 rounded-xl"
+                      className="mochi-card-glow text-start p-3 rounded-xl"
                     >
                       <div className="text-xs font-bold text-slate-900 dark:text-white truncate">{g.title}</div>
                       <div className="text-[10px] text-slate-500 dark:text-slate-400 font-mono mt-0.5">

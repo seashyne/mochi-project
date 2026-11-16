@@ -44,7 +44,7 @@ export const GameHud: React.FC<GameHudProps> = ({ state, hint = 'WASD move · Sp
               {snapshot.leaderboard.map((row, index) => (
                 <li key={row.category} className="flex items-center justify-between gap-3 text-[11px]">
                   <span className="text-slate-400 truncate">
-                    <span className="text-slate-500 mr-1 tabular-nums">{index + 1}.</span>
+                    <span className="text-slate-500 me-1 tabular-nums">{index + 1}.</span>
                     {row.category}
                   </span>
                   <span className="font-bold text-[#38bdf8] tabular-nums">{row.score}</span>

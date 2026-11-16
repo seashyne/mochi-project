@@ -29,7 +29,7 @@ export const ProfileShareCard: React.FC<ProfileShareCardProps> = ({ user }) => {
           {t.profile.canonicalUuid}
         </label>
         <div className="flex items-center justify-between px-3.5 py-2.5 bg-slate-100/70 dark:bg-[#090b10]/80 border border-slate-200 dark:border-white/[0.08] rounded-xl text-xs font-mono text-slate-800 dark:text-slate-200">
-          <span className="truncate mr-3">{user.id}</span>
+          <span className="truncate me-3">{user.id}</span>
           <button
             type="button"
             onClick={() => copy('uuid', user.id)}
@@ -46,7 +46,7 @@ export const ProfileShareCard: React.FC<ProfileShareCardProps> = ({ user }) => {
           {t.profile.shareableUrl}
         </label>
         <div className="flex items-center justify-between px-3.5 py-2.5 bg-slate-100/70 dark:bg-[#090b10]/80 border border-slate-200 dark:border-white/[0.08] rounded-xl text-xs font-mono text-[#00a2ff] dark:text-[#38bdf8]">
-          <span className="truncate mr-3 select-all">{shareUrl}</span>
+          <span className="truncate me-3 select-all">{shareUrl}</span>
           <button
             type="button"
             onClick={() => copy('url', shareUrl)}

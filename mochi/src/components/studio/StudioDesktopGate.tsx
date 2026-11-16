@@ -66,7 +66,7 @@ export const StudioDesktopGate: React.FC<StudioDesktopGateProps> = ({
         </div>
 
         {/* Future PC version callout */}
-        <div className="p-4 rounded-xl bg-studio-bg/60 border border-studio-border text-left space-y-1.5 text-xs text-studio-muted">
+        <div className="p-4 rounded-xl bg-studio-bg/60 border border-studio-border text-start space-y-1.5 text-xs text-studio-muted">
           <p className="font-semibold text-studio-text">Desktop Architecture</p>
           <p>
             Mochi separates the lightweight cross-platform Player from the full-featured Creator Studio.

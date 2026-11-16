@@ -109,17 +109,17 @@ export const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
       {/* Toolbar */}
       <div className="p-4 border-b border-slate-200 dark:border-white/[0.08] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="relative flex-1 max-w-md">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-slate-400 absolute start-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t.admin.userSearchPlaceholder}
-            className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-100 dark:bg-[#090b10] border border-slate-200 dark:border-white/[0.08] focus:border-[#00a2ff] text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none"
+            className="w-full ps-9 pe-3 py-2 rounded-xl bg-slate-100 dark:bg-[#090b10] border border-slate-200 dark:border-white/[0.08] focus:border-[#00a2ff] text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none"
           />
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-x-2">
           <span className="text-xs font-mono text-slate-500 dark:text-slate-400">
             {total.toLocaleString()} {t.admin.tabUsers}
           </span>
@@ -127,7 +127,7 @@ export const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
             type="button"
             onClick={() => void fetchUsers()}
             disabled={isLoading}
-            className="inline-flex items-center space-x-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] border border-slate-200 dark:border-white/[0.08] text-xs text-slate-700 dark:text-slate-200 transition-colors disabled:opacity-50"
+            className="inline-flex items-center gap-x-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] border border-slate-200 dark:border-white/[0.08] text-xs text-slate-700 dark:text-slate-200 transition-colors disabled:opacity-50"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
             <span>{t.admin.refresh}</span>
@@ -143,14 +143,14 @@ export const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
 
       {/* User Table */}
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
+        <table className="w-full text-start border-collapse">
           <thead>
             <tr className="border-b border-slate-200 dark:border-white/[0.08] text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-white/[0.02]">
               <th className="py-3 px-4 font-semibold">{t.auth.username}</th>
               <th className="py-3 px-4 font-semibold">{t.admin.role}</th>
               <th className="py-3 px-4 font-semibold">{t.admin.coins}</th>
               <th className="py-3 px-4 font-semibold">{t.admin.status}</th>
-              <th className="py-3 px-4 font-semibold text-right">Action</th>
+              <th className="py-3 px-4 font-semibold text-end">Action</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200 dark:divide-white/[0.06] text-xs">
@@ -160,7 +160,7 @@ export const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
               return (
                 <tr key={u.id} className="hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors">
                   <td className="py-3 px-4">
-                    <div className="flex items-center space-x-3">
+                    <div className="flex items-center gap-x-3">
                       <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#00a2ff] to-indigo-600 flex items-center justify-center text-xs font-bold text-white border border-white/20 shrink-0">
                         {(u.displayName?.[0] || u.username[0] || 'U').toUpperCase()}
                       </div>
@@ -195,7 +195,7 @@ export const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
                   </td>
 
                   <td className="py-3 px-4">
-                    <div className="inline-flex items-center space-x-1.5">
+                    <div className="inline-flex items-center gap-x-1.5">
                       <Coins className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                       <input
                         type="number"
@@ -210,7 +210,7 @@ export const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
                         type="button"
                         disabled={isBusy}
                         onClick={() => handleSaveCoins(u)}
-                        className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-[#00a2ff]/15 hover:bg-[#00a2ff]/25 border border-[#00a2ff]/30 text-[11px] font-semibold text-[#00a2ff] transition-colors disabled:opacity-50"
+                        className="inline-flex items-center gap-x-1 px-2.5 py-1 rounded-lg bg-[#00a2ff]/15 hover:bg-[#00a2ff]/25 border border-[#00a2ff]/30 text-[11px] font-semibold text-[#00a2ff] transition-colors disabled:opacity-50"
                       >
                         <Save className="w-3 h-3" />
                         <span>{t.admin.save}</span>
@@ -220,24 +220,24 @@ export const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
 
                   <td className="py-3 px-4">
                     {u.isBanned ? (
-                      <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-rose-500/15 border border-rose-500/30 text-[11px] font-semibold text-rose-300">
+                      <span className="inline-flex items-center gap-x-1 px-2.5 py-0.5 rounded-full bg-rose-500/15 border border-rose-500/30 text-[11px] font-semibold text-rose-300">
                         <Ban className="w-3 h-3" />
                         <span>{t.admin.suspended}</span>
                       </span>
                     ) : (
-                      <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-[11px] font-semibold text-emerald-300">
+                      <span className="inline-flex items-center gap-x-1 px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-[11px] font-semibold text-emerald-300">
                         <CheckCircle2 className="w-3 h-3" />
                         <span>{t.admin.active}</span>
                       </span>
                     )}
                   </td>
 
-                  <td className="py-3 px-4 text-right">
+                  <td className="py-3 px-4 text-end">
                     <button
                       type="button"
                       disabled={isBusy || isSelf}
                       onClick={() => void applyUserPatch(u, { isBanned: !u.isBanned })}
-                      className={`inline-flex items-center space-x-1 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors disabled:opacity-40 ${
+                      className={`inline-flex items-center gap-x-1 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors disabled:opacity-40 ${
                         u.isBanned
                           ? 'bg-emerald-500/15 hover:bg-emerald-500/25 border-emerald-500/30 text-emerald-300'
                           : 'bg-rose-500/15 hover:bg-rose-500/25 border-rose-500/30 text-rose-300'
@@ -258,7 +258,7 @@ export const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
         <span className="font-mono">
           Page {page} / {totalPages}
         </span>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-x-2">
           <button
             type="button"
             disabled={page <= 1 || isLoading}

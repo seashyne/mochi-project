@@ -118,7 +118,7 @@ export const ForgotPasswordStep: React.FC<ForgotPasswordStepProps> = ({
       {step === 'request' ? (
         <form onSubmit={handleRequestCode} className="space-y-3">
           <div className="relative">
-            <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <Mail className="w-4 h-4 text-slate-500 absolute start-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="email"
               value={email}
@@ -126,7 +126,7 @@ export const ForgotPasswordStep: React.FC<ForgotPasswordStepProps> = ({
               placeholder={t.auth.email}
               required
               autoFocus
-              className="mochi-input w-full pl-10 pr-3.5 py-2.5 rounded-xl text-xs"
+              className="mochi-input w-full ps-10 pe-3.5 py-2.5 rounded-xl text-xs"
             />
           </div>
 
@@ -145,7 +145,7 @@ export const ForgotPasswordStep: React.FC<ForgotPasswordStepProps> = ({
           </div>
 
           <div className="relative">
-            <KeyRound className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <KeyRound className="w-4 h-4 text-slate-500 absolute start-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               value={code}
@@ -154,12 +154,12 @@ export const ForgotPasswordStep: React.FC<ForgotPasswordStepProps> = ({
               required
               maxLength={6}
               autoFocus
-              className="mochi-input w-full pl-10 pr-3.5 py-2.5 rounded-xl text-xs font-mono tracking-widest text-center"
+              className="mochi-input w-full ps-10 pe-3.5 py-2.5 rounded-xl text-xs font-mono tracking-widest text-center"
             />
           </div>
 
           <div className="relative">
-            <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <Lock className="w-4 h-4 text-slate-500 absolute start-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type={showPassword ? 'text' : 'password'}
               value={newPassword}
@@ -167,13 +167,13 @@ export const ForgotPasswordStep: React.FC<ForgotPasswordStepProps> = ({
               placeholder={t.auth.newPasswordPlaceholder}
               required
               minLength={6}
-              className="mochi-input w-full pl-10 pr-10 py-2.5 rounded-xl text-xs"
+              className="mochi-input w-full ps-10 pe-10 py-2.5 rounded-xl text-xs"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               aria-label={showPassword ? t.auth.hidePassword : t.auth.showPassword}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+              className="absolute end-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
             >
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>

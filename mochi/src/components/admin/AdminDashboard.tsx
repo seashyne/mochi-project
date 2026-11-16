@@ -100,7 +100,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
 
                 {card.liveDot && (
-                  <span className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-[10px] font-mono font-semibold text-emerald-600 dark:text-emerald-300">
+                  <span className="inline-flex items-center gap-x-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-[10px] font-mono font-semibold text-emerald-600 dark:text-emerald-300">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                     <span>LIVE</span>
                   </span>
@@ -123,17 +123,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {/* Quick Recent Audit Activity Summary */}
       <div className="rounded-2xl bg-white dark:bg-[#121621]/90 backdrop-blur-md border border-slate-200 dark:border-white/[0.08] overflow-hidden shadow-sm">
         <div className="px-5 py-4 border-b border-slate-200 dark:border-white/[0.08] flex items-center justify-between">
-          <div className="flex items-center space-x-2.5">
+          <div className="flex items-center gap-x-2.5">
             <ScrollText className="w-4 h-4 text-[#00a2ff]" />
             <h3 className="text-sm font-bold text-slate-900 dark:text-white">{t.admin.auditHeader}</h3>
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center gap-x-2">
             <button
               type="button"
               onClick={onRefresh}
               disabled={isLoading}
-              className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] border border-slate-200 dark:border-white/[0.08] text-xs text-slate-700 dark:text-slate-300 transition-colors disabled:opacity-50"
+              className="inline-flex items-center gap-x-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] border border-slate-200 dark:border-white/[0.08] text-xs text-slate-700 dark:text-slate-300 transition-colors disabled:opacity-50"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
               <span>{t.admin.refresh}</span>
@@ -142,7 +142,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <button
               type="button"
               onClick={onViewAllLogs}
-              className="inline-flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-[#00a2ff]/15 hover:bg-[#00a2ff]/25 border border-[#00a2ff]/30 text-xs font-semibold text-[#00a2ff] transition-colors"
+              className="inline-flex items-center gap-x-1 px-3 py-1.5 rounded-lg bg-[#00a2ff]/15 hover:bg-[#00a2ff]/25 border border-[#00a2ff]/30 text-xs font-semibold text-[#00a2ff] transition-colors"
             >
               <span>{t.admin.tabAudit}</span>
               <ArrowUpRight className="w-3.5 h-3.5" />
@@ -161,7 +161,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 key={log.id}
                 className="px-5 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors"
               >
-                <div className="flex items-center space-x-3 min-w-0">
+                <div className="flex items-center gap-x-3 min-w-0">
                   <span className="px-2 py-0.5 rounded-md bg-[#00a2ff]/15 border border-[#00a2ff]/30 text-[10px] font-mono font-bold text-[#00a2ff] shrink-0">
                     {log.action}
                   </span>

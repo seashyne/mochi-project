@@ -54,13 +54,13 @@ export const StudioPublishForm: React.FC<StudioPublishFormProps> = ({
 
   return (
     <div className="bg-studio-panel border border-studio-border rounded-2xl p-5 space-y-4 shadow-sm transition-colors">
-      <div className="flex items-center space-x-2 border-b border-studio-border pb-3">
+      <div className="flex items-center gap-x-2 border-b border-studio-border pb-3">
         <UploadCloud className="w-4 h-4 text-studio-accent" />
         <h2 className="text-sm font-bold text-studio-text">{t.studio.publishTitle}</h2>
       </div>
 
       {publishNotice && (
-        <div className="p-3 bg-studio-success/10 dark:bg-studio-success/15 border border-studio-success/40 rounded-xl flex items-center space-x-2 text-xs text-studio-success">
+        <div className="p-3 bg-studio-success/10 dark:bg-studio-success/15 border border-studio-success/40 rounded-xl flex items-center gap-x-2 text-xs text-studio-success">
           <CheckCircle2 className="w-4 h-4 shrink-0" />
           <span>{publishNotice}</span>
         </div>

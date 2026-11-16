@@ -47,7 +47,7 @@ export const StudioViewportOverlay: React.FC<StudioViewportOverlayProps> = ({
 
   return (
     <>
-      <div className="absolute top-3 left-3 flex flex-col gap-1.5">
+      <div className="absolute top-3 start-3 flex flex-col gap-1.5">
         <div className="flex items-center gap-1.5 p-1 rounded-xl bg-studio-panel/90 backdrop-blur-md border border-studio-border text-studio-text shadow-md">
           {gizmos.map((g) => (
             <button key={g.mode} type="button" onClick={() => onGizmoMode(g.mode)} title={g.title}
@@ -95,7 +95,7 @@ export const StudioViewportOverlay: React.FC<StudioViewportOverlayProps> = ({
         )}
       </div>
 
-      <div className="absolute top-3 right-3 flex flex-col gap-1.5 items-end">
+      <div className="absolute top-3 end-3 flex flex-col gap-1.5 items-end">
         <div className="flex items-center gap-1 p-1 rounded-xl bg-studio-panel/90 backdrop-blur-md border border-studio-border shadow-md">
           <Compass className="w-3.5 h-3.5 text-studio-muted mx-1" />
           {VIEW_PRESETS.map((preset: ViewPreset) => (

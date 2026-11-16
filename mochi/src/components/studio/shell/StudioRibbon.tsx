@@ -56,7 +56,7 @@ export const StudioRibbon: React.FC<{
             {tab.label}
           </button>
         ))}
-        <span className="ml-auto pr-1 text-[10px] font-mono text-studio-muted/70 hidden md:inline">
+        <span className="ml-auto pe-1 text-[10px] font-mono text-studio-muted/70 hidden md:inline">
           Mochi Studio 1.0
         </span>
       </div>

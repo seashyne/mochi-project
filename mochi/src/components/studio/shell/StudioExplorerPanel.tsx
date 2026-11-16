@@ -39,7 +39,7 @@ export interface StudioExplorerPanelProps {
 }
 
 const rowBase =
-  'group flex items-center gap-1.5 h-[22px] pr-2 rounded-[3px] cursor-pointer text-[11px] transition-colors';
+  'group flex items-center gap-1.5 h-[22px] pe-2 rounded-[3px] cursor-pointer text-[11px] transition-colors';
 
 /** True when `candidate` sits below `ancestor` in the parent chain. */
 export function isDescendant(objects: StudioObject[], candidate: string, ancestor: string): boolean {

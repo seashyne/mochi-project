@@ -41,17 +41,17 @@ export const GameCard3D: React.FC<GameCard3DProps> = ({
         <div className="absolute inset-0 bg-mochi-grid bg-[size:18px_18px] opacity-40 group-hover:opacity-65 transition-opacity" />
         
         {/* Ambient neon backdrop glow */}
-        <div className="absolute -top-6 -right-6 w-28 h-28 rounded-full bg-[#00a2ff]/20 blur-2xl group-hover:scale-125 transition-transform duration-500 pointer-events-none" />
-        <div className="absolute -bottom-6 -left-6 w-28 h-28 rounded-full bg-indigo-500/20 blur-2xl group-hover:scale-125 transition-transform duration-500 pointer-events-none" />
+        <div className="absolute -top-6 -end-6 w-28 h-28 rounded-full bg-[#00a2ff]/20 blur-2xl group-hover:scale-125 transition-transform duration-500 pointer-events-none" />
+        <div className="absolute -bottom-6 -start-6 w-28 h-28 rounded-full bg-indigo-500/20 blur-2xl group-hover:scale-125 transition-transform duration-500 pointer-events-none" />
 
         {/* Top Badges: Genre Tag & Live Player Indicator */}
-        <div className="absolute top-2.5 left-2.5 z-10 flex items-center gap-1.5">
+        <div className="absolute top-2.5 start-2.5 z-10 flex items-center gap-1.5">
           <span className="px-2 py-0.5 rounded-md bg-[#090b10]/80 backdrop-blur-md border border-white/10 text-[9px] font-mono font-bold tracking-wider text-slate-300 uppercase shadow-sm">
             {tag}
           </span>
         </div>
 
-        <div className="absolute top-2.5 right-2.5 z-10 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[#090b10]/80 backdrop-blur-md border border-emerald-500/30 text-[9px] font-mono text-emerald-400">
+        <div className="absolute top-2.5 end-2.5 z-10 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[#090b10]/80 backdrop-blur-md border border-emerald-500/30 text-[9px] font-mono text-emerald-400">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
           <span>{displayPlayers}</span>
         </div>
@@ -66,13 +66,13 @@ export const GameCard3D: React.FC<GameCard3DProps> = ({
         {/* Play Action Hover Shield */}
         <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-20">
           <div className="w-12 h-12 rounded-full bg-[#00a2ff] text-white flex items-center justify-center shadow-lg shadow-[#00a2ff]/50 transform scale-75 group-hover:scale-100 transition-transform">
-            <Play className="w-5 h-5 fill-current ml-0.5" />
+            <Play className="w-5 h-5 fill-current ms-0.5" />
           </div>
         </div>
 
         {/* Session Progress Bar if applicable */}
         {typeof progressPct === 'number' && (
-          <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/[0.08]">
+          <div className="absolute bottom-0 start-0 end-0 h-1 bg-white/[0.08]">
             <div
               style={{ width: `${progressPct}%` }}
               className="h-full bg-gradient-to-r from-[#00a2ff] to-indigo-500"

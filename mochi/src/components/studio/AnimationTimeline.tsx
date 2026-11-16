@@ -45,14 +45,14 @@ export const AnimationTimeline: React.FC<AnimationTimelineProps> = ({ clip, play
   return (
     <div className="flex flex-col rounded-xl border border-studio-border bg-studio-card overflow-hidden" data-testid="animation-timeline">
       <div className="flex">
-        <div className="w-36 shrink-0 px-3 py-1.5 text-[10px] uppercase tracking-wide text-studio-muted border-b border-r border-studio-border/50">
+        <div className="w-36 shrink-0 px-3 py-1.5 text-[10px] uppercase tracking-wide text-studio-muted border-b border-e border-studio-border/50">
           {t.animation.keyframes}
         </div>
         <div className="relative flex-1 h-7 border-b border-studio-border/50">
           {ticks.map((time, index) => (
             <span
               key={index}
-              className="absolute top-0 h-full border-l border-studio-border/40 pl-1 text-[9px] text-studio-muted leading-7"
+              className="absolute top-0 h-full border-s border-studio-border/40 ps-1 text-[9px] text-studio-muted leading-7"
               style={{ left: `${(index / TICK_COUNT) * 100}%` }}
             >
               {time.toFixed(1)}{t.animation.seconds}
@@ -61,7 +61,7 @@ export const AnimationTimeline: React.FC<AnimationTimelineProps> = ({ clip, play
         </div>
       </div>
       <div className="flex">
-        <div className="w-36 shrink-0 border-r border-studio-border/50">
+        <div className="w-36 shrink-0 border-e border-studio-border/50">
           {clip.tracks.map((track) => (
             <div key={track.target} className="h-8 px-3 flex items-center text-[11px] text-studio-text truncate border-b border-studio-border/30" title={track.target}>
               {track.target}

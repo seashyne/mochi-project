@@ -38,7 +38,7 @@ export function RoomInviteChip({ roomClient }: RoomInviteChipProps) {
   };
 
   return (
-    <div className="absolute top-3 right-3 flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-[#090b10]/85 backdrop-blur-md border border-white/[0.08] text-[11px] font-mono text-slate-300">
+    <div className="absolute top-3 end-3 flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-[#090b10]/85 backdrop-blur-md border border-white/[0.08] text-[11px] font-mono text-slate-300">
       <Users className="w-3.5 h-3.5 text-[#38bdf8]" />
       <span>{t.player.roomShard} #{shard}</span>
       <button

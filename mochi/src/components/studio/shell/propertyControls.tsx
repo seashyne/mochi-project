@@ -147,7 +147,7 @@ export const PropertyControlView: React.FC<{ control: PropertyControl }> = ({ co
             onChange={(event) => control.onChange(Number(event.target.value))}
             className="w-full h-1 accent-studio-accent cursor-pointer"
           />
-          <span className="text-[10px] font-mono text-studio-text w-12 text-right shrink-0">
+          <span className="text-[10px] font-mono text-studio-text w-12 text-end shrink-0">
             {control.format ? control.format(control.value) : control.value.toFixed(2)}
           </span>
         </div>

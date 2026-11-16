@@ -120,7 +120,7 @@ export const StudioHubTemplates: React.FC<StudioHubTemplatesProps> = ({
             {/* Visual Thumbnail Preview */}
             <div className="relative h-32 w-full overflow-hidden border-b border-studio-border/60 bg-studio-bg">
               <TemplatePreviewGraphic type={tpl.previewType} />
-              <div className="absolute top-2 right-2 px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-studio-panel/90 text-studio-muted border border-studio-border/80">
+              <div className="absolute top-2 end-2 px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-studio-panel/90 text-studio-muted border border-studio-border/80">
                 {tpl.previewType}
               </div>
             </div>

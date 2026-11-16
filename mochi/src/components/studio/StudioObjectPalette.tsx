@@ -42,7 +42,7 @@ export const StudioObjectPalette: React.FC<StudioObjectPaletteProps> = ({ onAddO
               key={item.type}
               type="button"
               onClick={() => onAddObject(item.type)}
-              className="group p-2.5 rounded-xl bg-studio-card hover:bg-studio-card/80 border border-studio-border hover:border-studio-accent/50 text-studio-text transition-all text-left flex flex-col justify-between space-y-2 shadow-sm"
+              className="group p-2.5 rounded-xl bg-studio-card hover:bg-studio-card/80 border border-studio-border hover:border-studio-accent/50 text-studio-text transition-all text-start flex flex-col justify-between space-y-2 shadow-sm"
             >
               <div className="flex items-center justify-between">
                 <div className="p-1.5 rounded-lg bg-studio-bg border border-studio-border/50 group-hover:scale-105 transition-transform">

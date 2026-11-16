@@ -92,8 +92,8 @@ export const StudioExplorerServiceRow: React.FC<StudioExplorerServiceRowProps> =
       style={{ paddingLeft: `${6 + depth * 12}px` }}
       className={`${rowClass} ${
         isSelected
-          ? 'bg-studio-accent/25 text-studio-text border-l-2 border-studio-accent'
-          : 'text-studio-text/85 hover:bg-studio-card/60 border-l-2 border-transparent'
+          ? 'bg-studio-accent/25 text-studio-text border-s-2 border-studio-accent'
+          : 'text-studio-text/85 hover:bg-studio-card/60 border-s-2 border-transparent'
       } ${isDropTarget ? 'ring-1 ring-inset ring-studio-accent bg-studio-accent/10' : ''}`}
     >
       {expandable ? (

@@ -140,7 +140,7 @@ export const PlayerChatDrawer: React.FC<PlayerChatDrawerProps> = ({
   };
 
   return (
-    <aside className="absolute top-3 right-3 bottom-14 w-72 sm:w-80 z-20 mochi-glass-panel rounded-2xl flex flex-col overflow-hidden shadow-mochi-glass">
+    <aside className="absolute top-3 end-3 bottom-14 w-72 sm:w-80 z-20 mochi-glass-panel rounded-2xl flex flex-col overflow-hidden shadow-mochi-glass">
       {/* Drawer Header */}
       <div className="px-4 py-3 border-b border-slate-200 dark:border-white/[0.08] flex items-center justify-between bg-slate-100/80 dark:bg-[#090b10]/55">
         <div className="flex items-center gap-2 min-w-0">

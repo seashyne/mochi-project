@@ -93,20 +93,20 @@ export const GameCatalog: React.FC<GameCatalogProps> = ({ games, onPlayGame, ini
           {/* Search Input with Clear Button + Sort Mode Selector */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
             <div className="relative w-full sm:w-72">
-              <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <Search className="w-4 h-4 text-slate-500 absolute start-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t.catalog.searchPlaceholder}
-                className="mochi-input w-full pl-9 pr-8 py-2 rounded-xl text-xs"
+                className="mochi-input w-full ps-9 pe-8 py-2 rounded-xl text-xs"
               />
               {searchQuery && (
                 <button
                   type="button"
                   onClick={() => setSearchQuery('')}
                   aria-label={t.catalog.clearSearch}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-900 dark:hover:text-white p-0.5 rounded transition-colors"
+                  className="absolute end-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-900 dark:hover:text-white p-0.5 rounded transition-colors"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -114,12 +114,12 @@ export const GameCatalog: React.FC<GameCatalogProps> = ({ games, onPlayGame, ini
             </div>
 
             <div className="relative inline-flex items-center">
-              <ArrowUpDown className="w-3.5 h-3.5 text-[#38bdf8] absolute left-3 pointer-events-none" />
+              <ArrowUpDown className="w-3.5 h-3.5 text-[#38bdf8] absolute start-3 pointer-events-none" />
               <select
                 value={sortMode}
                 onChange={(e) => setSortMode(e.target.value as CatalogSortMode)}
                 aria-label={t.catalog.sortWorlds}
-                className="mochi-input pl-8 pr-4 py-2 rounded-xl text-xs font-semibold cursor-pointer appearance-none"
+                className="mochi-input ps-8 pe-4 py-2 rounded-xl text-xs font-semibold cursor-pointer appearance-none"
               >
                 <option value="popular" className="bg-white dark:bg-[#0e1118] text-slate-900 dark:text-white">
                   {t.catalog.sortPopular}
@@ -201,11 +201,11 @@ export const GameCatalog: React.FC<GameCatalogProps> = ({ games, onPlayGame, ini
                       <ArtIcon className="w-7 h-7" />
                     </div>
 
-                    <span className="absolute top-3 left-3 px-2 py-0.5 rounded-md bg-[#090b10]/80 border border-white/10 text-[10px] font-mono font-bold text-[#38bdf8] uppercase">
+                    <span className="absolute top-3 start-3 px-2 py-0.5 rounded-md bg-[#090b10]/80 border border-white/10 text-[10px] font-mono font-bold text-[#38bdf8] uppercase">
                       {genreLabel}
                     </span>
 
-                    <span className="absolute top-3 right-3 px-2 py-0.5 text-[10px] font-mono bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 rounded-md">
+                    <span className="absolute top-3 end-3 px-2 py-0.5 text-[10px] font-mono bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 rounded-md">
                       {game.currentVersion || 'v1.0.0'}
                     </span>
                   </div>

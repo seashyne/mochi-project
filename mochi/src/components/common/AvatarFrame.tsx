@@ -45,21 +45,21 @@ const SIZE_CLASSES: Record<
   sm: {
     outer: 'w-9 h-9',
     text: 'text-xs',
-    badge: 'w-3.5 h-3.5 -bottom-0.5 -right-0.5 border-[1.5px]',
+    badge: 'w-3.5 h-3.5 -bottom-0.5 -end-0.5 border-[1.5px]',
     icon: 'w-2 h-2',
     pad: 'p-[1.5px]'
   },
   md: {
     outer: 'w-14 h-14',
     text: 'text-sm',
-    badge: 'w-4 h-4 bottom-0 right-0 border-2',
+    badge: 'w-4 h-4 bottom-0 end-0 border-2',
     icon: 'w-2.5 h-2.5',
     pad: 'p-[2px]'
   },
   lg: {
     outer: 'w-16 h-16',
     text: 'text-xl',
-    badge: 'w-5 h-5 -bottom-0.5 -right-0.5 border-2',
+    badge: 'w-5 h-5 -bottom-0.5 -end-0.5 border-2',
     icon: 'w-3 h-3',
     pad: 'p-[2px]'
   }

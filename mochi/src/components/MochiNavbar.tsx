@@ -62,7 +62,7 @@ export const MochiNavbar: React.FC<MochiNavbarProps> = ({
   return (
     <header className="sticky top-0 z-40 bg-white/95 dark:bg-[#0e1118]/90 backdrop-blur-xl border-b border-slate-200 dark:border-white/[0.08] px-4 py-2.5 flex items-center justify-between transition-colors">
       {/* Left: Sidebar Toggle, Geometric Brand Emblem, and Primary Nav Tabs */}
-      <div className="flex items-center space-x-3.5">
+      <div className="flex items-center gap-x-3.5">
         {user && (
           <button
             type="button"
@@ -77,7 +77,7 @@ export const MochiNavbar: React.FC<MochiNavbarProps> = ({
         <button
           type="button"
           onClick={() => onNavigateTab('home')}
-          className="group flex items-center space-x-2.5 select-none"
+          className="group flex items-center gap-x-2.5 select-none"
         >
           <span className="w-8 h-8 rounded-[11px] bg-[#d9536f] border border-[#d9536f] flex items-center justify-center transition-colors group-hover:bg-[#c94763]">
             <svg
@@ -101,7 +101,7 @@ export const MochiNavbar: React.FC<MochiNavbarProps> = ({
           </span>
         </button>
 
-        <nav className="hidden md:flex items-center space-x-1 pl-2 text-xs font-semibold">
+        <nav className="hidden md:flex items-center gap-x-1 ps-2 text-xs font-semibold">
           <button
             type="button"
             onClick={() => onNavigateTab('home')}
@@ -154,7 +154,7 @@ export const MochiNavbar: React.FC<MochiNavbarProps> = ({
             <button
               type="button"
               onClick={() => onNavigateTab('admin')}
-              className={`inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border transition-colors ${
+              className={`inline-flex items-center gap-x-1.5 px-3 py-1.5 rounded-lg border transition-colors ${
                 activeTab === 'admin'
                   ? 'bg-[#00a2ff]/20 border-[#00a2ff]/40 text-[#00a2ff]'
                   : 'border-[#00a2ff]/20 bg-[#00a2ff]/5 text-sky-300 hover:bg-[#00a2ff]/15 hover:text-white'
@@ -170,20 +170,20 @@ export const MochiNavbar: React.FC<MochiNavbarProps> = ({
       {/* Middle: Global Discovery Search Bar */}
       <form onSubmit={submitSearch} className="flex-1 max-w-md mx-4 hidden sm:block">
         <div className="relative">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-slate-400 absolute start-3 top-1/2 -translate-y-1/2" />
           <input
             type="search"
             value={searchDraft}
             onChange={(event) => setSearchDraft(event.target.value)}
             placeholder={t.nav.search}
             aria-label={t.nav.search}
-            className="w-full pl-9 pr-4 py-1.5 bg-slate-100 dark:bg-[#090b10]/90 border border-slate-200 dark:border-white/[0.08] focus:border-[#00a2ff] rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none transition-colors"
+            className="w-full ps-9 pe-4 py-1.5 bg-slate-100 dark:bg-[#090b10]/90 border border-slate-200 dark:border-white/[0.08] focus:border-[#00a2ff] rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none transition-colors"
           />
         </div>
       </form>
 
       {/* Right: Language Switcher, Theme Toggle, Coin Pill, and Account Controls */}
-      <div className="flex items-center space-x-2.5">
+      <div className="flex items-center gap-x-2.5">
         <LanguageSwitcher />
 
         <button
@@ -202,7 +202,7 @@ export const MochiNavbar: React.FC<MochiNavbarProps> = ({
               type="button"
               onClick={() => onNavigateTab('shop')}
               title="Mochi Coins Wallet"
-              className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-amber-500/10 dark:bg-[#121621] border border-amber-500/25 text-xs font-mono font-bold text-amber-600 dark:text-amber-300 shadow-sm hover:border-amber-500/50 transition-colors cursor-pointer"
+              className="flex items-center gap-x-1.5 px-3 py-1 rounded-full bg-amber-500/10 dark:bg-[#121621] border border-amber-500/25 text-xs font-mono font-bold text-amber-600 dark:text-amber-300 shadow-sm hover:border-amber-500/50 transition-colors cursor-pointer"
             >
               <Coins className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
               <span>{coinBalance.toLocaleString()}</span>
@@ -217,7 +217,7 @@ export const MochiNavbar: React.FC<MochiNavbarProps> = ({
             >
               <Bell className="w-4 h-4" />
               {unreadCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 rounded-full bg-[#00a2ff] text-white text-[9px] font-bold flex items-center justify-center">
+                <span className="absolute -top-0.5 -end-0.5 min-w-4 h-4 px-1 rounded-full bg-[#00a2ff] text-white text-[9px] font-bold flex items-center justify-center">
                   {unreadCount}
                 </span>
               )}
@@ -236,7 +236,7 @@ export const MochiNavbar: React.FC<MochiNavbarProps> = ({
             <button
               type="button"
               onClick={onOpenProfile}
-              className="flex items-center space-x-2 pl-1 group text-left"
+              className="flex items-center gap-x-2 ps-1 group text-start"
             >
               <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-[#00a2ff] to-indigo-600 flex items-center justify-center font-bold text-xs text-white border border-white/20 group-hover:border-[#00a2ff] transition-colors">
                 {user.displayName?.[0]?.toUpperCase() || user.username[0]?.toUpperCase()}

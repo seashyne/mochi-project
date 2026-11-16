@@ -20,7 +20,7 @@ export const StudioTeamControls: React.FC<StudioTeamControlsProps> = ({ team }) 
         type="button"
         data-testid="team-create-open"
         onClick={() => setIsOpen(true)}
-        className={`fixed bottom-4 right-4 z-[70] px-3 py-2 rounded-xl border text-xs font-bold shadow-lg flex items-center gap-2 transition-colors ${team.isLive ? 'bg-studio-success/15 border-studio-success/50 text-studio-success' : 'bg-studio-card border-studio-border text-studio-text hover:border-studio-accent'}`}
+        className={`fixed bottom-4 end-4 z-[70] px-3 py-2 rounded-xl border text-xs font-bold shadow-lg flex items-center gap-2 transition-colors ${team.isLive ? 'bg-studio-success/15 border-studio-success/50 text-studio-success' : 'bg-studio-card border-studio-border text-studio-text hover:border-studio-accent'}`}
       >
         <Users className="w-3.5 h-3.5" />
         {t.team.buttonLabel}
