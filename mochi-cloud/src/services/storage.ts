@@ -26,11 +26,11 @@ export function createUploadUrl(
   const prefix = isModel ? 'models' : isBundle ? 'bundles' : 'thumbnails';
   const assetKey = generateAssetKey(prefix, filename);
 
-  const apiHost = env.API_HOSTNAME || 'api.lenout.com';
-  const modelsBase = env.PUBLIC_MODELS_URL || 'https://assets.lenout.com';
+  const apiHost = env.API_HOSTNAME || 'api-game.lenout.com';
+  const modelsBase = env.PUBLIC_MODELS_URL || 'https://assets-game.lenout.com';
   const publicBase = isModel
     ? modelsBase
-    : env.PUBLIC_ASSETS_URL || 'https://assets.lenout.com';
+    : env.PUBLIC_ASSETS_URL || 'https://assets-game.lenout.com';
 
   // Endpoint where clients PUT or POST their binary data
   const uploadUrl = `https://${apiHost}/api/v1/assets/upload?key=${encodeURIComponent(

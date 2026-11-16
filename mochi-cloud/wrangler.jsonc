@@ -11,10 +11,10 @@
   "vars": {
     "ENVIRONMENT": "production",
     "ALLOWED_ORIGINS": "https://game.lenout.com,https://studio.lenout.com,https://studio-game.lenout.com,https://game-staging.lenout.com,http://localhost:5173,http://127.0.0.1:5173,capacitor://localhost,https://localhost",
-    "API_HOSTNAME": "api.lenout.com",
-    "PUBLIC_ASSETS_URL": "https://assets.lenout.com",
-    "PUBLIC_MODELS_URL": "https://assets.lenout.com/models",
-    "ACCESS_ASSETS_URL": "https://access.lenout.com",
+    "API_HOSTNAME": "api-game.lenout.com",
+    "PUBLIC_ASSETS_URL": "https://assets-game.lenout.com",
+    "PUBLIC_MODELS_URL": "https://assets-game.lenout.com/models",
+    "ACCESS_ASSETS_URL": "https://access-game.lenout.com",
     "JWT_SECRET": "mochi-prod-hmac-key-2026-lenout-decoupled",
     "EMAIL_FROM": "noreply@lenout.com",
     "EMAIL_FROM_NAME": "Mochi Platform"
@@ -29,14 +29,6 @@
     }
   ],
   "routes": [
-    {
-      "pattern": "api.lenout.com",
-      "custom_domain": true
-    },
-    {
-      "pattern": "assets.lenout.com",
-      "custom_domain": true
-    },
     {
       "pattern": "access.lenout.com",
       "custom_domain": true
