@@ -89,30 +89,36 @@ The web client builds as two independent apps that share one engine and one API 
 | 45 | CSS Design Token System                   | Single-source-of-truth `--studio-*-rgb` CSS variables with dark/light theme support, Tailwind `rgb(var() / <alpha>)` mapping, semantic state tokens, object-type identity classes, and reusable utility classes replacing all hardcoded palette colours | M16       | Request        |
 | 46 | Team Create Collaborative Editing    | Owner/invite/role management, shared drafts, per-draft Durable Object room, live ops, presence, object locks, server-authoritative save, and token-only Studio UI | M17       | Request        |
 | 47 | Studio Shell & Declarative Property Grid | Menu bar, ribbon tabs with group bodies, docked toolbox/explorer/properties/output, status bar command line, and a data-driven property schema (`PropertyGroupDef` + `PropertyControl`) shared by services and parts | M18       | Refactor       |
+| 48 | CodeMirror 6 Studio Code Editor           | Modular CodeMirror 6 editor replacing textarea/overlay in ScriptConsole with --studio-* token theme and SSR fallback | M19       | Survey 1       |
+| 49 | Mochi Engine Autocomplete & IntelliSense  | Context-aware code completion for Mochi globals (`Instance`, `Vector3`, `CFrame`, `task`, `ui`, `players`, `script.Parent`, `node.Touched:Connect`) | M19       | Survey 3       |
+| 50 | Built-in Game Mechanic Snippets           | Snippet completions and insertion for Hazard block, Coin collectible, Dialogue NPC trigger, and Door tween | M19       | Survey 3       |
+| 51 | Real-Time Lua Diagnostics & Jump-to-Line  | Real-time syntax validation via wasmoon compile check, @codemirror/lint markers, and jump-to-line error navigation | M19       | Survey 2       |
+| 52 | Script Editor Automated Vitest Suite      | Comprehensive unit tests covering syntax checker, diagnostics navigation, engine completions, snippets, and SSR rendering | M19       | Survey 2       |
 
 ## Milestones
 
-| #   | Name                                              | Scope                                                                                                        | Dependencies | Status |
-| --- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ------------ | ------ |
-| M1  | Design Tokens & Social Mock Removal               | Add studio color scale to tailwind and CSS; clean mock friends in FriendsBar.tsx                             | none         | DONE   |
-| M2  | Templates & Studio Hub Landing View               | Implement studioTemplates.ts and modular StudioHub.tsx with drafts list                                      | M1           | DONE   |
-| M3  | Map ID Routing & State Isolation                  | Extend studioRouting.ts and App.tsx for /studio/:mapId and /play/:mapId with clean map state isolation       | M2           | DONE   |
-| M4  | Studio 3D Editor UX/UI Overhaul                   | Modernize all Studio 3D editor panels and canvas container to eye-friendly dark palette                      | M1, M3       | DONE   |
-| M5  | Final Milestone: 100% E2E Pass & Tier 5 Hardening | Validate 100% pass across E2E test suite Tiers 1-4 and execute Tier 5 adversarial hardening                  | M1-M4, E2E   | DONE   |
-| E2E | E2E Testing Track                                 | Author comprehensive opaque-box E2E test suite (Tiers 1-4) and publish TEST_READY.md                         | none         | DONE   |
-| M6  | Asset Platform & Server Authoring                 | Starter skyboxes, asset access grants, asset library UI, server script/remote event system, and Tier 5 suite | M5           | DONE   |
-| M7  | Upload, Flood Control & Materials                 | Drag-and-drop upload with folder filing, DO rate limiting, and the CC0 PBR material library                  | M6           | DONE   |
-| M8  | Access Keys & Asset Domain                        | Opaque access ids, upload-before-use enforcement on draft save, and the rebindable access asset origin       | M7           | DONE   |
-| M9  | Real Server Scripting                             | Replace the regex shim with a real interpreter, expose the room script loader, and enforce the remote event registry | M8           | DONE   |
-| M10 | Physics Kernel Verification                       | Reproducible Rust build pipeline and kernel-backed raycast / sphere-box narrowphase with parity tests                  | M9           | DONE   |
-| M11 | Physics Solver & Collider Fidelity                | Filtered rays, multi-probe grounding, iterative solver, substepping, and oriented box colliders                      | M10          | DONE   |
-| M12 | Server Authoring Runtime                          | Automatic script delivery to rooms, persistent per-player data, a fuller Lua stdlib, and capacity-aware room shards  | M11          | DONE   |
-| M13 | Room Lifecycle & Party Joining                    | Player join/leave hooks for scripts, a live player count, and shard pinning so a party can share an instance        | M12          | DONE   |
-| M14 | Lua Fidelity & Party Invites                      | True multi-return (including `pcall(ok, err)`) and an in-game invite chip that copies a shard-pinned link            | M13          | DONE   |
-| M15 | Terrain, Constraints & Particles                  | Voxel sculpting, joint solver, particle emitters across editor, playtest and published runtime                          | M14          | DONE   |
-| M16 | Editor Parity & CSS Tokens                        | Clipboard, multi-select gizmo, flycam/view presets/snap config, joint overlay, and unified CSS design token system       | M15          | DONE   |
-| M17 | Team Create Studio                    | Roles, shared drafts, WebSocket live editing, presence/locks/awareness, DO persistence, and CSS-token-only UI       | M16          | DONE   |
-| M18 | Studio Shell & Property Grid          | Shell chrome extraction, declarative property schema, legacy panel removal, and shell test coverage                | M17          | DONE   |
+| #   | Name                                              | Scope                                                                                                        | Dependencies | Status      |
+| --- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ------------ | ----------- |
+| M1  | Design Tokens & Social Mock Removal               | Add studio color scale to tailwind and CSS; clean mock friends in FriendsBar.tsx                             | none         | DONE        |
+| M2  | Templates & Studio Hub Landing View               | Implement studioTemplates.ts and modular StudioHub.tsx with drafts list                                      | M1           | DONE        |
+| M3  | Map ID Routing & State Isolation                  | Extend studioRouting.ts and App.tsx for /studio/:mapId and /play/:mapId with clean map state isolation       | M2           | DONE        |
+| M4  | Studio 3D Editor UX/UI Overhaul                   | Modernize all Studio 3D editor panels and canvas container to eye-friendly dark palette                      | M1, M3       | DONE        |
+| M5  | Final Milestone: 100% E2E Pass & Tier 5 Hardening | Validate 100% pass across E2E test suite Tiers 1-4 and execute Tier 5 adversarial hardening                  | M1-M4, E2E   | DONE        |
+| E2E | E2E Testing Track                                 | Author comprehensive opaque-box E2E test suite (Tiers 1-4) and publish TEST_READY.md                         | none         | DONE        |
+| M6  | Asset Platform & Server Authoring                 | Starter skyboxes, asset access grants, asset library UI, server script/remote event system, and Tier 5 suite | M5           | DONE        |
+| M7  | Upload, Flood Control & Materials                 | Drag-and-drop upload with folder filing, DO rate limiting, and the CC0 PBR material library                  | M6           | DONE        |
+| M8  | Access Keys & Asset Domain                        | Opaque access ids, upload-before-use enforcement on draft save, and the rebindable access asset origin       | M7           | DONE        |
+| M9  | Real Server Scripting                             | Replace the regex shim with a real interpreter, expose the room script loader, and enforce the remote event registry | M8           | DONE        |
+| M10 | Physics Kernel Verification                       | Reproducible Rust build pipeline and kernel-backed raycast / sphere-box narrowphase with parity tests                  | M9           | DONE        |
+| M11 | Physics Solver & Collider Fidelity                | Filtered rays, multi-probe grounding, iterative solver, substepping, and oriented box colliders                      | M10          | DONE        |
+| M12 | Server Authoring Runtime                          | Automatic script delivery to rooms, persistent per-player data, a fuller Lua stdlib, and capacity-aware room shards  | M11          | DONE        |
+| M13 | Room Lifecycle & Party Joining                    | Player join/leave hooks for scripts, a live player count, and shard pinning so a party can share an instance        | M12          | DONE        |
+| M14 | Lua Fidelity & Party Invites                      | True multi-return (including `pcall(ok, err)`) and an in-game invite chip that copies a shard-pinned link            | M13          | DONE        |
+| M15 | Terrain, Constraints & Particles                  | Voxel sculpting, joint solver, particle emitters across editor, playtest and published runtime                          | M14          | DONE        |
+| M16 | Editor Parity & CSS Tokens                        | Clipboard, multi-select gizmo, flycam/view presets/snap config, joint overlay, and unified CSS design token system       | M15          | DONE        |
+| M17 | Team Create Studio                    | Roles, shared drafts, WebSocket live editing, presence/locks/awareness, DO persistence, and CSS-token-only UI       | M16          | DONE        |
+| M18 | Studio Shell & Property Grid          | Shell chrome extraction, declarative property schema, legacy panel removal, and shell test coverage                | M17          | DONE        |
+| M19 | Modern Lua Scripting Experience       | CodeMirror 6 editor, Mochi engine autocomplete, game snippets, real-time syntax checking, and jump-to-line navigation | M18          | DONE        |
 
 ## Interface Contracts
 
@@ -210,6 +216,12 @@ The web client builds as two independent apps that share one engine and one API 
 - `mochi/src/components/studio/Studio3DCanvas.tsx` - Three.js canvas viewport container
 - `mochi/src/components/studio/StudioObjectPalette.tsx` - Object palette used by the toolbox Insert tab
 - `mochi/src/components/studio/ScriptConsole.tsx` - Lua script editor and console body
+- `mochi/src/components/studio/editor/CodeMirrorEditor.tsx` - CodeMirror 6 editor wrapper with SSR fallback and line jump
+- `mochi/src/components/studio/editor/cmStudioTheme.ts` - CodeMirror 6 styling with `--studio-*` CSS variables
+- `mochi/src/components/studio/editor/luaSyntaxChecker.ts` - Lua 5.4 syntax error checking via wasmoon compilation
+- `mochi/src/components/studio/editor/luaLinter.ts` - CodeMirror 6 linter extension, error diagnostics, and jump-to-line navigation
+- `mochi/src/components/studio/editor/luaCompletions.ts` - Context-aware autocomplete for Mochi globals and members
+- `mochi/src/components/studio/editor/luaSnippets.ts` - Built-in game mechanic snippets (hazard, coin, dialogue, door)
 - `mochi/src/index.css` - Global CSS custom properties (--studio-*)
 - `mochi/tailwind.config.js` - Tailwind theme tokens (colors.studio)
 - `mochi/src/components/studio/team/` - Team Create hooks, transport, op helpers and token-only UI
