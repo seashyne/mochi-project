@@ -32,6 +32,7 @@ export class LiveNode {
   onError: ((error: unknown) => void) | null = null;
 
   private readonly touchHandlers: TouchHandler[] = [];
+  private readonly touchEndedHandlers: TouchHandler[] = [];
   private readonly updateHandlers: UpdateHandler[] = [];
   /** Last transform pushed to the mesh/body, so idle nodes cost nothing per frame. */
   private lastTransform: number[] | null = null;
@@ -99,6 +100,10 @@ export class LiveNode {
     return this.touchHandlers.length;
   }
 
+  get touchEndedHandlerCount(): number {
+    return this.touchEndedHandlers.length;
+  }
+
   get updateHandlerCount(): number {
     return this.updateHandlers.length;
   }
@@ -161,8 +166,22 @@ export class LiveNode {
     this.touchHandlers.push(handler);
   }
 
+  addTouchEndedHandler(handler: TouchHandler): void {
+    this.touchEndedHandlers.push(handler);
+  }
+
   addUpdateHandler(handler: UpdateHandler): void {
     this.updateHandlers.push(handler);
+  }
+
+  emitTouchEnded(player: LuaPlayerProxy): void {
+    for (const handler of [...this.touchEndedHandlers]) {
+      try {
+        handler(player);
+      } catch (err) {
+        this.reportError(err);
+      }
+    }
   }
 
   emitTouch(player: LuaPlayerProxy): void {

@@ -254,8 +254,8 @@ animation.trigger("jump")
 ## 7. Scripted Movement (`player.moveTo`)
 
 `player.moveTo(x, z, speed?)` walks the local player to a world position through
-the navigation grid baked from the scene. The path is A* over colliding
-footprints, inflated by an agent radius, then smoothed to waypoints.
+the navigation grid baked from the scene. The path is A* over its convex regions
+plus a funnel pass, falling back to the cell pathfinder when an end is off-mesh.
 
 | Call | Effect |
 | --- | --- |

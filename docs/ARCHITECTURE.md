@@ -232,3 +232,58 @@ The real `.env.*` files are gitignored, so the tracked templates in
 `mochi/config/env.*.example` are the checked source of truth. Copy one to
 `mochi/.env.development` or `mochi/.env.production` before a build; the gate also
 validates those copies when they exist.
+
+---
+
+## 7. Units and scale
+
+**One world unit = one metre; one unit of time = one second.** A project convention,
+not an engine conversion: the TS runtime, WASM kernel and cloud store plain numbers
+and never convert units. No second internal unit (studs, feet, tiles) is permitted.
+
+### 7.1 Canonical constants
+
+| Quantity | Value | Source |
+| --- | --- | --- |
+| Gravity | −18 m/s², deliberately game-tuned, **not** 9.81 | `physics/world.ts` |
+| Speed of sound | 343 m/s (Doppler) | `runtime/audioSpatial.ts` |
+| Replication | ε 0.01 m / 0.02 rad; quantise 0.01 m / 0.0017 rad | `multiplayer/replication.ts` |
+| Movement reconciliation | max 18 m/s, max teleport 25 m, min elapsed 50 ms | `mochi-cloud/src/do/roomMovement.ts` |
+| Streaming | load 128 m, unload 192 m, interest 60 m, model cull 300 m | `scene/chunkStream.ts`, `do/roomBinary.ts`, `scene/distanceCulling.ts` |
+| Studio snap | 1 m / 15° / 0.25 | `studio/transformGizmo.ts` |
+| Agent | radius 0.4 m, avoidance max step 0.25 m | `navigation/navGridFromScene.ts`, `navigation/localAvoidance.ts` |
+
+Two unrelated `cellSize` values exist, **both in metres**: nav grid 1
+(`buildNavGrid`) versus manifest chunking 64, validated 8–1024 (`package/manifestV2.ts`).
+
+### 7.2 Distance norms
+
+All distances are Euclidean in local Cartesian metres; no geographic metric is used.
+
+| Layer | Norm | Source |
+| --- | --- | --- |
+| A* | octile in **cell steps** (1 straight, √2 diagonal), admissible | `navigation/astar.ts` |
+| Steering / waypoints | `hypot(dx, dz)`, 2D XZ | `navigation/steering.ts` |
+| Avoidance / culling / interest | squared distance vs radius², no sqrt | `navigation/localAvoidance.ts`, `scene/distanceCulling.ts`, `do/roomBinary.ts` |
+| Audio / replication / collision | `hypot(dx, dy, dz)`, 3D | `runtime/audioSpatial.ts`, `multiplayer/replication.ts`, `mochi-physics-wasm/src/lib.rs` |
+
+A walk ends at the **centre of the goal cell**, not the requested coordinate (`docs/RUNTIME_AGENTS.md`).
+
+### 7.3 Foreign units: Roblox studs
+
+Roblox studs are an **import-boundary unit only**, never internal; `docs/PLATFORM_ROADMAP.md` compares in this form (1,024 stud ≈ 287 m).
+
+| Roblox unit | Metric | Note |
+| --- | --- | --- |
+| 1 stud (current) | 0.28 m | Creator Hub "Roblox units", since 2019 |
+| 1 stud (legacy) | 0.05 m | pre-2019, from the then-fixed 196.2 stud/s² gravity |
+| 1 RMU | 21.952 kg | mass |
+| 1 second | 1 second | time is 1:1 |
+
+When content ingestion is implemented:
+
+1. Convert **once** at ingress; never persist studs in a manifest or scene.
+2. Scale by dimension: length / velocity / acceleration × `s`, mass × 21.952, force × `21.952 × s`.
+3. `normalizeModel()` (`assets/modelLoader.ts`) rescales every GLB to a 1-unit footprint; absolute size comes from the object transform, not the mesh.
+4. A 0.28 m Studio snap preset is a UX affordance, not a unit change.
+5. `buildNavGrid(objects, { cellSize: 0.28 })` for imported obbies; cells grow `1/cellSize²` (≈12.8×) and the WASM bake is O(cells), so profile first.

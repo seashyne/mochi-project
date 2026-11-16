@@ -46,3 +46,11 @@ generic rate limiter. Score-shaped replicated state is clamped: non-finite and
 negative values become 0, a ceiling is enforced, and a score cannot grow faster
 than 10,000 per second. Non-score state passes through untouched. Both budgets are
 released when a player disconnects.
+
+**5.4 shipped** (2026-11-13): `docs/API_PARITY.md` maps the calls a beginner
+brings from elsewhere onto this runtime, grouped by instances, properties, events,
+player, world, audio, agents, UI, networking and types. Each row is Yes / Shape /
+No / Mochi, so "not supported" is an explicit answer rather than a discovery. It
+includes a coin-script port example, a gap list ordered by impact (Humanoid and
+Character first), and a maintenance rule: a Lua global change updates the matching
+row in the same commit. Phase 5 is now complete.

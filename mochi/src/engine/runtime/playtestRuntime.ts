@@ -2,6 +2,7 @@
 // and the fixed-order tick that keeps all of them in sync.
 
 import { defaultReactLuaStore } from '../lua/reactLuaBridge';
+import { defaultGuiStore } from '../gui/guiStore';
 import { PhysicsWorld, RigidBody, TriggerEvent } from '../physics';
 import { StudioObject } from '../studio/types';
 import { AudioBus } from './audioBus';
@@ -90,6 +91,9 @@ export class PlaytestRuntime {
 
     defaultReactLuaStore.getHudElements().forEach((element) => defaultReactLuaStore.removeHud(element.id));
     defaultReactLuaStore.hideDialogue();
+    // A playtest starts from an empty interface: the previous run's ScreenGuis must
+    // not survive into this one.
+    defaultGuiStore.reset();
     this.state.reset();
 
     const bundle = createPlaytestScene(canvas);
@@ -225,6 +229,7 @@ export class PlaytestRuntime {
     const dt = Math.min(Math.max((now - this.lastTime) / 1000, 0), 0.05);
     this.lastTime = now;
     this.simTime += dt;
+    (this.deps?.playerApi as { pollSignals?: () => void } | undefined)?.pollSignals?.();
     this.contexts.forEach((context) => context.advance());
 
     world.applyAuthoritativeTransforms();

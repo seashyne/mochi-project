@@ -234,6 +234,9 @@ export class GameRuntime {
     this.elapsed += dt;
     // Resume scripts parked in `task.wait` before handlers and agents run.
     for (const context of this.contexts.values()) context.advance();
+    // Death and respawn are latched from the health transition, so they fire once
+    // per frame however many contexts are running.
+    (this.deps.playerApi as { pollSignals?: () => void } | undefined)?.pollSignals?.();
     this.navigation.update(dt);
     this.agents.update(dt);
     this.replication?.update(dt);
