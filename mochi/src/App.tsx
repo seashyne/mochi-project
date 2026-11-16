@@ -16,9 +16,11 @@ import { canAccessAdminPortal, isAdminPathname } from './api/admin';
 import {
   parseStudioRoute, parsePlayRoute, resolveStudioExternalUrl, resolveNavPath,
   resolvePlayPath, isPlayPathname, isStudioPathname, getNavTabFromPathname,
-  getAuthModeFromHash, buildMapGameSummary, isCreditsPathname
+  getAuthModeFromHash, buildMapGameSummary, isCreditsPathname,
+  resolveLegalPath, getLegalKindFromPathname
 } from './routes/studioRouting';
 import { CreditsPage } from './pages/CreditsPage';
+import { LegalPage, LegalPageKind } from './components/legal/LegalPage';
 import { InstallPrompt } from './components/InstallPrompt';
 import { useInstallPrompt } from './pwa/useInstallPrompt';
 import { useAppBootstrap } from './apps/shared/useAppBootstrap';
@@ -39,6 +41,11 @@ export const App: React.FC = () => {
   const [isCreditsView, setIsCreditsView] = useState<boolean>(() =>
     typeof window !== 'undefined' && isCreditsPathname(window.location.pathname)
   );
+  const [legalKind, setLegalKind] = useState<LegalPageKind | null>(() =>
+    (typeof window !== 'undefined' ? getLegalKindFromPathname(window.location.pathname) : null) as
+      | LegalPageKind
+      | null
+  );
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<AuthMode>('signin');
@@ -53,6 +60,16 @@ export const App: React.FC = () => {
     window.open(resolveStudioExternalUrl(mapId), '_blank', 'noopener');
   }, []);
 
+  const navigateToLegal = useCallback((kind: LegalPageKind) => {
+    if (typeof window !== 'undefined' && window.history?.pushState) {
+      const target = resolveLegalPath(kind);
+      if (window.location.pathname !== target) window.history.pushState({}, '', target);
+    }
+    setIsCreditsView(false);
+    setLegalKind(kind);
+    setActiveTab('home');
+  }, []);
+
   const navigateToTab = useCallback((nextTab: MochiNavTab, mapId?: string | null) => {
     if (nextTab === 'studio') {
       openStudioApp(mapId);
@@ -63,6 +80,7 @@ export const App: React.FC = () => {
       if (window.location.pathname !== target) window.history.pushState({}, '', target);
     }
     setPlayMapId(nextTab === 'player' ? mapId || null : null);
+    setLegalKind(null);
     setActiveTab(nextTab);
   }, [openStudioApp]);
 
@@ -106,6 +124,9 @@ export const App: React.FC = () => {
       const path = window.location.pathname;
       if (isCreditsPathname(path)) { setIsCreditsView(true); return; }
       setIsCreditsView(false);
+      const legal = getLegalKindFromPathname(path);
+      setLegalKind((legal as LegalPageKind) || null);
+      if (legal) return;
       if (isAdminPathname(path)) { setActiveTab('admin'); }
       else if (isPlayPathname(path)) { setPlayMapId(parsePlayRoute(path).mapId); setActiveTab('player'); }
       else {
@@ -157,6 +178,16 @@ export const App: React.FC = () => {
 
   if (!isInitialized) return <AppLoadingScreen />;
   if (isCreditsView) return <CreditsPage />;
+  if (legalKind) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-[#090b10] text-slate-900 dark:text-[#ffffff] flex flex-col font-sans transition-colors">
+        <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+          <LegalPage kind={legalKind} />
+        </main>
+        <Footer onNavigateLegal={navigateToLegal} />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#090b10] text-slate-900 dark:text-[#ffffff] flex flex-col font-sans transition-colors">
@@ -216,7 +247,7 @@ export const App: React.FC = () => {
 
       <AuthModal isOpen={isAuthModalOpen} onClose={handleCloseAuth} onSuccess={handleAuthSuccess} initialMode={authMode} />
       <UserProfileModal currentUser={user} isOpen={isProfileModalOpen} onClose={() => { setIsProfileModalOpen(false); setProfileLookup(null); }} onSelectGame={handleRequestPlay} lookupIdentifier={profileLookup} />
-      <Footer />
+      <Footer onNavigateLegal={navigateToLegal} />
       <InstallPrompt
         {...installPrompt}
         hidden={activeTab === 'player' || isAuthModalOpen || isProfileModalOpen}

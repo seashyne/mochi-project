@@ -1,6 +1,6 @@
 // Thai (TH) Translation Dictionary
 
-import { TranslationDictionary } from '../types';
+import { TranslationDictionary } from '../types'; import { thLegal } from './thLegal';
 import { thPages } from './thPages';
 import { thInstall } from './thInstall';
 import { thAnimation } from './thAnimation';
@@ -294,5 +294,6 @@ export const th: TranslationDictionary = {
     accessDeniedDesc: 'พื้นที่จัดการหลังบ้านอนุญาตเฉพาะผู้ดูแลระบบของแพลตฟอร์ม Mochi ที่ได้รับสิทธิ์เท่านั้น',
     returnHome: 'กลับสู่หน้าหลัก'
   },
-  pages: thPages
+  pages: thPages,
+  legal: thLegal
 };

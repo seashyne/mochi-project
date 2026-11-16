@@ -1,6 +1,6 @@
 // Simplified Chinese (ZH) Translation Dictionary
 
-import { TranslationDictionary } from '../types';
+import { TranslationDictionary } from '../types'; import { zhLegal } from './zhLegal';
 import { zhPages } from './zhPages';
 import { zhInstall } from './zhInstall';
 import { zhAnimation } from './zhAnimation';
@@ -294,5 +294,6 @@ export const zh: TranslationDictionary = {
     accessDeniedDesc: '此管理后台仅限获授权的 Mochi 平台管理员访问。',
     returnHome: '返回首页'
   },
-  pages: zhPages
+  pages: zhPages,
+  legal: zhLegal
 };

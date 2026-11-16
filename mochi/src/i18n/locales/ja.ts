@@ -1,6 +1,6 @@
 // Japanese (JA) Translation Dictionary
 
-import { TranslationDictionary } from '../types';
+import { TranslationDictionary } from '../types'; import { jaLegal } from './jaLegal';
 import { jaPages } from './jaPages';
 import { jaInstall } from './jaInstall';
 import { jaAnimation } from './jaAnimation';
@@ -294,5 +294,6 @@ export const ja: TranslationDictionary = {
     accessDeniedDesc: 'この管理バックオフィスは承認された Mochi プラットフォーム管理者専用です。',
     returnHome: 'ホームへ戻る'
   },
-  pages: jaPages
+  pages: jaPages,
+  legal: jaLegal
 };

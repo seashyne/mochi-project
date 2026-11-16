@@ -1,6 +1,6 @@
 // English (EN) Translation Dictionary
 
-import { TranslationDictionary } from '../types';
+import { TranslationDictionary } from '../types'; import { enLegal } from './enLegal';
 import { enPages } from './enPages';
 import { enInstall } from './enInstall';
 import { enAnimation } from './enAnimation';
@@ -294,5 +294,6 @@ export const en: TranslationDictionary = {
     accessDeniedDesc: 'This backoffice portal is restricted to authorized Mochi platform administrators.',
     returnHome: 'Return to Home'
   },
-  pages: enPages
+  pages: enPages,
+  legal: enLegal
 };

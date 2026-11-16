@@ -49,10 +49,10 @@ export function isStudioSubdomain(hostname?: string): boolean {
   if (!host) return false;
   const lower = host.toLowerCase();
   return (
-    lower === 'studio-game.lenout.com' ||
     lower === 'studio.lenout.com' ||
-    lower.startsWith('studio-') ||
-    lower.startsWith('studio.')
+    lower === 'studio-game.lenout.com' ||
+    lower.startsWith('studio.') ||
+    lower.startsWith('studio-')
   );
 }
 
@@ -71,7 +71,7 @@ function resolveAppBase(kind: 'player' | 'studio'): string {
   if (typeof window !== 'undefined') {
     const host = window.location.hostname.toLowerCase();
     if (host.endsWith('lenout.com')) {
-      return kind === 'player' ? 'https://game.lenout.com' : 'https://studio-game.lenout.com';
+      return kind === 'player' ? 'https://game.lenout.com' : 'https://studio.lenout.com';
     }
   }
   return '';
@@ -219,6 +219,33 @@ export function getNavTabFromPathname(pathname: string): string | null {
   if (isStudioPathname(clean)) return 'studio';
   if (isPlayPathname(clean)) return 'player';
   const entry = Object.entries(SIMPLE_NAV_PATHS).find(([, path]) => path === clean);
+  return entry ? entry[0] : null;
+}
+
+// Static policy and information pages. Each one is a plain pathname so the
+// pages are linkable and survive a refresh.
+export const LEGAL_PATHS: Record<string, string> = {
+  about: '/about',
+  jobs: '/jobs',
+  newsroom: '/newsroom',
+  parents: '/parents',
+  'gift-cards': '/gift-cards',
+  help: '/help',
+  terms: '/terms',
+  accessibility: '/accessibility',
+  privacy: '/privacy',
+  'privacy-choices': '/privacy-choices',
+  sitemap: '/sitemap'
+};
+
+export function resolveLegalPath(kind: string): string {
+  return LEGAL_PATHS[kind] || '/';
+}
+
+// Resolves a browser pathname back into a legal page kind
+export function getLegalKindFromPathname(pathname: string): string | null {
+  const clean = pathname.trim().replace(/\/+$/, '') || '/';
+  const entry = Object.entries(LEGAL_PATHS).find(([, path]) => path === clean);
   return entry ? entry[0] : null;
 }
 
