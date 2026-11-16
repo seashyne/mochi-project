@@ -3,7 +3,7 @@
 // - Creator uploads are served from a dedicated asset host so the domain can be
 //   rebound for migration by changing one environment variable.
 
-const DEFAULT_ACCESS_ASSET_HOST = 'https://access-game.lenout.com';
+const DEFAULT_ACCESS_ASSET_HOST = 'https://access.lenout.com';
 
 export function resolveAssetBase(): string {
   if (typeof import.meta !== 'undefined' && import.meta.env) {

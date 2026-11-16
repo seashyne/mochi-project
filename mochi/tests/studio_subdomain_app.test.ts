@@ -83,10 +83,10 @@ describe('Studio Subdomain: Cross-Site Link Resolution', () => {
   });
 
   it('resolves external studio subdomain URLs when on lenout.com', () => {
-    expect(resolveStudioExternalUrl()).toBe('https://studio-game.lenout.com');
-    expect(resolveStudioExternalUrl(null)).toBe('https://studio-game.lenout.com');
+    expect(resolveStudioExternalUrl()).toBe('https://studio.lenout.com');
+    expect(resolveStudioExternalUrl(null)).toBe('https://studio.lenout.com');
     expect(resolveStudioExternalUrl('c686b8f3-31a5-44cd-b06c-5fc89e53f9d0')).toBe(
-      'https://studio-game.lenout.com/c686b8f3-31a5-44cd-b06c-5fc89e53f9d0'
+      'https://studio.lenout.com/c686b8f3-31a5-44cd-b06c-5fc89e53f9d0'
     );
   });
 

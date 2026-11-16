@@ -11,7 +11,7 @@ import { CharacterPhysicsController, PhysicsWorld, RigidBody } from '../src/engi
 function scanWorkspace(dir: string): { files: { file: string; lines: number }[]; emojiViolations: string[] } {
   const files: { file: string; lines: number }[] = [];
   const emojiViolations: string[] = [];
-  const IGNORED = new Set(['node_modules', '.git', 'dist', '.wrangler', '.tmp', 'coverage', 'android', 'ios', 'godot-master', '.agents']);
+  const IGNORED = new Set(['node_modules', '.git', 'dist', 'dist-player', 'dist-studio', '.wrangler', '.tmp', 'coverage', 'android', 'ios', 'godot-master', '.agents', '.workbuddy-ai', 'vendor']);
   const EXT = /\.(ts|tsx|js|mjs|cjs|css|html|sql|md|json)$/;
   const EMOJI = /[\u{1F300}-\u{1F9FF}\u{1FA00}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}]/u;
 

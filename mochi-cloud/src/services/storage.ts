@@ -2,7 +2,10 @@ import { MochiEnv } from '../types/env';
 import { AssetUploadResponse } from '../types/api';
 
 // Generate unique asset key for R2 storage
-export function generateAssetKey(prefix: 'bundles' | 'thumbnails', filename: string): string {
+export function generateAssetKey(
+  prefix: 'bundles' | 'thumbnails' | 'models' | 'avatars',
+  filename: string
+): string {
   const sanitized = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
   const timestamp = Date.now();
   const randomSuffix = Math.random().toString(36).substring(2, 8);
@@ -15,12 +18,19 @@ export function createUploadUrl(
   filename: string,
   contentType: string
 ): AssetUploadResponse {
+  const isModel =
+    contentType.includes('gltf') ||
+    filename.endsWith('.glb') ||
+    filename.endsWith('.gltf');
   const isBundle = contentType.includes('zip') || filename.endsWith('.zip');
-  const prefix = isBundle ? 'bundles' : 'thumbnails';
+  const prefix = isModel ? 'models' : isBundle ? 'bundles' : 'thumbnails';
   const assetKey = generateAssetKey(prefix, filename);
 
-  const apiHost = env.API_HOSTNAME || 'api-game.lenout.com';
-  const publicBase = env.PUBLIC_ASSETS_URL || 'https://assets-game.lenout.com';
+  const apiHost = env.API_HOSTNAME || 'api.lenout.com';
+  const modelsBase = env.PUBLIC_MODELS_URL || 'https://assets.lenout.com';
+  const publicBase = isModel
+    ? modelsBase
+    : env.PUBLIC_ASSETS_URL || 'https://assets.lenout.com';
 
   // Endpoint where clients PUT or POST their binary data
   const uploadUrl = `https://${apiHost}/api/v1/assets/upload?key=${encodeURIComponent(

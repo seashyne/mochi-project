@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { MochiEnv, AppVariables } from './types/env';
 import { corsMiddleware } from './middleware/cors';
+import { isCdnHostname, serveCdnRequest } from './services/cdnServe';
 import { healthRouter } from './routes/health';
 import { authRouter } from './routes/auth';
 import { authRecoveryRouter } from './routes/authRecovery';
@@ -27,7 +28,16 @@ export const app = new Hono<{
   Variables: AppVariables;
 }>();
 
-// Global parameterized CORS middleware
+// Edge CDN direct asset serving for models-game.lenout.com and assets-game.lenout.com
+app.use('*', async (c, next) => {
+  const host = new URL(c.req.url).hostname.toLowerCase();
+  if (isCdnHostname(host)) {
+    return serveCdnRequest(c);
+  }
+  await next();
+});
+
+// Global parameterized CORS middleware for standard REST endpoints
 app.use('*', corsMiddleware);
 
 // Root informational endpoint

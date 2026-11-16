@@ -26,6 +26,9 @@ export interface MochiEnv {
   // Parameterized public asset CDN distribution URL (e.g. "https://assets-game.lenout.com")
   PUBLIC_ASSETS_URL?: string;
 
+  // Parameterized 3D models CDN distribution URL (e.g. "https://models-game.lenout.com")
+  PUBLIC_MODELS_URL?: string;
+
   // Dedicated origin for creator-uploaded access assets. Rebinding this single
   // value migrates every stored asset to a new domain (e.g. access-game.lenout.com)
   ACCESS_ASSETS_URL?: string;

@@ -12,6 +12,10 @@
   },
   "routes": [
     {
+      "pattern": "studio.lenout.com",
+      "custom_domain": true
+    },
+    {
       "pattern": "studio-game.lenout.com",
       "custom_domain": true
     }

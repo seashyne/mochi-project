@@ -9,7 +9,7 @@ export async function corsMiddleware(
   const origin = c.req.header('Origin') || '';
   const configured =
     c.env.ALLOWED_ORIGINS ||
-    'https://game.lenout.com,https://studio-game.lenout.com,http://localhost:5173,http://127.0.0.1:5173,capacitor://localhost,https://localhost';
+    'https://game.lenout.com,https://studio.lenout.com,https://studio-game.lenout.com,http://localhost:5173,http://127.0.0.1:5173,capacitor://localhost,https://localhost';
 
   const allowedList = configured
     .split(',')

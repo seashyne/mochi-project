@@ -14,7 +14,7 @@ export const assetFilesRouter = new Hono<{ Bindings: MochiEnv; Variables: AppVar
 
 assetFilesRouter.use('*', optionalAuthMiddleware);
 
-const ALLOWED_PREFIXES = ['assets/', 'drafts/'];
+const ALLOWED_PREFIXES = ['assets/', 'drafts/', 'models/', 'bundles/', 'thumbnails/', 'avatars/'];
 const CACHE_CONTROL = 'public, max-age=31536000, immutable';
 
 interface ByteRange {
