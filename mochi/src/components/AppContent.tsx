@@ -40,6 +40,8 @@ export interface AppContentProps {
   playMapId: string | null;
   currentPlayGame: GameSummary | null;
   catalogSearch: string;
+  profileLookup?: string | null;
+  onClearProfileLookup?: () => void;
   onPlayGame: (game: GameSummary) => void;
   onNavigateTab: (tab: MochiNavTab) => void;
   onOpenAuth: (mode: AuthMode) => void;
@@ -56,6 +58,8 @@ export const AppContent: React.FC<AppContentProps> = ({
   playMapId,
   currentPlayGame,
   catalogSearch,
+  profileLookup,
+  onClearProfileLookup,
   onPlayGame,
   onNavigateTab,
   onOpenAuth,
@@ -87,6 +91,32 @@ export const AppContent: React.FC<AppContentProps> = ({
 
     if (activeTab === 'shop') {
       return <ShopPage onOpenAuth={() => onOpenAuth('signin')} />;
+    }
+
+    if (activeTab === 'profile') {
+      return (
+        <SettingsPage
+          user={user}
+          initialSection="profile"
+          lookupIdentifier={profileLookup}
+          onSelectGame={onPlayGame}
+          onClearLookup={onClearProfileLookup}
+          onSignOut={onSignOut}
+          onOpenProfile={onOpenProfile}
+        />
+      );
+    }
+
+    if (activeTab === 'settings') {
+      return (
+        <SettingsPage
+          user={user}
+          initialSection="security"
+          onSelectGame={onPlayGame}
+          onSignOut={onSignOut}
+          onOpenProfile={onOpenProfile}
+        />
+      );
     }
 
     if (!user) {
@@ -133,8 +163,6 @@ export const AppContent: React.FC<AppContentProps> = ({
         return <GroupsPage />;
       case 'news':
         return <NewsPage />;
-      case 'settings':
-        return <SettingsPage user={user} onSignOut={onSignOut} onOpenProfile={onOpenProfile} />;
       case 'plus':
         return <MochiPlusPage />;
       case 'home':

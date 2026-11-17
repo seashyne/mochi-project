@@ -7,7 +7,6 @@ import { Sidebar } from './components/Sidebar';
 import { AppContent } from './components/AppContent';
 import { Footer } from './components/Footer';
 import { AuthModal, AuthMode } from './components/AuthModal';
-import { UserProfileModal } from './components/UserProfileModal';
 import { useAvatarStore } from './store/useAvatarStore';
 import { gamesApi } from './api/games';
 import { GameSummary, UserProfile } from './api/types';
@@ -17,7 +16,7 @@ import {
   parseStudioRoute, parsePlayRoute, resolveStudioExternalUrl, resolveNavPath,
   resolvePlayPath, isPlayPathname, isStudioPathname, getNavTabFromPathname,
   getAuthModeFromHash, buildMapGameSummary, isCreditsPathname,
-  resolveLegalPath, getLegalKindFromPathname
+  resolveLegalPath, getLegalKindFromPathname, parseProfilePathname
 } from './routes/studioRouting';
 import { CreditsPage } from './pages/CreditsPage';
 import { LegalPage, LegalPageKind } from './components/legal/LegalPage';
@@ -49,8 +48,9 @@ export const App: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<AuthMode>('signin');
-  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-  const [profileLookup, setProfileLookup] = useState<string | null>(null);
+  const [profileLookup, setProfileLookup] = useState<string | null>(() =>
+    typeof window !== 'undefined' ? parseProfilePathname(window.location.pathname).identifier : null
+  );
   const [games, setGames] = useState<GameSummary[]>(INITIAL_GAMES);
   const [activeGame, setActiveGame] = useState<GameSummary | null>(INITIAL_GAMES[0]);
   const [catalogSearch, setCatalogSearch] = useState('');
@@ -80,6 +80,7 @@ export const App: React.FC = () => {
       if (window.location.pathname !== target) window.history.pushState({}, '', target);
     }
     setPlayMapId(nextTab === 'player' ? mapId || null : null);
+    if (nextTab !== 'profile') setProfileLookup(null);
     setLegalKind(null);
     setActiveTab(nextTab);
   }, [openStudioApp]);
@@ -109,12 +110,16 @@ export const App: React.FC = () => {
     return () => window.removeEventListener('hashchange', handleHash);
   }, []);
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const match = window.location.pathname.match(/^\/profile\/([^/]+)\/?$/);
-    if (match) {
-      setProfileLookup(decodeURIComponent(match[1]));
-      setIsProfileModalOpen(true);
+  const handleOpenProfile = useCallback(() => {
+    setProfileLookup(null);
+    navigateToTab('profile');
+  }, [navigateToTab]);
+
+  const clearProfileLookup = useCallback(() => {
+    setProfileLookup(null);
+    if (typeof window !== 'undefined' && window.history?.pushState) {
+      const target = resolveNavPath('profile');
+      if (window.location.pathname !== target) window.history.pushState({}, '', target);
     }
   }, []);
 
@@ -127,6 +132,14 @@ export const App: React.FC = () => {
       const legal = getLegalKindFromPathname(path);
       setLegalKind((legal as LegalPageKind) || null);
       if (legal) return;
+      const profileRoute = parseProfilePathname(path);
+      if (profileRoute.isProfile) {
+        setPlayMapId(null);
+        setProfileLookup(profileRoute.identifier);
+        setActiveTab('profile');
+        return;
+      }
+      setProfileLookup(null);
       if (isAdminPathname(path)) { setActiveTab('admin'); }
       else if (isPlayPathname(path)) { setPlayMapId(parsePlayRoute(path).mapId); setActiveTab('player'); }
       else {
@@ -195,7 +208,7 @@ export const App: React.FC = () => {
         user={user}
         activeTab={activeTab}
         onOpenAuth={() => handleOpenAuth('signin')}
-        onOpenProfile={() => setIsProfileModalOpen(true)}
+        onOpenProfile={handleOpenProfile}
         onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         onNavigateTab={(tab) => {
           if (tab === 'studio') {
@@ -219,7 +232,7 @@ export const App: React.FC = () => {
               if (sec === 'studio') { openStudioApp(); return; }
               navigateToTab(sec as MochiNavTab);
             }}
-            onOpenProfile={() => setIsProfileModalOpen(true)}
+            onOpenProfile={handleOpenProfile}
             onLogout={() => { logout(); navigateToTab('home'); }}
           />
         )}
@@ -233,22 +246,23 @@ export const App: React.FC = () => {
             playMapId={playMapId}
             currentPlayGame={currentPlayGame}
             catalogSearch={catalogSearch}
+            profileLookup={profileLookup}
+            onClearProfileLookup={clearProfileLookup}
             onPlayGame={handleRequestPlay}
             onNavigateTab={navigateToTab}
             onOpenAuth={handleOpenAuth}
             onSignOut={() => { logout(); navigateToTab('home'); }}
-            onOpenProfile={() => setIsProfileModalOpen(true)}
+            onOpenProfile={handleOpenProfile}
             onCatalogChanged={() => void refreshPublishedGames()}
           />
         </main>
       </div>
 
       <AuthModal isOpen={isAuthModalOpen} onClose={handleCloseAuth} onSuccess={handleAuthSuccess} initialMode={authMode} />
-      <UserProfileModal currentUser={user} isOpen={isProfileModalOpen} onClose={() => { setIsProfileModalOpen(false); setProfileLookup(null); }} onSelectGame={handleRequestPlay} lookupIdentifier={profileLookup} />
       <Footer onNavigateLegal={navigateToLegal} />
       <InstallPrompt
         {...installPrompt}
-        hidden={activeTab === 'player' || isAuthModalOpen || isProfileModalOpen}
+        hidden={activeTab === 'player' || isAuthModalOpen}
         onInstall={installPrompt.install}
         onDismiss={installPrompt.dismiss}
       />

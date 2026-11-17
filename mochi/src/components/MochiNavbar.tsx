@@ -23,6 +23,7 @@ export type MochiNavTab =
   | 'trade'
   | 'groups'
   | 'news'
+  | 'profile'
   | 'settings'
   | 'plus';
 

@@ -111,5 +111,17 @@ export const thPages: PagesTranslations = {
   creditsTitle: 'ประกาศซอฟต์แวร์บุคคลที่สาม',
   creditsIntro: 'Mochi สร้างขึ้นจากซอฟต์แวร์โอเพนซอร์ส รายชื่อคอมโพเนนต์ที่เราใช้งาน สัญญาอนุญาต และข้อความสัญญาอนุญาตฉบับเต็มแสดงอยู่ด้านล่าง',
   creditsLoading: 'กำลังโหลดประกาศ...',
-  creditsUnavailable: 'ไม่สามารถโหลดไฟล์ประกาศได้ คุณสามารถเปิดไฟล์โดยตรงได้ที่:'
+  creditsUnavailable: 'ไม่สามารถโหลดไฟล์ประกาศได้ คุณสามารถเปิดไฟล์โดยตรงได้ที่:',
+  proSettingsBadge: 'ศูนย์จัดการบัญชี',
+  navProfile: 'โปรไฟล์และเวิลด์',
+  navSecurity: 'ความปลอดภัยและรหัสผ่าน',
+  navPreferences: 'หน้าตาและภาษา',
+  navSystem: 'ข้อมูลและระบบ',
+  showPassword: 'แสดงรหัสผ่าน',
+  hidePassword: 'ซ่อนรหัสผ่าน',
+  backToMyProfile: 'กลับไปยังโปรไฟล์ของฉัน',
+  viewingPublicProfile: 'กำลังดูโปรไฟล์สาธารณะ',
+  memberOverview: 'ข้อมูลบัญชีโดยย่อ',
+  securityOverviewHint: 'จัดการชื่อที่แสดง การเปลี่ยนรหัสผ่าน และการยืนยันอีเมล',
+  signInForAccount: 'เข้าสู่ระบบเพื่อจัดการโปรไฟล์ รหัสผ่าน และการยืนยันอีเมล'
 };

@@ -109,4 +109,16 @@ export interface PagesTranslations {
   creditsIntro: string;
   creditsLoading: string;
   creditsUnavailable: string;
+  proSettingsBadge: string;
+  navProfile: string;
+  navSecurity: string;
+  navPreferences: string;
+  navSystem: string;
+  showPassword: string;
+  hidePassword: string;
+  backToMyProfile: string;
+  viewingPublicProfile: string;
+  memberOverview: string;
+  securityOverviewHint: string;
+  signInForAccount: string;
 }

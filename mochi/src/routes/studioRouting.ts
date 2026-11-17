@@ -204,6 +204,7 @@ export const SIMPLE_NAV_PATHS: Record<string, string> = {
   trade: '/trade',
   groups: '/groups',
   news: '/news',
+  profile: '/profile',
   settings: '/settings',
   plus: '/plus'
 };
@@ -212,12 +213,21 @@ export function resolveNavPath(tab: string): string {
   return SIMPLE_NAV_PATHS[tab] || '/';
 }
 
+export function parseProfilePathname(pathname: string): { isProfile: boolean; identifier: string | null } {
+  const clean = pathname.trim().replace(/\/+$/, '') || '/';
+  if (clean === '/profile') return { isProfile: true, identifier: null };
+  const match = clean.match(/^\/profile\/([^/]+)$/);
+  if (match) return { isProfile: true, identifier: decodeURIComponent(match[1]) };
+  return { isProfile: false, identifier: null };
+}
+
 // Resolves a browser pathname back into a navigation tab key
 export function getNavTabFromPathname(pathname: string): string | null {
   const clean = pathname.trim().replace(/\/+$/, '') || '/';
   if (clean === '/admin' || clean.startsWith('/admin/')) return 'admin';
   if (isStudioPathname(clean)) return 'studio';
   if (isPlayPathname(clean)) return 'player';
+  if (parseProfilePathname(clean).isProfile) return 'profile';
   const entry = Object.entries(SIMPLE_NAV_PATHS).find(([, path]) => path === clean);
   return entry ? entry[0] : null;
 }

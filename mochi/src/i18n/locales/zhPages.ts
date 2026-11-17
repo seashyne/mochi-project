@@ -111,5 +111,17 @@ export const zhPages: PagesTranslations = {
   creditsTitle: '第三方软件声明',
   creditsIntro: 'Mochi 使用开源软件构建。以下列出我们随产品分发的组件、其许可证以及许可证全文。',
   creditsLoading: '正在加载声明...',
-  creditsUnavailable: '无法加载声明文件，可直接打开：'
+  creditsUnavailable: '无法加载声明文件，可直接打开：',
+  proSettingsBadge: '账户中心',
+  navProfile: '个人资料与世界',
+  navSecurity: '安全与登录',
+  navPreferences: '外观与语言',
+  navSystem: '数据与系统',
+  showPassword: '显示密码',
+  hidePassword: '隐藏密码',
+  backToMyProfile: '返回我的资料',
+  viewingPublicProfile: '正在查看公开资料',
+  memberOverview: '账户摘要',
+  securityOverviewHint: '管理显示名称、密码更新和邮箱恢复',
+  signInForAccount: '登录后即可管理个人资料、密码和邮箱验证。'
 };

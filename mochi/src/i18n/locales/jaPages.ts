@@ -111,5 +111,17 @@ export const jaPages: PagesTranslations = {
   creditsTitle: 'サードパーティに関する表示',
   creditsIntro: 'Mochi はオープンソースソフトウェアを利用して構築されています。同梱しているコンポーネント、そのライセンス、およびライセンス全文を以下に記載します。',
   creditsLoading: '表示を読み込み中...',
-  creditsUnavailable: '表示ファイルを読み込めませんでした。次のリンクから直接開けます:'
+  creditsUnavailable: '表示ファイルを読み込めませんでした。次のリンクから直接開けます:',
+  proSettingsBadge: 'アカウントセンター',
+  navProfile: 'プロフィールとワールド',
+  navSecurity: 'セキュリティとログイン',
+  navPreferences: '外観と言語',
+  navSystem: 'データとシステム',
+  showPassword: 'パスワードを表示',
+  hidePassword: 'パスワードを隠す',
+  backToMyProfile: '自分のプロフィールに戻る',
+  viewingPublicProfile: '公開プロフィールを表示中',
+  memberOverview: 'アカウント概要',
+  securityOverviewHint: '表示名、パスワード変更、メール復旧を管理します',
+  signInForAccount: 'プロフィール、パスワード、メール認証を管理するにはログインしてください。'
 };

@@ -111,5 +111,17 @@ export const enPages: PagesTranslations = {
   creditsTitle: 'Third-Party Notices',
   creditsIntro: 'Mochi is built with open-source software. The components we ship, their licenses, and the full license texts are listed below.',
   creditsLoading: 'Loading notices...',
-  creditsUnavailable: 'The notice file could not be loaded. You can open it directly:'
+  creditsUnavailable: 'The notice file could not be loaded. You can open it directly:',
+  proSettingsBadge: 'Account Center',
+  navProfile: 'Profile & Worlds',
+  navSecurity: 'Security & Login',
+  navPreferences: 'Appearance & Language',
+  navSystem: 'Data & System',
+  showPassword: 'Show password',
+  hidePassword: 'Hide password',
+  backToMyProfile: 'Back to my profile',
+  viewingPublicProfile: 'Viewing public profile',
+  memberOverview: 'Account Summary',
+  securityOverviewHint: 'Manage display name, password rotation, and email recovery',
+  signInForAccount: 'Sign in to manage your profile, password, and email verification.'
 };

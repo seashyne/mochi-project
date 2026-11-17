@@ -111,5 +111,17 @@ export const idPages: PagesTranslations = {
   creditsTitle: 'Pemberitahuan Pihak Ketiga',
   creditsIntro: 'Mochi dibangun dengan perangkat lunak sumber terbuka. Komponen yang kami kirimkan, lisensinya, dan teks lisensi lengkapnya ada di bawah.',
   creditsLoading: 'Memuat pemberitahuan...',
-  creditsUnavailable: 'Berkas pemberitahuan gagal dimuat. Kamu bisa membukanya langsung:'
+  creditsUnavailable: 'Berkas pemberitahuan gagal dimuat. Kamu bisa membukanya langsung:',
+  proSettingsBadge: 'Pusat Akun',
+  navProfile: 'Profil & Dunia',
+  navSecurity: 'Keamanan & Masuk',
+  navPreferences: 'Tampilan & Bahasa',
+  navSystem: 'Data & Sistem',
+  showPassword: 'Tampilkan kata sandi',
+  hidePassword: 'Sembunyikan kata sandi',
+  backToMyProfile: 'Kembali ke profil saya',
+  viewingPublicProfile: 'Melihat profil publik',
+  memberOverview: 'Ringkasan Akun',
+  securityOverviewHint: 'Kelola nama tampilan, kata sandi, dan pemulihan email',
+  signInForAccount: 'Masuk untuk mengelola profil, kata sandi, dan verifikasi email.'
 };
