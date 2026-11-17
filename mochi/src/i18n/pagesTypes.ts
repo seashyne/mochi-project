@@ -121,4 +121,13 @@ export interface PagesTranslations {
   memberOverview: string;
   securityOverviewHint: string;
   signInForAccount: string;
+  categoryAll: string;
+  categoryFeatured: string;
+  categoryParkour: string;
+  categoryTycoon: string;
+  categoryArena: string;
+  worldsCountSuffix: string;
+  noWorldsFound: string;
+  resetFilters: string;
+  featuredSpotlight: string;
 }

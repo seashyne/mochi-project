@@ -123,5 +123,14 @@ export const thPages: PagesTranslations = {
   viewingPublicProfile: 'กำลังดูโปรไฟล์สาธารณะ',
   memberOverview: 'ข้อมูลบัญชีโดยย่อ',
   securityOverviewHint: 'จัดการชื่อที่แสดง การเปลี่ยนรหัสผ่าน และการยืนยันอีเมล',
-  signInForAccount: 'เข้าสู่ระบบเพื่อจัดการโปรไฟล์ รหัสผ่าน และการยืนยันอีเมล'
+  signInForAccount: 'เข้าสู่ระบบเพื่อจัดการโปรไฟล์ รหัสผ่าน และการยืนยันอีเมล',
+  categoryAll: 'ทั้งหมด',
+  categoryFeatured: 'แนะนำ',
+  categoryParkour: 'ปาร์กูร์',
+  categoryTycoon: 'ไทคูน',
+  categoryArena: 'อารีนา',
+  worldsCountSuffix: 'เวิลด์',
+  noWorldsFound: 'ไม่พบโลก 3 มิติที่ตรงกับการค้นหา',
+  resetFilters: 'ล้างตัวกรอง',
+  featuredSpotlight: 'เกมแนะนำวันนี้'
 };

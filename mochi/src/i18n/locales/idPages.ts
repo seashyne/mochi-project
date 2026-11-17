@@ -123,5 +123,14 @@ export const idPages: PagesTranslations = {
   viewingPublicProfile: 'Melihat profil publik',
   memberOverview: 'Ringkasan Akun',
   securityOverviewHint: 'Kelola nama tampilan, kata sandi, dan pemulihan email',
-  signInForAccount: 'Masuk untuk mengelola profil, kata sandi, dan verifikasi email.'
+  signInForAccount: 'Masuk untuk mengelola profil, kata sandi, dan verifikasi email.',
+  categoryAll: 'Semua',
+  categoryFeatured: 'Unggulan',
+  categoryParkour: 'Parkour',
+  categoryTycoon: 'Taipan',
+  categoryArena: 'Arena',
+  worldsCountSuffix: 'dunia',
+  noWorldsFound: 'Tidak ada dunia 3D yang cocok',
+  resetFilters: 'Atur ulang filter',
+  featuredSpotlight: 'Dunia Unggulan'
 };

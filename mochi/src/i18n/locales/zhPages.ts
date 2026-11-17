@@ -123,5 +123,14 @@ export const zhPages: PagesTranslations = {
   viewingPublicProfile: '正在查看公开资料',
   memberOverview: '账户摘要',
   securityOverviewHint: '管理显示名称、密码更新和邮箱恢复',
-  signInForAccount: '登录后即可管理个人资料、密码和邮箱验证。'
+  signInForAccount: '登录后即可管理个人资料、密码和邮箱验证。',
+  categoryAll: '全部',
+  categoryFeatured: '精选',
+  categoryParkour: '跑酷',
+  categoryTycoon: '大亨',
+  categoryArena: '竞技场',
+  worldsCountSuffix: '个世界',
+  noWorldsFound: '未找到匹配的 3D 世界',
+  resetFilters: '重置筛选',
+  featuredSpotlight: '今日精选'
 };

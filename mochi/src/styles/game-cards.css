@@ -1,0 +1,152 @@
+/* Mochi Game Discovery & Card System
+   Uses CSS Grid intrinsic tracks, @container sizing, aspect-ratio cover images,
+   and accessible stretched-trigger card semantics. */
+
+.mochi-discover-featured-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr));
+  gap: 1.125rem;
+}
+
+.mochi-discover-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+  gap: 1.125rem;
+}
+
+.mochi-pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  flex-wrap: balance;
+  gap: 0.5rem;
+}
+
+.mochi-game-card {
+  container: mochi-card / inline-size;
+  position: relative;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  border-radius: 16px;
+  overflow: clip;
+  background: var(--mochi-card);
+  border: 1px solid var(--mochi-border);
+  box-shadow: 0 10px 26px -18px rgba(0, 0, 0, 0.72);
+  transition: transform 200ms ease, border-color 200ms ease, box-shadow 220ms ease, background-color 200ms ease;
+}
+
+.mochi-game-card:hover {
+  transform: translateY(-4px);
+  background: var(--mochi-card-hover);
+  border-color: rgba(111, 158, 245, 0.45);
+  box-shadow: 0 18px 36px -16px rgba(0, 0, 0, 0.78), 0 0 24px -10px var(--mochi-glow-cyan);
+}
+
+.mochi-game-card:has(.mochi-game-card-trigger:focus-visible) {
+  outline: 2px solid var(--mochi-blue);
+  outline-offset: 2px;
+}
+
+.mochi-game-card-media {
+  position: relative;
+  overflow: clip;
+  border-bottom: 1px solid var(--mochi-border);
+  background: linear-gradient(135deg, #0b1930 0%, #111827 55%, #1d1536 100%);
+}
+
+.mochi-game-card-img {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  height: auto;
+  display: block;
+  object-fit: cover;
+  transition: transform 360ms ease, filter 280ms ease;
+}
+
+.mochi-game-card:hover .mochi-game-card-img {
+  transform: scale(1.06);
+  filter: brightness(1.06);
+}
+
+.mochi-game-card-scrim {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(8, 11, 17, 0.42) 0%, rgba(8, 11, 17, 0.05) 42%, rgba(8, 11, 17, 0.82) 100%);
+}
+
+.mochi-game-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  padding: 0.875rem 1rem 1rem;
+  min-inline-size: 0;
+}
+
+@container mochi-card (inline-size > 340px) {
+  .mochi-game-card-body {
+    padding: 1rem 1.125rem 1.125rem;
+  }
+}
+
+.mochi-game-card-trigger {
+  display: block;
+  width: 100%;
+  text-align: start;
+  font-weight: 800;
+  color: var(--mochi-text);
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.mochi-game-card-trigger:focus-visible {
+  outline: none;
+}
+
+.mochi-game-card-trigger::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.mochi-game-card:hover .mochi-game-card-trigger {
+  color: var(--mochi-blue-hover);
+}
+
+.mochi-game-desc {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-clamp: 2;
+  overflow: clip;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--mochi-text-sub);
+}
+
+.mochi-game-card-footer {
+  margin-block-start: auto;
+  padding-block-start: 0.625rem;
+  border-block-start: 1px solid var(--mochi-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 11px;
+  color: var(--mochi-text-muted);
+}
+
+html.light .mochi-game-card,
+.light .mochi-game-card {
+  background: #ffffff;
+  border-color: rgba(15, 23, 42, 0.1);
+  box-shadow: 0 8px 22px -12px rgba(15, 23, 42, 0.14);
+}
+
+html.light .mochi-game-card:hover,
+.light .mochi-game-card:hover {
+  border-color: rgba(2, 132, 199, 0.48);
+  box-shadow: 0 18px 34px -14px rgba(15, 23, 42, 0.2), 0 0 20px -8px rgba(2, 132, 199, 0.22);
+}

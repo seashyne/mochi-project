@@ -11,6 +11,7 @@ import '../../theme-soft.css';
 import '../../styles/studio-theme.css';
 import '../../styles/landing.css';
 import '../../styles/landing-grid.css';
+import '../../styles/game-cards.css';
 import '../../styles/auth.css';
 
 const rootElement = document.getElementById('root');

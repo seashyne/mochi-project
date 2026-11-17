@@ -1,12 +1,15 @@
-// 3D Luminous Gaming Card Component
-// High-depth perspective artwork, ambient neon bloom, live player telemetry, and interactive hover tilt
+// Luminous 3D Gaming Card Component
+// Semantic <article> card with 16:10 3D cover artwork, container queries, live telemetry, and accessible card trigger
 
 import React from 'react';
 import { Play, ThumbsUp, Users, Sparkles } from 'lucide-react';
 import { GameSummary } from '../../api/types';
+import { useI18n } from '../../i18n/context';
+import { formatCompactCount, resolveGameThumbnail } from './gameThumbHelpers';
 
 export interface GameCard3DProps {
   game: GameSummary;
+  index?: number;
   tag?: string;
   rating?: string;
   players?: string;
@@ -19,60 +22,54 @@ export interface GameCard3DProps {
 
 export const GameCard3D: React.FC<GameCard3DProps> = ({
   game,
+  index = 0,
   tag = '3D // WORLD',
   rating,
   players,
-  gradient = 'from-[#0a1e38] via-[#0e1628] to-[#1f1338]',
-  accentClass = 'border-[#00a2ff]/40 text-[#38bdf8] bg-[#00a2ff]/12',
-  icon: IconComponent = Sparkles,
   progressPct,
   onPlay
 }) => {
-  const displayPlayers = players || (game.playCount > 1000 ? `${(game.playCount / 1000).toFixed(1)}K` : `${game.playCount}`);
+  const { t } = useI18n();
+  const displayPlayers = players || formatCompactCount(game.playCount);
+  const coverSrc = resolveGameThumbnail(game, index);
 
   return (
-    <div
-      onClick={() => onPlay(game)}
-      className="group relative mochi-card-glow rounded-2xl overflow-hidden cursor-pointer flex flex-col justify-between transition-all duration-300 hover:-translate-y-1.5 select-none"
-    >
-      {/* 3D Visual Cover Stage */}
-      <div className={`aspect-[16/10] bg-gradient-to-br ${gradient} relative overflow-hidden flex items-center justify-center border-b border-white/[0.08]`}>
-        {/* Cyber perspective vanishing grid */}
-        <div className="absolute inset-0 bg-mochi-grid bg-[size:18px_18px] opacity-40 group-hover:opacity-65 transition-opacity" />
-        
-        {/* Ambient neon backdrop glow */}
-        <div className="absolute -top-6 -end-6 w-28 h-28 rounded-full bg-[#00a2ff]/20 blur-2xl group-hover:scale-125 transition-transform duration-500 pointer-events-none" />
-        <div className="absolute -bottom-6 -start-6 w-28 h-28 rounded-full bg-indigo-500/20 blur-2xl group-hover:scale-125 transition-transform duration-500 pointer-events-none" />
+    <article className="mochi-game-card group select-none">
+      <div className="mochi-game-card-media">
+        <img
+          src={coverSrc}
+          alt={game.title}
+          loading="lazy"
+          decoding="async"
+          className="mochi-game-card-img"
+        />
+        <div className="mochi-game-card-scrim" />
 
-        {/* Top Badges: Genre Tag & Live Player Indicator */}
         <div className="absolute top-2.5 start-2.5 z-10 flex items-center gap-1.5">
-          <span className="px-2 py-0.5 rounded-md bg-[#090b10]/80 backdrop-blur-md border border-white/10 text-[9px] font-mono font-bold tracking-wider text-slate-300 uppercase shadow-sm">
+          <span className="px-2 py-0.5 rounded-md bg-[#090b10]/80 backdrop-blur-md border border-white/15 text-[10px] font-mono font-bold tracking-wider text-slate-100 uppercase">
             {tag}
           </span>
+          {game.isFeatured && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/20 backdrop-blur-md border border-amber-400/40 text-[10px] font-bold text-amber-200">
+              <Sparkles className="w-2.5 h-2.5" />
+            </span>
+          )}
         </div>
 
-        <div className="absolute top-2.5 end-2.5 z-10 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[#090b10]/80 backdrop-blur-md border border-emerald-500/30 text-[9px] font-mono text-emerald-400">
+        <div className="absolute top-2.5 end-2.5 z-10 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#090b10]/80 backdrop-blur-md border border-emerald-500/35 text-[10px] font-mono font-semibold text-emerald-300">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
           <span>{displayPlayers}</span>
         </div>
 
-        {/* Floating 3D Center Artifact */}
-        <div className="relative z-10 flex flex-col items-center justify-center transition-transform duration-300 group-hover:scale-110">
-          <div className={`w-12 h-12 rounded-2xl border shadow-lg flex items-center justify-center transition-all duration-300 ${accentClass}`}>
-            <IconComponent className="w-6 h-6 transition-transform group-hover:rotate-12" />
-          </div>
+        <div className="absolute bottom-2.5 end-2.5 z-10 opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 pointer-events-none">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#00a2ff] text-white text-xs font-bold shadow-lg shadow-[#00a2ff]/40">
+            <Play className="w-3.5 h-3.5 fill-current" />
+            <span>{t.catalog.playNow}</span>
+          </span>
         </div>
 
-        {/* Play Action Hover Shield */}
-        <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-20">
-          <div className="w-12 h-12 rounded-full bg-[#00a2ff] text-white flex items-center justify-center shadow-lg shadow-[#00a2ff]/50 transform scale-75 group-hover:scale-100 transition-transform">
-            <Play className="w-5 h-5 fill-current ms-0.5" />
-          </div>
-        </div>
-
-        {/* Session Progress Bar if applicable */}
         {typeof progressPct === 'number' && (
-          <div className="absolute bottom-0 start-0 end-0 h-1 bg-white/[0.08]">
+          <div className="absolute bottom-0 inset-x-0 h-1 bg-white/10">
             <div
               style={{ width: `${progressPct}%` }}
               className="h-full bg-gradient-to-r from-[#00a2ff] to-indigo-500"
@@ -81,32 +78,43 @@ export const GameCard3D: React.FC<GameCard3DProps> = ({
         )}
       </div>
 
-      {/* Card Metadata & Telemetry Strip */}
-      <div className="p-3.5 space-y-2">
-        <h3 className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white group-hover:text-[#38bdf8] truncate transition-colors">
-          {game.title}
-        </h3>
-        <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1">
-          {game.description || 'โลก 3D อินเทอร์แอคทีฟบนเว็บ'}
-        </p>
+      <div className="mochi-game-card-body">
+        <div className="space-y-1">
+          <h3 className="text-sm sm:text-[15px] leading-snug truncate">
+            <button
+              type="button"
+              onClick={() => onPlay(game)}
+              className="mochi-game-card-trigger truncate transition-colors"
+            >
+              {game.title}
+            </button>
+          </h3>
+          <p className="mochi-game-desc">
+            {game.description || t.catalog.defaultDesc}
+          </p>
+        </div>
 
-        <div className="pt-2 border-t border-slate-200 dark:border-white/[0.06] flex items-center justify-between text-[11px] font-mono text-slate-500 dark:text-slate-400">
+        <footer className="mochi-game-card-footer font-mono">
           {rating ? (
-            <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold">
+            <span className="inline-flex items-center gap-1 text-emerald-500 font-semibold">
               <ThumbsUp className="w-3 h-3" />
               <span>{rating}</span>
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1 text-slate-500 dark:text-slate-400 uppercase">
-              {tag}
+            <span className="px-1.5 py-0.5 rounded bg-slate-200/60 dark:bg-white/[0.06] text-[10px] font-semibold text-[color:var(--mochi-text-sub)]">
+              {game.currentVersion || 'v1.0.0'}
             </span>
           )}
-          <span className="inline-flex items-center gap-1 text-slate-700 dark:text-slate-300">
-            <Users className="w-3 h-3 text-[#38bdf8]" />
-            <span>{displayPlayers}</span>
+          <span className="inline-flex items-center gap-1.5 text-[color:var(--mochi-text-sub)] font-semibold">
+            <Users className="w-3.5 h-3.5 text-[#38bdf8]" />
+            <span>
+              {displayPlayers} {t.catalog.plays}
+            </span>
           </span>
-        </div>
+        </footer>
       </div>
-    </div>
+    </article>
   );
 };
+
+export default GameCard3D;

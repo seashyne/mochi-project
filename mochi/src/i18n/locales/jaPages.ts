@@ -123,5 +123,14 @@ export const jaPages: PagesTranslations = {
   viewingPublicProfile: '公開プロフィールを表示中',
   memberOverview: 'アカウント概要',
   securityOverviewHint: '表示名、パスワード変更、メール復旧を管理します',
-  signInForAccount: 'プロフィール、パスワード、メール認証を管理するにはログインしてください。'
+  signInForAccount: 'プロフィール、パスワード、メール認証を管理するにはログインしてください。',
+  categoryAll: 'すべて',
+  categoryFeatured: '注目',
+  categoryParkour: 'パルクール',
+  categoryTycoon: 'タイクーン',
+  categoryArena: 'アリーナ',
+  worldsCountSuffix: 'ワールド',
+  noWorldsFound: '一致する 3D ワールドが見つかりません',
+  resetFilters: 'フィルターをリセット',
+  featuredSpotlight: '注目のワールド'
 };

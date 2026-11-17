@@ -123,5 +123,14 @@ export const enPages: PagesTranslations = {
   viewingPublicProfile: 'Viewing public profile',
   memberOverview: 'Account Summary',
   securityOverviewHint: 'Manage display name, password rotation, and email recovery',
-  signInForAccount: 'Sign in to manage your profile, password, and email verification.'
+  signInForAccount: 'Sign in to manage your profile, password, and email verification.',
+  categoryAll: 'All Worlds',
+  categoryFeatured: 'Featured',
+  categoryParkour: 'Parkour',
+  categoryTycoon: 'Tycoon',
+  categoryArena: 'Arena',
+  worldsCountSuffix: 'worlds',
+  noWorldsFound: 'No matching 3D worlds found',
+  resetFilters: 'Reset filters',
+  featuredSpotlight: 'Featured World'
 };

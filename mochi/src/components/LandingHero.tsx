@@ -4,26 +4,13 @@ import React from 'react';
 import { LogIn, Play, Users } from 'lucide-react';
 import { useI18n } from '../i18n/context';
 import { GameSummary } from '../api/types';
+import { resolveGameThumbnail } from './home/gameThumbHelpers';
 
 export interface LandingHeroProps {
   games: GameSummary[];
   onOpenSignIn: () => void;
   onOpenSignUp: () => void;
   onRequestPlay: (game: GameSummary) => void;
-}
-
-const FALLBACK_THUMBS = [
-  '/landing/thumb-obby.jpg',
-  '/landing/thumb-tycoon.jpg',
-  '/landing/thumb-arena.jpg'
-];
-
-function resolveThumb(game: GameSummary, index: number): string {
-  if (game.thumbnailUrl) return game.thumbnailUrl;
-  const slug = game.slug.toLowerCase();
-  if (slug.includes('tycoon')) return FALLBACK_THUMBS[1];
-  if (slug.includes('arena') || slug.includes('drift')) return FALLBACK_THUMBS[2];
-  return FALLBACK_THUMBS[index % FALLBACK_THUMBS.length];
 }
 
 export const LandingHero: React.FC<LandingHeroProps> = ({
@@ -82,7 +69,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
                 >
                   <span className="landing-game-thumb">
                     <img
-                      src={resolveThumb(game, index)}
+                      src={resolveGameThumbnail(game, index)}
                       alt={game.title}
                       loading="lazy"
                       decoding="async"
