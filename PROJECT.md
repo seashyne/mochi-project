@@ -94,6 +94,7 @@ The web client builds as two independent apps that share one engine and one API 
 | 50 | Built-in Game Mechanic Snippets           | Snippet completions and insertion for Hazard block, Coin collectible, Dialogue NPC trigger, and Door tween | M19       | Survey 3       |
 | 51 | Real-Time Lua Diagnostics & Jump-to-Line  | Real-time syntax validation via wasmoon compile check, @codemirror/lint markers, and jump-to-line error navigation | M19       | Survey 2       |
 | 52 | Script Editor Automated Vitest Suite      | Comprehensive unit tests covering syntax checker, diagnostics navigation, engine completions, snippets, and SSR rendering | M19       | Survey 2       |
+| 53 | Customizable Workspace Layout System      | Binary split tree layout engine, dockable & resizable panels, tabbed grouping, visual dock overlay, draggable splitters, and persistence | M20       | Survey 1, 2, 3 |
 
 ## Milestones
 
@@ -119,6 +120,7 @@ The web client builds as two independent apps that share one engine and one API 
 | M17 | Team Create Studio                    | Roles, shared drafts, WebSocket live editing, presence/locks/awareness, DO persistence, and CSS-token-only UI       | M16          | DONE        |
 | M18 | Studio Shell & Property Grid          | Shell chrome extraction, declarative property schema, legacy panel removal, and shell test coverage                | M17          | DONE        |
 | M19 | Modern Lua Scripting Experience       | CodeMirror 6 editor, Mochi engine autocomplete, game snippets, real-time syntax checking, and jump-to-line navigation | M18          | DONE        |
+| M20 | Customizable Workspace Layout System  | Binary split tree layout engine, dockable & resizable panels, tabbed grouping, visual dock overlay, draggable splitters, and persistence | M18 | DONE        |
 
 ## Interface Contracts
 
